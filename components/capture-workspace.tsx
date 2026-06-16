@@ -12,7 +12,6 @@ type WorkspaceProps = {
   hasEvidence: boolean;
   hasRawNote: boolean;
   hasProduct: boolean;
-  hasTaskContext: boolean;
   isAnalyzing: boolean;
   patternId?: string;
   screenshotId: string;
@@ -55,7 +54,6 @@ export function PatternExtractionWorkspace(props: WorkspaceProps) {
     hasEvidence,
     hasRawNote,
     hasProduct,
-    hasTaskContext,
     patternId,
     screenshotId,
     analysis,
@@ -71,26 +69,21 @@ export function PatternExtractionWorkspace(props: WorkspaceProps) {
   } = props;
 
   return (
-    <div className="pattern-workspace">
+    <div className="pattern-workspace pattern-workspace--flush">
       <div className="pattern-workspace-header">
-        <h2 className="text-[13px] font-semibold text-[var(--text)]">模式提炼工作台</h2>
-        <p className="mt-0.5 text-[10px] text-[var(--text-weak)]">
-          提炼 · 诊断 · 校对
-        </p>
+        <h2 className="pattern-workspace-header-title">模式提炼工作台</h2>
       </div>
 
       <div className="pattern-workspace-body">
-        {phase === "waiting" ? (
-          <WaitingPanel
+        {phase === "waiting" || phase === "ready" ? (
+          <ExtractPanel
+            ready={phase === "ready"}
+            inferences={EXTRACT_INFERENCES}
+            canExtract={canExtract}
             hasEvidence={hasEvidence}
             hasRawNote={hasRawNote}
-            hasProduct={hasProduct}
-            hasTaskContext={hasTaskContext}
+            onExtract={onExtract}
           />
-        ) : null}
-
-        {phase === "ready" ? (
-          <ReadyPanel inferences={EXTRACT_INFERENCES} canExtract={canExtract} onExtract={onExtract} />
         ) : null}
 
         {phase === "extracting" ? (
@@ -118,50 +111,33 @@ export function PatternExtractionWorkspace(props: WorkspaceProps) {
   );
 }
 
-function WaitingPanel({
-  hasEvidence,
-  hasRawNote,
-  hasProduct,
-  hasTaskContext,
-}: {
-  hasEvidence: boolean;
-  hasRawNote: boolean;
-  hasProduct: boolean;
-  hasTaskContext: boolean;
-}) {
-  return (
-    <div className="workspace-panel">
-      <h3 className="workspace-panel-title">等待证据</h3>
-      <p className="workspace-panel-subtitle">补齐左侧必填项后即可开始</p>
-
-      <div className="evidence-checklist mt-3">
-        <div className="text-[10px] font-medium text-[var(--text-muted)]">开始提炼前：</div>
-        <ChecklistItem required done={hasEvidence} label="截图证据" />
-        <ChecklistItem required done={hasRawNote} label="研究备注" />
-        <ChecklistItem optional done={hasProduct} label="产品信息" />
-        <ChecklistItem optional done={hasTaskContext} label="任务上下文" />
-      </div>
-
-      <p className="mt-3 text-[11px] leading-5 text-[var(--text-muted)]">
-        请先补齐必填证据。完成后，AI 将根据截图与研究备注，提炼一条可复用的设计模式记录。
-      </p>
-    </div>
-  );
-}
-
-function ReadyPanel({
+function ExtractPanel({
+  ready,
   inferences,
   canExtract,
+  hasEvidence,
+  hasRawNote,
   onExtract,
 }: {
+  ready: boolean;
   inferences: readonly string[];
   canExtract: boolean;
+  hasEvidence: boolean;
+  hasRawNote: boolean;
   onExtract: () => void;
 }) {
+  const hint = ready
+    ? "证据已齐全，可以调用 AI 提炼"
+    : !hasEvidence
+      ? "先在左侧粘贴一张产品截图"
+      : !hasRawNote
+        ? "补充研究备注后即可开始提炼"
+        : "在左侧补齐证据后即可提炼";
+
   return (
     <div className="workspace-panel">
-      <h3 className="workspace-panel-title">可以开始提炼模式</h3>
-      <p className="workspace-panel-subtitle">证据已齐全，可以调用 AI 提炼</p>
+      <h3 className="workspace-panel-title">{ready ? "可以开始提炼模式" : "准备提炼模式"}</h3>
+      <p className="workspace-panel-subtitle">{hint}</p>
 
       <div className="mt-3">
         <div className="text-[10px] font-medium text-[var(--text-muted)]">AI 将推断：</div>
@@ -176,8 +152,13 @@ function ReadyPanel({
 
       <div className="mt-4 border-t border-[var(--border)] pt-3">
         <Button className="w-full sm:w-auto" onClick={onExtract} disabled={!canExtract}>
-          提炼设计模式
+          用 AI 提炼模式
         </Button>
+        {!ready ? (
+          <p className="mt-2 text-[10px] text-[var(--text-weak)]">
+            待证据齐全后可用，完成进度见顶部流程条
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -191,7 +172,7 @@ function ExtractingPanel({ hasProduct }: { hasProduct: boolean }) {
   return (
     <div className="workspace-panel">
       <h3 className="workspace-panel-title">正在提炼模式…</h3>
-      <p className="workspace-panel-subtitle">AI 正在读取截图与备注</p>
+      <p className="workspace-panel-subtitle">正在分析证据、备注、界面结构、信任机制与复用潜力</p>
 
       <div className="mt-3">
         <div className="text-[10px] font-medium text-[var(--text-muted)]">正在分析：</div>
@@ -220,9 +201,9 @@ function FailedPanel({
   return (
     <div className="workspace-panel workspace-panel--danger">
       <h3 className="workspace-panel-title text-[var(--danger)]">提炼失败</h3>
-      <p className="workspace-panel-subtitle">未能生成有效模式记录</p>
+      <p className="workspace-panel-subtitle">截图与研究备注已保留</p>
       <p className="mt-2 text-[11px] leading-5 text-[var(--text-muted)]">
-        AI 未能返回有效的模式记录。你的截图与研究备注已保留，可重试或手动填写。
+        AI 未能从当前证据中提炼出有效模式。你可以重试提炼，或手动填写校对表单。
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={onRetry}>重试提炼</Button>
@@ -271,7 +252,7 @@ function ReviewPanel({
 
       <div className="workspace-save-footer">
         <div className="text-[10px] leading-5 text-[var(--text-muted)]">
-          保存后将出现在：
+          保存后将同步至
           {SAVE_DESTINATIONS.map((d, i) => (
             <span key={d}>
               {i > 0 ? " · " : " "}
@@ -279,9 +260,6 @@ function ReviewPanel({
             </span>
           ))}
         </div>
-        <p className="mt-0.5 text-[9px] text-[var(--text-weak)]">
-          记录 · 矩阵 · 旅程 · 模式库 · 洞察
-        </p>
 
         {saveBlockers.length > 0 ? (
           <div className="mt-2 text-[10px] text-[var(--warning)]">
@@ -335,9 +313,11 @@ function RecordPreview({
 
       <dl className="record-preview-meta mt-2 grid gap-1 text-[11px]">
         <PreviewRow label="证据" value={screenshotId} />
+        <PreviewRow label="产品" value={analysis.product || "—"} />
+        <PreviewRow label="类型" value={analysis.productCategory || "—"} />
         <PreviewRow label="阶段" value={journeyCode(analysis.journeyStage)} />
-        <PreviewRow label="分类" value={analysis.patternCategory} />
-        <PreviewRow label="复用" value={analysis.reuseLevel} />
+        <PreviewRow label="分类" value={analysis.patternCategory || "—"} />
+        <PreviewRow label="复用" value={analysis.reuseLevel || "—"} />
       </dl>
 
       {saveBlockers.length > 0 && !nameMissing ? (
@@ -354,32 +334,6 @@ function PreviewRow({ label, value }: { label: string; value: string }) {
     <div className="flex gap-2">
       <dt className="w-10 shrink-0 text-[var(--text-weak)]">{label}</dt>
       <dd className="min-w-0 truncate text-[var(--text-muted)]">{value}</dd>
-    </div>
-  );
-}
-
-function ChecklistItem({
-  required,
-  optional,
-  done,
-  label,
-}: {
-  required?: boolean;
-  optional?: boolean;
-  done: boolean;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 py-0.5 text-[11px]">
-      <span className={done ? "text-[var(--success)]" : "text-[var(--text-weak)]"}>
-        {done ? "☑" : required ? "□" : "○"}
-      </span>
-      <span className={done ? "text-[var(--text-muted)]" : "text-[var(--text)]"}>{label}</span>
-      {required ? (
-        <span className="text-[9px] text-[var(--danger)]">必填</span>
-      ) : optional ? (
-        <span className="text-[9px] text-[var(--text-weak)]">可选</span>
-      ) : null}
     </div>
   );
 }

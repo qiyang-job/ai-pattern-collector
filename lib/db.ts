@@ -1,93 +1,304 @@
-import Dexie, { type Table } from "dexie";
-import type { PatternRecord } from "@/lib/types";
+import { getDb, ensureAuth, getApp } from "./cloudbase";
+import type { PatternRecord } from "./types";
 
-export type CounterMeta = {
-  key: "counters";
+// ── 类型 ──────────────────────────────────────────────
+
+export interface CounterMeta {
   screenshotSeq: number;
   patternSeq: number;
-};
+}
 
-export type InsightMeta = {
-  key: "latestInsights";
+export interface InsightMeta {
   value: string;
   updatedAt: string;
-};
+}
 
-type MetaRecord = CounterMeta | InsightMeta;
+// ── 内部：确保已认证再操作 ─────────────────────────────
 
-class PatternCollectorDatabase extends Dexie {
-  records!: Table<PatternRecord, string>;
-  meta!: Table<MetaRecord, string>;
+function records() {
+  return getDb().collection("records");
+}
 
-  constructor() {
-    super("ai-pattern-collector");
-    this.version(1).stores({
-      records:
-        "id, screenshotId, patternId, product, productCategory, journeyStage, screenshotState, patternCategory, reuseLevel, createdAt, updatedAt",
-      meta: "key",
+function meta() {
+  return getDb().collection("meta");
+}
+
+async function authed<T>(fn: () => Promise<T>): Promise<T> {
+  await ensureAuth();
+  return fn();
+}
+
+// ─── 截图上传云存 ────────────────────────────────────
+
+/** 将 base64 dataURL 上传到 CloudBase 云存，返回 fileID；失败时返回 undefined */
+async function uploadImageIfNeeded(
+  id: string,
+  imageDataUrl: string,
+  existingFileID?: string,
+): Promise<string | undefined> {
+  if (existingFileID) return existingFileID; // 已上传过，跳过
+  if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) return undefined;
+
+  try {
+    // 解析 mime 和纯 base64 数据
+    const [header, base64] = imageDataUrl.split(",");
+    const mime = header.match(/data:(.*?);/)?.[1] ?? "image/png";
+    const ext = mime === "image/jpeg" ? "jpg" : mime === "image/webp" ? "webp" : "png";
+    const byteChars = atob(base64);
+    const bytes = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mime });
+    const file = new File([blob], `${id}.${ext}`, { type: mime });
+
+    const cloudPath = `screenshots/${id}.${ext}`;
+    const result = await getApp().uploadFile({ cloudPath, filePath: file as unknown as string });
+
+    return result.fileID;
+  } catch (e) {
+    console.warn("[cloudbase] 图片上传失败，将保留 base64", e);
+    return undefined;
+  }
+}
+
+/** 根据 fileID 获取临时访问 URL */
+export async function getImageTempUrl(
+  fileID: string,
+): Promise<string | null> {
+  if (!fileID) return null;
+  try {
+    await ensureAuth();
+    const res = await getApp().getTempFileURL({
+      fileList: [{ fileID, maxAge: 3600 }],
+    });
+    return (
+      res.fileList?.[0]?.tempFileURL ??
+      res.fileList?.[0]?.download_url ??
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+// ─── 计数器 (meta 集合) ────────────────────────────────
+
+function countersDoc() {
+  return meta().where({ key: "counters" }).get();
+}
+
+async function readCounters(): Promise<CounterMeta> {
+  const res = await countersDoc();
+  if (res.data?.[0]?.value) return res.data[0].value as CounterMeta;
+  return { screenshotSeq: 0, patternSeq: 0 };
+}
+
+async function writeCounters(val: CounterMeta): Promise<void> {
+  const existing = await countersDoc();
+  if (existing.data?.[0]?._id) {
+    await meta().doc(existing.data[0]._id).update({
+      value: val,
+      updatedAt: new Date().toISOString(),
+    });
+  } else {
+    await meta().add({
+      key: "counters",
+      value: val,
+      updatedAt: new Date().toISOString(),
     });
   }
 }
 
-export const db = new PatternCollectorDatabase();
+/** 原子递增并返回新编号 */
+export async function reserveNextRecordIds(): Promise<{
+  screenshotId: string;
+  patternId: string;
+}> {
+  return authed(async () => {
+    const cur = await readCounters();
+    const next = {
+      screenshotSeq: cur.screenshotSeq + 1,
+      patternSeq: cur.patternSeq + 1,
+    };
+    await writeCounters(next);
+    return {
+      screenshotId: `S-${String(next.screenshotSeq).padStart(3, "0")}`,
+      patternId: `P-${String(next.patternSeq).padStart(3, "0")}`,
+    };
+  });
+}
 
-const formatId = (prefix: "S" | "P", value: number) =>
-  `${prefix}-${String(value).padStart(3, "0")}`;
+// ─── Records CRUD ──────────────────────────────────────
 
-export async function reserveNextRecordIds() {
-  return db.transaction("rw", db.meta, async () => {
-    const counters = (await db.meta.get("counters")) as CounterMeta | undefined;
-    const nextCounters: CounterMeta = {
-      key: "counters",
-      screenshotSeq: counters?.screenshotSeq ?? 1,
-      patternSeq: counters?.patternSeq ?? 1,
+export async function saveRecord(record: PatternRecord): Promise<void> {
+  await authed(async () => {
+    const now = new Date().toISOString();
+    const existing = await records()
+      .where({ id: record.id })
+      .get();
+
+    // 截图上云存：有 base64 但无 fileID 时自动上传
+    const imageFileID = await uploadImageIfNeeded(
+      record.id,
+      record.imageDataUrl,
+      existing.data?.[0]?.imageFileID,
+    );
+
+    const payload: Record<string, unknown> = {
+      ...record,
+      imageFileID: imageFileID ?? existing.data?.[0]?.imageFileID ?? undefined,
+      createdAt: existing.data?.[0]?.createdAt ?? record.createdAt ?? now,
+      updatedAt: now,
     };
 
-    await db.meta.put({
-      key: "counters",
-      screenshotSeq: nextCounters.screenshotSeq + 1,
-      patternSeq: nextCounters.patternSeq + 1,
+    if (existing.data?.length) {
+      await records().doc(existing.data[0]._id).update(payload);
+    } else {
+      await records().add(payload);
+    }
+  });
+}
+
+/** 对有 fileID 无 dataUrl 的记录，批量回填临时 URL */
+async function hydrateImageUrls(
+  items: PatternRecord[],
+): Promise<PatternRecord[]> {
+  const needsFetch = items.filter(
+    (r) => !r.imageDataUrl && r.imageFileID,
+  );
+  if (needsFetch.length === 0) return items;
+
+  await ensureAuth();
+  const fileList = needsFetch.map((r) => ({
+    fileID: r.imageFileID!,
+    maxAge: 3600,
+  }));
+
+  try {
+    const res = await getApp().getTempFileURL({ fileList });
+    const urlMap = new Map<string, string | undefined>();
+    (res.fileList ?? []).forEach((f, i) => {
+      urlMap.set(fileList[i].fileID, f.tempFileURL ?? f.download_url);
     });
 
-    return {
-      screenshotId: formatId("S", nextCounters.screenshotSeq),
-      patternId: formatId("P", nextCounters.patternSeq),
+    return items.map((r) => {
+      if (!r.imageDataUrl && r.imageFileID) {
+        const url = urlMap.get(r.imageFileID);
+        if (url) return { ...r, imageDataUrl: url };
+      }
+      return r;
+    });
+  } catch {
+    // 回填失败不影响主流程
+    return items;
+  }
+}
+
+export async function getRecord(id: string): Promise<PatternRecord | null> {
+  return authed(async () => {
+    const res = await records().where({ id }).get();
+    if (!res.data?.length) return null;
+    const { _id, _openid, ...rest } = res.data[0];
+    const rec = rest as unknown as PatternRecord;
+    const hydrated = await hydrateImageUrls([rec]);
+    return hydrated[0] ?? rec;
+  });
+}
+
+export async function listRecords(): Promise<PatternRecord[]> {
+  return authed(async () => {
+    // NoSQL 不支持 orderBy，在内存中排序
+    const res = await records().limit(999).get();
+    const items = (res.data ?? []).map(({ _id, _openid, ...rest }) => rest as unknown as PatternRecord);
+    const sorted = items.sort(
+      (a, b) =>
+        new Date(b.createdAt ?? 0).getTime() -
+        new Date(a.createdAt ?? 0).getTime(),
+    );
+    return hydrateImageUrls(sorted);
+  });
+}
+
+export async function deleteRecord(id: string): Promise<void> {
+  await authed(async () => {
+    const res = await records().where({ id }).get();
+    if (res.data?.[0]?._id) {
+      // 同时删除关联的云存储图片
+      const rec = res.data[0];
+      if (rec.imageFileID) {
+        try {
+          await getApp().deleteFile({ fileList: [rec.imageFileID] });
+        } catch {
+          /* 删除失败不阻断 */
+        }
+      }
+      await records().doc(res.data[0]._id).remove();
+    }
+  });
+}
+
+// ─── Insights (meta 集合) ──────────────────────────────
+
+export async function saveLatestInsights(value: string): Promise<void> {
+  await authed(async () => {
+    const existing = await meta().where({ key: "latestInsights" }).get();
+    const payload = {
+      key: "latestInsights",
+      value,
+      updatedAt: new Date().toISOString(),
     };
+    if (existing.data?.[0]?._id) {
+      await meta().doc(existing.data[0]._id).update(payload);
+    } else {
+      await meta().add(payload);
+    }
   });
 }
 
-export async function listRecords() {
-  return db.records.orderBy("createdAt").reverse().toArray();
-}
-
-export async function getRecord(id: string) {
-  return db.records.get(id);
-}
-
-export async function saveRecord(record: PatternRecord) {
-  const now = new Date().toISOString();
-  const existing = await db.records.get(record.id);
-
-  await db.records.put({
-    ...record,
-    createdAt: existing?.createdAt ?? record.createdAt ?? now,
-    updatedAt: now,
+export async function getLatestInsights(): Promise<string | null> {
+  return authed(async () => {
+    const res = await meta().where({ key: "latestInsights" }).get();
+    return res.data?.[0]?.value ?? null;
   });
 }
 
-export async function deleteRecord(id: string) {
-  await db.records.delete(id);
+// ─── 导入/导出辅助 ─────────────────────────────────────
+
+export interface ImportRecordsResult {
+  imported: number;
+  skipped: number;
+  total: number;
 }
 
-export async function saveLatestInsights(value: string) {
-  await db.meta.put({
-    key: "latestInsights",
-    value,
-    updatedAt: new Date().toISOString(),
+export async function importRecords(
+  incoming: PatternRecord[],
+  mode: "merge" | "replace" = "merge",
+): Promise<ImportRecordsResult> {
+  return authed(async () => {
+    let imported = 0;
+    let skipped = 0;
+
+    for (const rec of incoming) {
+      if (mode === "replace") {
+        // replace 模式：直接 upsert
+        await saveRecord(rec);
+        imported++;
+        continue;
+      }
+
+      // merge 模式：跳过已存在
+      const existing = await records().where({ id: rec.id }).get();
+      if (existing.data?.length) {
+        skipped++;
+      } else {
+        await saveRecord(rec);
+        imported++;
+      }
+    }
+
+    return { imported, skipped, total: incoming.length };
   });
 }
 
-export async function getLatestInsights() {
-  const latest = (await db.meta.get("latestInsights")) as InsightMeta | undefined;
-  return latest?.value ?? "";
+export async function importInsights(insights: string): Promise<void> {
+  await saveLatestInsights(insights);
 }

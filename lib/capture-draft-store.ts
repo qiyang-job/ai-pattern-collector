@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { EMPTY_ANALYSIS } from "@/lib/constants";
 import { reserveNextRecordIds } from "@/lib/db";
@@ -145,3 +146,32 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     }
   },
 }));
+
+function getCaptureSsrSnapshot(store: CaptureDraftState): CaptureDraftState {
+  return {
+    ...store,
+    reservedIds: null,
+    imageDataUrl: "",
+    imageMeta: INITIAL_DRAFT.imageMeta,
+    rawNote: "",
+    sourceUrl: "",
+    taskContext: "",
+    analysis: { ...EMPTY_ANALYSIS },
+    analysisStatus: "idle",
+    isAnalyzing: false,
+    showReview: false,
+    showAdvanced: false,
+    error: "",
+  };
+}
+
+/** Align first client render with SSR before Zustand in-memory state is applied. */
+export function useHydratedCaptureDraft(): CaptureDraftState {
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const store = useCaptureDraftStore();
+  return hydrated ? store : getCaptureSsrSnapshot(store);
+}

@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useCaptureDraftStore } from "@/lib/capture-draft-store";
+import { useHydratedCaptureDraft } from "@/lib/capture-draft-store";
 import { useRecordsStore } from "@/lib/records-store";
 import {
   CapturePipeline,
@@ -19,11 +18,7 @@ import {
   PatternExtractionWorkspace,
 } from "@/components/capture-workspace";
 import {
-  Button,
-  DualLabel,
   ErrorBanner,
-  Field,
-  inputClass,
   textareaClass,
 } from "@/components/ui";
 import {
@@ -32,9 +27,11 @@ import {
   ImageLightbox,
   type EvidenceUiStatus,
 } from "@/components/research-ui";
+import { cn } from "@/lib/utils";
+import { callCloudFunction } from "@/lib/cloudbase";
 
 const RESEARCH_NOTE_PLACEHOLDER =
-  "用一句话说明这张截图中值得研究的交互。例如：Cursor 在执行代码修改前展示将修改的文件，并要求用户确认。";
+  "这张图里值得研究的交互是什么，例如：修改代码前展示待改文件并要求确认。";
 
 const WRITING_TEMPLATE =
   "[产品] 在 [用户阶段] 通过 [界面机制] 帮用户 [解决问题]";
@@ -50,6 +47,41 @@ const createBrowserId = () =>
     ? crypto.randomUUID()
     : `record-${Date.now()}`;
 
+function ComposerInlineField({
+  zh,
+  en,
+  mark,
+  placeholder,
+  value,
+  onChange,
+}: {
+  zh: string;
+  en: string;
+  mark?: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const fieldId = `context-${zh}`;
+
+  return (
+    <div className="composer-inline-field">
+      <label className="composer-inline-field-label" htmlFor={fieldId}>
+        {zh}
+        <span className="composer-inline-field-label-en">{en}</span>
+      </label>
+      <input
+        id={fieldId}
+        className="composer-inline-field-input focus-ring"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {mark ? <span className="composer-inline-field-mark">{mark}</span> : null}
+    </div>
+  );
+}
+
 export default function CapturePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { saveRecord } = useRecordsStore();
@@ -64,7 +96,6 @@ export default function CapturePage() {
     analysisStatus,
     isAnalyzing,
     showReview,
-    showAdvanced,
     error,
     ensureIds,
     setImage,
@@ -76,18 +107,17 @@ export default function CapturePage() {
     setAnalysisStatus,
     setIsAnalyzing,
     setShowReview,
-    toggleAdvanced,
     setError,
     resetDraft,
-  } = useCaptureDraftStore();
+  } = useHydratedCaptureDraft();
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [evidenceEditing, setEvidenceEditing] = useState(false);
 
   const hasEvidence = Boolean(imageDataUrl);
   const hasRawNote = Boolean(rawNote.trim());
   const hasProduct = Boolean(analysis.product.trim());
-  const hasTaskContext = Boolean(taskContext.trim());
   const analyzeReady = hasEvidence && hasRawNote;
   const canExtract = analyzeReady && !isAnalyzing;
 
@@ -95,6 +125,7 @@ export default function CapturePage() {
   const canSave = saveBlockers.length === 0;
 
   const inReview = showReview || analysisStatus === "analyzed";
+  const collapseEvidence = inReview && !evidenceEditing;
   const workspacePhase = getWorkspacePhase({
     isAnalyzing,
     analysisStatus,
@@ -106,23 +137,23 @@ export default function CapturePage() {
     ? "缺失截图"
     : !hasRawNote
       ? "缺失备注"
-      : "已就绪";
+      : "证据就绪";
 
   const extractStatus: ExtractStepStatus = isAnalyzing
     ? "提炼中"
     : analysisStatus === "analyzed"
       ? "已完成"
       : analysisStatus === "failed"
-        ? "失败"
+        ? "提炼失败"
         : analyzeReady
           ? "可提炼"
-          : "未开始";
+          : "尚未提炼";
 
   const reviewStatus: ReviewStepStatus = !inReview
-    ? "未解锁"
+    ? "已锁定"
     : canSave
       ? "可保存"
-      : "待校对";
+      : "需校对";
 
   const evidenceUiStatus: EvidenceUiStatus = isAnalyzing
     ? "analyzing"
@@ -145,12 +176,26 @@ export default function CapturePage() {
     inReview,
     isAnalyzing,
     analyzeReady,
-    evidenceReady: evidenceStatus === "已就绪",
+    evidenceReady: evidenceStatus === "证据就绪",
   });
 
   useEffect(() => {
     ensureIds();
   }, [ensureIds]);
+
+  const handleImageFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("请选择图片文件。");
+      return;
+    }
+    try {
+      const dataUrl = await readAndResizeImage(file);
+      const kb = Math.round(file.size / 1024);
+      setImage(dataUrl, `${file.type} · ${kb} KB · ${new Date().toLocaleTimeString()}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "图片读取失败");
+    }
+  }, [setError, setImage]);
 
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
@@ -165,25 +210,12 @@ export default function CapturePage() {
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  });
-
-  async function handleImageFile(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setError("请选择图片文件。");
-      return;
-    }
-    try {
-      const dataUrl = await readAndResizeImage(file);
-      const kb = Math.round(file.size / 1024);
-      setImage(dataUrl, `${file.type} · ${kb} KB · ${new Date().toLocaleTimeString()}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "图片读取失败");
-    }
-  }
+  }, [handleImageFile]);
 
   async function reset() {
     setPreviewOpen(false);
     setSavedFlash(false);
+    setEvidenceEditing(false);
     await resetDraft();
   }
 
@@ -197,6 +229,15 @@ export default function CapturePage() {
     setRawNote(`${prev.trimEnd()}\n${hint} `);
   }
 
+  function insertWritingTemplate() {
+    if (!rawNote.trim()) {
+      setRawNote(`${WRITING_TEMPLATE} `);
+      return;
+    }
+    if (rawNote.includes(WRITING_TEMPLATE)) return;
+    setRawNote(`${rawNote.trimEnd()}\n${WRITING_TEMPLATE} `);
+  }
+
   async function analyze() {
     if (!imageDataUrl) return setError("请先添加截图证据。");
     if (!rawNote.trim()) return setError("请填写研究备注。");
@@ -204,20 +245,14 @@ export default function CapturePage() {
     setAnalysisStatus("analyzing");
     setError("");
     try {
-      const res = await fetch("/api/analyze-pattern", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageDataUrl,
-          rawNote,
-          product: analysis.product,
-          sourceUrl,
-          taskContext,
-        }),
+      const payload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
+        imageDataUrl,
+        rawNote,
+        product: analysis.product,
+        sourceUrl,
+        taskContext,
       });
-      const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error || "AI 分析失败");
-      setAnalysis({ ...payload, product: payload.product || analysis.product });
+      setAnalysis({ ...payload, product: (payload.product as string) || analysis.product } as any);
       setAnalysisStatus("analyzed");
       setShowReview(true);
       toast.success("模式提炼完成，请校对后保存");
@@ -252,7 +287,7 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="capture-workbench">
+    <div className="capture-workbench flex-1">
       <CapturePipeline
         screenshotId={reservedIds?.screenshotId ?? "S---"}
         patternId={inReview ? reservedIds?.patternId : undefined}
@@ -264,38 +299,97 @@ export default function CapturePage() {
         activeStep={activeStep}
       />
 
-      <div className="capture-columns">
+      <div className={cn("capture-columns", collapseEvidence && "capture-columns--review")}>
         <div className="capture-evidence-column">
-          <header className="mb-3 border-b border-[var(--border)] pb-2">
-            <h1 className="text-[13px] font-semibold text-[var(--text)]">证据编排</h1>
-            <p className="mt-0.5 text-[10px] text-[var(--text-weak)]">
-              截图 · 研究备注 · 上下文
-            </p>
-          </header>
+          {collapseEvidence ? (
+            <>
+              <header className="capture-column-header capture-column-header--compact">
+                <div>
+                  <h1 className="capture-column-header-title">证据参考</h1>
+                  <p className="capture-column-header-subtitle">校对时仅供参考，可随时修改</p>
+                </div>
+                <button
+                  type="button"
+                  className="evidence-recap-edit focus-ring"
+                  onClick={() => setEvidenceEditing(true)}
+                >
+                  修改证据
+                </button>
+              </header>
+              <div className="evidence-recap">
+                {imageDataUrl ? (
+                  <button
+                    type="button"
+                    className="evidence-recap-thumb focus-ring"
+                    onClick={() => setPreviewOpen(true)}
+                    title="点击查看大图"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imageDataUrl} alt={reservedIds?.screenshotId ?? "screenshot"} />
+                  </button>
+                ) : null}
+                <div className="evidence-recap-block">
+                  <div className="evidence-recap-block-label">研究备注</div>
+                  <p className="evidence-recap-note">{rawNote || "—"}</p>
+                </div>
+                <div className="evidence-recap-block">
+                  <div className="evidence-recap-block-label">场景上下文</div>
+                  <dl className="evidence-recap-meta">
+                    <div className="evidence-recap-meta-row">
+                      <dt>证据</dt>
+                      <dd>{reservedIds?.screenshotId ?? "S---"}</dd>
+                    </div>
+                    <div className="evidence-recap-meta-row">
+                      <dt>产品</dt>
+                      <dd>{analysis.product || "—"}</dd>
+                    </div>
+                    <div className="evidence-recap-meta-row">
+                      <dt>当时任务</dt>
+                      <dd>{taskContext || "—"}</dd>
+                    </div>
+                    <div className="evidence-recap-meta-row">
+                      <dt>来源</dt>
+                      <dd>{sourceUrl || "—"}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <header className="capture-column-header capture-column-header--compact">
+                <div>
+                  <h1 className="capture-column-header-title">采集证据</h1>
+                  <p className="capture-column-header-subtitle">粘贴截图，说明值得研究的交互</p>
+                </div>
+                {inReview ? (
+                  <button
+                    type="button"
+                    className="evidence-recap-edit focus-ring"
+                    onClick={() => setEvidenceEditing(false)}
+                  >
+                    完成
+                  </button>
+                ) : null}
+              </header>
 
-          <section className="composer-section">
-            <div className="composer-section-title">截图证据</div>
-            <p className="composer-section-hint">
-              截图是研究证据，不只是图片上传。它将与研究备注一起提炼为模式记录。
-            </p>
-            <div className="mt-2">
-              <EvidenceSlot
-                screenshotId={reservedIds?.screenshotId ?? "S---"}
-                status={evidenceUiStatus}
-                imageDataUrl={imageDataUrl}
-                meta={imageMeta}
-                onUploadClick={() => fileInputRef.current?.click()}
-                onPreviewClick={() => imageDataUrl && setPreviewOpen(true)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const f = Array.from(e.dataTransfer.files).find((x) =>
-                    x.type.startsWith("image/"),
-                  );
-                  if (f) void handleImageFile(f);
-                }}
-              />
-            </div>
+              <div className="capture-evidence-body">
+            <EvidenceSlot
+              screenshotId={reservedIds?.screenshotId ?? "S---"}
+              status={evidenceUiStatus}
+              imageDataUrl={imageDataUrl}
+              meta={imageMeta}
+              onUploadClick={() => fileInputRef.current?.click()}
+              onPreviewClick={() => imageDataUrl && setPreviewOpen(true)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const f = Array.from(e.dataTransfer.files).find((x) =>
+                  x.type.startsWith("image/"),
+                );
+                if (f) void handleImageFile(f);
+              }}
+            />
             <input
               ref={fileInputRef}
               type="file"
@@ -306,104 +400,78 @@ export default function CapturePage() {
                 if (f) void handleImageFile(f);
               }}
             />
-          </section>
 
-          <section className="composer-section">
-            <div className="composer-section-title">研究备注</div>
-            <p className="composer-section-hint">说明这张图为什么值得研究</p>
-            <div className="mt-2">
-              <Field label={<DualLabel zh="研究备注" en="Research Note" />} hint="必填" compact>
-                <textarea
-                  className={textareaClass}
-                  rows={4}
-                  placeholder={RESEARCH_NOTE_PLACEHOLDER}
-                  value={rawNote}
-                  onChange={(e) => setRawNote(e.target.value)}
-                />
-              </Field>
-              <div className="writing-template">
-                <span className="font-medium text-[var(--text-muted)]">推荐写法：</span>
-                {WRITING_TEMPLATE}
+            <div className="composer-note-block">
+              <div className="composer-note-header">
+                <div className="composer-note-title">
+                  研究备注
+                  <span className="composer-note-title-en">Research Note</span>
+                </div>
+                <span className="composer-label-mark">必填</span>
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {NOTE_HINTS.map((hint) => (
-                  <HintChip key={hint} onClick={() => appendHint(hint)}>
-                    {hint}
-                  </HintChip>
-                ))}
+              <textarea
+                className={cn(textareaClass, "composer-note-input")}
+                placeholder={RESEARCH_NOTE_PLACEHOLDER}
+                value={rawNote}
+                onChange={(e) => setRawNote(e.target.value)}
+              />
+              <div className="composer-note-footer">
+                <button
+                  type="button"
+                  className="composer-note-template"
+                  onClick={insertWritingTemplate}
+                >
+                  句式：{WRITING_TEMPLATE}
+                </button>
+                <div className="composer-note-chips">
+                  {NOTE_HINTS.map((hint) => (
+                    <HintChip key={hint} onClick={() => appendHint(hint)}>
+                      {hint}
+                    </HintChip>
+                  ))}
+                </div>
               </div>
             </div>
-          </section>
 
-          <section className="composer-section">
-            <div className="composer-section-title">上下文</div>
-            <div className="mt-2 space-y-2">
-              <Field label={<DualLabel zh="产品" en="Product" />} hint="建议填写" compact>
-                <input
-                  className={inputClass}
-                  placeholder="Cursor / Claude / Notion AI…"
+            <div className="composer-context-block">
+              <div className="composer-context-header">
+                <div className="composer-context-title">场景上下文</div>
+              </div>
+
+              <div className="composer-context-fields">
+                <ComposerInlineField
+                  zh="产品"
+                  en="Product"
+                  mark="建议填写"
+                  placeholder="AI 产品，如 Cursor、Claude、Notion AI"
                   value={analysis.product}
-                  onChange={(e) => patchAnalysis({ product: e.target.value })}
+                  onChange={(value) => patchAnalysis({ product: value })}
                 />
-              </Field>
-              <p className="field-hint -mt-1">用于提高 AI 分类准确性</p>
 
-              <Field label={<DualLabel zh="任务上下文" en="Task Context" />} hint="可选" compact>
-                <input
-                  className={inputClass}
-                  placeholder="例如：代码重构、调研总结、多文件编辑…"
+                <ComposerInlineField
+                  zh="当时任务"
+                  en="Task Context"
+                  mark="可选"
+                  placeholder="具体任务，如总结论文、生成 PRD、批量改代码"
                   value={taskContext}
-                  onChange={(e) => setTaskContext(e.target.value)}
+                  onChange={setTaskContext}
                 />
-              </Field>
-              <p className="field-hint -mt-1">说明你当时让 AI 做的任务</p>
 
-              <button
-                type="button"
-                className="flex w-full items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text)]"
-                onClick={toggleAdvanced}
-              >
-                {showAdvanced ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-                高级上下文
-              </button>
-
-              {showAdvanced ? (
-                <Field label={<DualLabel zh="来源链接" en="Source URL" />} compact>
-                  <input
-                    className={inputClass}
-                    placeholder="https://…"
-                    value={sourceUrl}
-                    onChange={(e) => setSourceUrl(e.target.value)}
-                  />
-                </Field>
-              ) : null}
+                <ComposerInlineField
+                  zh="来源链接"
+                  en="Source URL"
+                  mark="可选"
+                  placeholder="页面或功能 URL，便于回溯证据"
+                  value={sourceUrl}
+                  onChange={setSourceUrl}
+                />
+              </div>
             </div>
-          </section>
 
-          {workspacePhase === "ready" || workspacePhase === "waiting" ? (
-            <div className="border-t border-[var(--border)] pt-3">
-              <Button className="w-full" onClick={analyze} disabled={!canExtract}>
-                {isAnalyzing ? "提炼中…" : "提炼设计模式"}
-              </Button>
-              <p className="mt-1 text-center text-[10px] text-[var(--text-weak)]">
-                使用 AI 从证据中提炼设计模式
-              </p>
-              {!canExtract && !isAnalyzing ? (
-                <p className="mt-1 text-center text-[10px] text-[var(--text-weak)]">
-                  {!hasEvidence && !hasRawNote
-                    ? "需要截图和研究备注才能提炼。"
-                    : !hasEvidence
-                      ? "需要截图才能提炼。"
-                      : "需要研究备注才能提炼。"}
-                </p>
-              ) : null}
-              <ErrorBanner message={error} />
-            </div>
-          ) : null}
+            {error ? <ErrorBanner message={error} /> : null}
+          </div>
+            </>
+          )}
         </div>
 
         <div className="capture-analysis-column">
@@ -412,7 +480,6 @@ export default function CapturePage() {
             hasEvidence={hasEvidence}
             hasRawNote={hasRawNote}
             hasProduct={hasProduct}
-            hasTaskContext={hasTaskContext}
             isAnalyzing={isAnalyzing}
             patternId={reservedIds?.patternId}
             screenshotId={reservedIds?.screenshotId ?? "S---"}
@@ -428,7 +495,7 @@ export default function CapturePage() {
             onReset={reset}
           />
           {workspacePhase !== "waiting" && workspacePhase !== "ready" ? (
-            <div className="mt-2">
+            <div className="page-gutter-x pb-2">
               <ErrorBanner message={error} />
             </div>
           ) : null}

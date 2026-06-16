@@ -7,17 +7,21 @@ import { getLatestInsights, saveLatestInsights } from "@/lib/db";
 import { useRecordsStore } from "@/lib/records-store";
 import { computeRecordStats } from "@/lib/stats";
 import type { InsightsResult, RecordSummary } from "@/lib/types";
+import { callCloudFunction } from "@/lib/cloudbase";
 import {
   Button,
   ErrorBanner,
   PageBody,
+  PageFrame,
   PageHeader,
   Panel,
   PanelHeader,
   StatMetric,
   TypedIdBadge,
 } from "@/components/ui";
-import { ReportSkeletonSection } from "@/components/research-ui";
+import { DistributionRow, ReportSkeletonSection } from "@/components/research-ui";
+import { CORE_JOURNEY_STAGES } from "@/lib/constants";
+import { journeyCode, journeyName } from "@/lib/utils";
 
 const INSIGHT_KEYS: Array<{ key: keyof InsightsResult; title: string; num: string }> = [
   { key: "researchScope", title: "研究范围", num: "01" },
@@ -72,13 +76,7 @@ export default function InsightsPage() {
         lensScore: r.lensScore,
         tags: r.tags,
       }));
-      const res = await fetch("/api/generate-insights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: summaries }),
-      });
-      const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error || "生成失败");
+      const payload = await callCloudFunction<InsightsResult>("ai-generate-insights", { records: summaries });
       setInsights(payload);
       await saveLatestInsights(JSON.stringify(payload));
       toast.success("洞察报告已生成。");
@@ -90,7 +88,7 @@ export default function InsightsPage() {
   }
 
   return (
-    <div>
+    <PageFrame>
       <PageHeader
         title="洞察"
         description="研究报告生成器 — 本地统计 + AI 叙事。"
@@ -109,14 +107,21 @@ export default function InsightsPage() {
           </Button>
         }
       />
-      <PageBody className="space-y-3">
-        <Panel noPadding className="border-[var(--accent-muted)] bg-[var(--accent-muted)]/30 p-3">
-          <div className="text-[11px] font-medium text-[var(--text-muted)]">样本量阈值</div>
-          <ul className="mt-1 space-y-0.5 text-[11px] text-[var(--text-muted)]">
-            <li><strong className="text-[var(--text)]">5+</strong> 条记录 → 基础洞察</li>
-            <li><strong className="text-[var(--text)]">15+</strong> 条记录 → 跨产品对比</li>
-            <li><strong className="text-[var(--text)]">30+</strong> 条记录 → 稳定模式建议</li>
-          </ul>
+      <PageBody className="page-section-gap">
+        <Panel className="insight-readiness border-[var(--accent-muted)]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>
+              <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--text-muted)]">
+                Insights 的可信度来自记录密度。先看样本规模，再判断报告适合用于初步观察还是稳定设计建议。
+              </p>
+            </div>
+            <ul className="grid min-w-[280px] flex-1 gap-1 text-[11px] text-[var(--text-muted)] sm:grid-cols-3">
+              <li><strong className="text-[var(--text)]">5+</strong> 基础洞察</li>
+              <li><strong className="text-[var(--text)]">15+</strong> 跨产品对比</li>
+              <li><strong className="text-[var(--text)]">30+</strong> 稳定建议</li>
+            </ul>
+          </div>
           {!hasRecords ? (
             <Link href="/capture" className="mt-2 inline-block text-[11px] text-[var(--accent)] underline">
               开始采集 →
@@ -127,39 +132,57 @@ export default function InsightsPage() {
         <ErrorBanner message={error} />
 
         {hasRecords ? (
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Panel noPadding className="p-3">
-              <PanelHeader title="旅程覆盖" />
-              <table className="data-table">
-                <tbody>
-                  {stats.journeyCounts.map((item) => (
-                    <tr key={item.stage}>
-                      <td className="text-[12px]">{item.stage}</td>
-                      <td className="tabular-nums text-right">{item.count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="grid gap-[var(--section-gap)] lg:grid-cols-2">
+            <Panel>
+              <PanelHeader title="旅程覆盖" meta={`J-01 → J-09 · ${records.length} 条`} />
+              <div className="dist-list">
+                {(() => {
+                  const max = Math.max(1, ...stats.journeyCounts.map((i) => i.count));
+                  return stats.journeyCounts.map((item) => {
+                    const isCore = CORE_JOURNEY_STAGES.some((s) => s === item.stage);
+                    return (
+                      <DistributionRow
+                        key={item.stage}
+                        label={
+                          <span className="flex items-center gap-2">
+                            <span className="mono text-[10px] text-[var(--text-weak)]">
+                              {journeyCode(item.stage)}
+                            </span>
+                            {journeyName(item.stage)}
+                          </span>
+                        }
+                        count={item.count}
+                        max={max}
+                        accent={isCore}
+                        core={isCore}
+                      />
+                    );
+                  });
+                })()}
+              </div>
             </Panel>
-            <Panel noPadding className="p-3">
-              <PanelHeader title="产品覆盖" />
-              <table className="data-table">
-                <tbody>
-                  {stats.productCategoryCounts.map((item) => (
-                    <tr key={item.category}>
-                      <td className="text-[12px]">{item.category}</td>
-                      <td className="tabular-nums text-right">{item.count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <Panel>
+              <PanelHeader title="产品覆盖" meta={`${stats.coveredProducts} 个产品`} />
+              <div className="dist-list">
+                {(() => {
+                  const max = Math.max(1, ...stats.productCategoryCounts.map((i) => i.count));
+                  return stats.productCategoryCounts.map((item) => (
+                    <DistributionRow
+                      key={item.category}
+                      label={item.category}
+                      count={item.count}
+                      max={max}
+                    />
+                  ));
+                })()}
+              </div>
             </Panel>
           </div>
         ) : null}
 
-        <Panel noPadding className="p-4">
+        <Panel>
           <PanelHeader title="研究报告" meta={insights ? "AI 生成" : "骨架"} />
-          <div className="max-w-2xl">
+          <div className="insight-report">
             {INSIGHT_KEYS.map(({ key, title, num }) => (
               <ReportSkeletonSection
                 key={key}
@@ -173,7 +196,7 @@ export default function InsightsPage() {
         </Panel>
 
         {hasRecords && stats.highReusePatterns.length > 0 ? (
-          <Panel noPadding className="p-3">
+          <Panel>
             <PanelHeader title="高价值模式" />
             <div className="space-y-1">
               {stats.highReusePatterns.map((r) => (
@@ -187,6 +210,6 @@ export default function InsightsPage() {
           </Panel>
         ) : null}
       </PageBody>
-    </div>
+    </PageFrame>
   );
 }

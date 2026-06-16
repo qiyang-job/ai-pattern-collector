@@ -25,8 +25,29 @@ export function recordToMarkdown(record: PatternRecord) {
   ].join("\n");
 }
 
+export type BackupBundle = {
+  version: 1;
+  exportedAt: string;
+  records: PatternRecord[];
+  insights: InsightsResult | null;
+};
+
 export function recordsToJson(records: PatternRecord[]) {
   return JSON.stringify(records, null, 2);
+}
+
+/** Full backup for cross-device restore (records + latest insights). */
+export function recordsToBackupJson(
+  records: PatternRecord[],
+  insights?: InsightsResult | null,
+) {
+  const bundle: BackupBundle = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    records,
+    insights: insights ?? null,
+  };
+  return JSON.stringify(bundle, null, 2);
 }
 
 export function recordsToCsv(records: PatternRecord[]) {

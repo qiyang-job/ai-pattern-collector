@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
 import { WorkflowStatusPill } from "@/components/research-ui";
 
-export type EvidenceStepStatus = "缺失截图" | "缺失备注" | "已就绪";
-export type ExtractStepStatus = "未开始" | "可提炼" | "提炼中" | "已完成" | "失败";
-export type ReviewStepStatus = "未解锁" | "待校对" | "可保存";
+export type EvidenceStepStatus = "缺失截图" | "缺失备注" | "证据就绪";
+export type ExtractStepStatus = "尚未提炼" | "可提炼" | "提炼中" | "已完成" | "提炼失败";
+export type ReviewStepStatus = "已锁定" | "需校对" | "可保存";
 export type SavedStepStatus = "未保存" | "已保存";
 
 export type CaptureTaskMessage =
@@ -48,23 +48,23 @@ export function CapturePipeline({
 }) {
   return (
     <header className="capture-pipeline-header border-b border-[var(--border)] bg-[var(--panel-muted)]">
-      <div className="px-4 pt-2.5">
+      <div className="capture-pipeline-top page-gutter-x">
         <div className="text-[10px] font-semibold tracking-wider text-[var(--text-weak)]">
           采集流程
         </div>
-        <div className="capture-pipeline-steps mt-2">
+        <div className="capture-pipeline-steps mt-1.5">
           <PipelineStep
             num={1}
             label={STEP_LABELS[0]}
             active={activeStep === 1}
-            done={evidenceStatus === "已就绪"}
+            done={evidenceStatus === "证据就绪"}
           >
             {screenshotId !== "S---" ? (
               <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
             ) : null}
             <WorkflowStatusPill
               status={evidenceStatus}
-              tone={evidenceStatus === "已就绪" ? "success" : "warning"}
+              tone={evidenceStatus === "证据就绪" ? "success" : "warning"}
             />
           </PipelineStep>
 
@@ -83,7 +83,7 @@ export function CapturePipeline({
                   ? "success"
                   : extractStatus === "提炼中"
                     ? "active"
-                    : extractStatus === "失败"
+                    : extractStatus === "提炼失败"
                       ? "danger"
                       : extractStatus === "可提炼"
                         ? "ready"
@@ -100,7 +100,7 @@ export function CapturePipeline({
             active={activeStep === 3}
             done={reviewStatus === "可保存"}
           >
-            {patternId && reviewStatus !== "未解锁" ? (
+            {patternId && reviewStatus !== "已锁定" ? (
               <TypedIdBadge kind="pattern">{patternId}</TypedIdBadge>
             ) : null}
             <WorkflowStatusPill
@@ -108,7 +108,7 @@ export function CapturePipeline({
               tone={
                 reviewStatus === "可保存"
                   ? "success"
-                  : reviewStatus === "待校对"
+                  : reviewStatus === "需校对"
                     ? "ready"
                     : "neutral"
               }
@@ -130,7 +130,7 @@ export function CapturePipeline({
           </PipelineStep>
         </div>
       </div>
-      <div className="capture-current-task border-t border-[var(--border)] px-4 py-2">
+      <div className="capture-current-task page-gutter-x border-t border-[var(--border)] py-1.5">
         <span className="text-[10px] font-medium text-[var(--text-weak)]">当前任务 · </span>
         <span className="text-[11px] text-[var(--text-muted)]">{TASK_MESSAGES[currentTask]}</span>
       </div>
@@ -161,7 +161,7 @@ function PipelineStep({
     >
       <span className="capture-pipeline-step-num">步骤 {num}</span>
       <span className="capture-pipeline-step-label">{label}</span>
-      <div className="flex flex-wrap items-center gap-1">{children}</div>
+      <div className="flex items-center gap-1">{children}</div>
     </div>
   );
 }

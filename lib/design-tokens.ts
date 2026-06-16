@@ -1,39 +1,40 @@
 import type { PatternCategory, ProductCategory, ReuseLevel } from "@/lib/types";
 
 export const tokens = {
-  bg: "#F7F7F4",
-  panel: "#FFFFFF",
-  panelMuted: "#F2F2EE",
-  border: "#E4E4DE",
-  text: "#111111",
-  textMuted: "#666666",
-  textWeak: "#999999",
-  accent: "#3B5BDB",
-  accentMuted: "#EEF2FF",
-  success: "#2F9E44",
-  warning: "#F08C00",
-  danger: "#D9480F",
+  bg: "#0E1116",
+  panel: "#161A21",
+  panelMuted: "#1C212A",
+  border: "#2A313C",
+  text: "#EEF1F5",
+  textMuted: "#9AA3B1",
+  textWeak: "#646D7C",
+  accent: "#E0A64A",
+  accentMuted: "rgba(224,166,74,0.13)",
+  success: "#5BBF7A",
+  warning: "#E0A64A",
+  danger: "#E06A52",
 } as const;
 
+/* Dark-theme category tags: translucent tinted fills + luminous text. */
 export const PRODUCT_CATEGORY_COLORS: Record<ProductCategory, { bg: string; text: string }> = {
-  "AI Chat": { bg: "#E8F0FE", text: "#2F4A8A" },
-  "AI Search": { bg: "#E6F6F8", text: "#1F5C66" },
-  "Agent Task": { bg: "#F0EBFA", text: "#5A3F8C" },
-  "AI Workspace": { bg: "#EAF5EA", text: "#2F6B3A" },
-  "Coding Agent": { bg: "#FDF4E6", text: "#8A5A12" },
+  "AI Chat": { bg: "rgba(99,142,232,0.16)", text: "#9FB8F0" },
+  "AI Search": { bg: "rgba(79,196,207,0.16)", text: "#7FD6DE" },
+  "Agent Task": { bg: "rgba(168,130,232,0.16)", text: "#C0A6EE" },
+  "AI Workspace": { bg: "rgba(91,191,122,0.16)", text: "#86D49E" },
+  "Coding Agent": { bg: "rgba(224,166,74,0.16)", text: "#E9C079" },
 };
 
 export const REUSE_LEVEL_COLORS: Record<ReuseLevel, { bg: string; text: string }> = {
-  High: { bg: "#EAF5EA", text: "#2F6B3A" },
-  Medium: { bg: "#FDF4E6", text: "#8A5A12" },
-  Low: { bg: "#F2F2EE", text: "#666666" },
+  High: { bg: "rgba(91,191,122,0.18)", text: "#86D49E" },
+  Medium: { bg: "rgba(224,166,74,0.18)", text: "#E9C079" },
+  Low: { bg: "rgba(154,163,177,0.14)", text: "#9AA3B1" },
 };
 
 export const PATTERN_CATEGORY_COLORS: Record<PatternCategory, { bg: string; text: string }> = {
-  "Intent Input Patterns": { bg: "#E8F0FE", text: "#2F4A8A" },
-  "Context Management Patterns": { bg: "#E6F6F8", text: "#1F5C66" },
-  "Planning & Reasoning Patterns": { bg: "#F0EBFA", text: "#5A3F8C" },
-  "Execution Feedback Patterns": { bg: "#EAF5EA", text: "#2F6B3A" },
-  "Trust & Verification Patterns": { bg: "#FDF4E6", text: "#8A5A12" },
-  "Output Handoff Patterns": { bg: "#F5F0E8", text: "#6B5344" },
+  "Intent Input Patterns": { bg: "rgba(99,142,232,0.16)", text: "#9FB8F0" },
+  "Context Management Patterns": { bg: "rgba(79,196,207,0.16)", text: "#7FD6DE" },
+  "Planning & Reasoning Patterns": { bg: "rgba(168,130,232,0.16)", text: "#C0A6EE" },
+  "Execution Feedback Patterns": { bg: "rgba(91,191,122,0.16)", text: "#86D49E" },
+  "Trust & Verification Patterns": { bg: "rgba(224,166,74,0.16)", text: "#E9C079" },
+  "Output Handoff Patterns": { bg: "rgba(184,150,120,0.16)", text: "#D6B79A" },
 };

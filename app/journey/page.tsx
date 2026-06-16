@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGE_DESCRIPTIONS,
@@ -13,7 +14,9 @@ import { cn, journeyCode, journeyName } from "@/lib/utils";
 import {
   EvidenceThumbnail,
   PageBody,
+  PageFrame,
   PageHeader,
+  Panel,
   ReuseTag,
   StatMetric,
   TypedIdBadge,
@@ -33,43 +36,52 @@ export default function JourneyPage() {
   const stageRecords = records.filter((r) => r.journeyStage === activeStage);
   const products = [...new Set(stageRecords.map((r) => r.product).filter(Boolean))];
   const highReuse = stageRecords.filter((r) => r.reuseLevel === "High");
+  const stageMax = Math.max(
+    1,
+    ...JOURNEY_STAGES.map((stage) => records.filter((r) => r.journeyStage === stage).length),
+  );
 
   return (
-    <div>
+    <PageFrame>
       <PageHeader
         title="旅程"
         description="用户流程研究地图 — 从 J-01 Entry 到 J-09 Handoff。"
       />
-      <PageBody className="space-y-3">
-        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--panel)]">
-          <div className="border-b border-[var(--border)] bg-[var(--panel-muted)] px-3 py-1.5">
+      <PageBody className="page-section-gap">
+        <div className="stage-rail">
+          <div className="capture-column-header">
             <CoreBandLabel />
-            <span className="ml-2 text-[10px] text-[var(--text-weak)]">J-03 → J-07 高亮显示</span>
+            <span className="capture-column-header-subtitle ml-2 inline">J-03 → J-07 高亮显示</span>
           </div>
-          <div className="flex min-w-max">
+          <div className="flex w-full">
             {JOURNEY_STAGES.map((stage) => {
               const count = records.filter((r) => r.journeyStage === stage).length;
               const isCore = CORE_JOURNEY_STAGES.some((s) => s === stage);
               const isActive = activeStage === stage;
+              const pct = stageMax > 0 ? Math.round((count / stageMax) * 100) : 0;
               return (
                 <button
                   key={stage}
                   type="button"
                   className={cn(
-                    "flex min-w-[108px] flex-col border-r border-[var(--border)] px-2 py-2 text-left last:border-r-0",
+                    "stage-rail-button flex flex-col border-r border-[var(--border)] px-2.5 py-2.5 text-left last:border-r-0",
                     isActive && "bg-[var(--accent-muted)]",
-                    isCore && !isActive && "bg-[#FAFAF8]",
+                    isCore && !isActive && "bg-[var(--panel-muted)]",
                     !isActive && "hover:bg-[var(--panel-muted)]",
+                    isCore && "stage-rail-button--core",
                   )}
                   onClick={() => setActiveStage(stage)}
                 >
                   <TypedIdBadge kind="stage">{journeyCode(stage)}</TypedIdBadge>
-                  <span className={cn("mt-1 text-[10px] leading-tight", isCore ? "font-semibold" : "text-[var(--text-muted)]")}>
+                  <span className={cn("mt-1.5 text-[10px] leading-tight", isCore ? "font-semibold" : "text-[var(--text-muted)]")}>
                     {journeyName(stage)}
                   </span>
-                  <div className="mt-1.5 space-y-0.5 text-[9px] text-[var(--text-weak)]">
-                    <div><span className="tabular-nums font-medium text-[var(--text)]">{count}</span> 个模式</div>
-                    <div><span className="tabular-nums font-medium text-[var(--text)]">{count}</span> 张截图</div>
+                  <div className="mt-2 flex items-baseline gap-1 text-[10px] text-[var(--text-weak)]">
+                    <span className="tabular-nums mono text-[13px] font-medium text-[var(--text)]">{count}</span>
+                    <span>条模式</span>
+                  </div>
+                  <div className="stage-rail-meter" aria-hidden>
+                    <div className="stage-rail-meter-fill" style={{ width: `${pct}%` }} />
                   </div>
                 </button>
               );
@@ -77,7 +89,7 @@ export default function JourneyPage() {
           </div>
         </div>
 
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--panel)] p-3">
+        <Panel className="filter-panel">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="max-w-lg">
               <div className="flex items-center gap-2">
@@ -87,6 +99,14 @@ export default function JourneyPage() {
               <p className="mt-1.5 text-[12px] leading-5 text-[var(--text-muted)]">
                 {JOURNEY_STAGE_DESCRIPTIONS[activeStage]}
               </p>
+              {stageRecords.length > 0 ? (
+                <Link
+                  href={`/records?journeyStage=${encodeURIComponent(activeStage)}`}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
+                >
+                  在记录中查看该阶段 {stageRecords.length} 条 →
+                </Link>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               <StatMetric label="模式数" value={stageRecords.length} compact />
@@ -95,9 +115,9 @@ export default function JourneyPage() {
               <StatMetric label="高复用" value={highReuse.length} compact />
             </div>
           </div>
-        </div>
+        </Panel>
 
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--panel)]">
+        <Panel noPadding className="table-scroll">
           {stageRecords.length > 0 ? (
             <table className="data-table">
               <thead>
@@ -130,15 +150,15 @@ export default function JourneyPage() {
               </tbody>
             </table>
           ) : (
-            <div className="p-4">
+            <div className="page-gutter">
               <SlotEmpty>
                 {activeStage} 阶段尚无记录。采集该旅程阶段的截图以填充此视图。
               </SlotEmpty>
             </div>
           )}
-        </div>
+        </Panel>
       </PageBody>
       <RecordDrawer record={selected} onClose={() => setSelected(null)} />
-    </div>
+    </PageFrame>
   );
 }

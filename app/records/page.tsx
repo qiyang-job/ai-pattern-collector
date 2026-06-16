@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGES,
@@ -24,6 +25,7 @@ import {
   EvidenceThumbnail,
   LoadingState,
   PageBody,
+  PageFrame,
   PageHeader,
   Panel,
   ReuseTag,
@@ -36,20 +38,50 @@ import { SlotEmpty } from "@/components/research-ui";
 import { RecordDrawer } from "@/components/record-drawer";
 
 export default function RecordsPage() {
+  return (
+    <Suspense fallback={null}>
+      <RecordsView />
+    </Suspense>
+  );
+}
+
+function RecordsView() {
+  const searchParams = useSearchParams();
   const { records, loadRecords, isLoading, error } = useRecordsStore();
   const [selected, setSelected] = useState<PatternRecord | null>(null);
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({
-    productCategory: "",
-    journeyStage: "",
-    screenshotState: "",
-    patternCategory: "",
-    reuseLevel: "",
-  });
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [filters, setFilters] = useState(() => ({
+    productCategory: searchParams.get("productCategory") ?? "",
+    journeyStage: searchParams.get("journeyStage") ?? "",
+    screenshotState: searchParams.get("screenshotState") ?? "",
+    patternCategory: searchParams.get("patternCategory") ?? "",
+    reuseLevel: searchParams.get("reuseLevel") ?? "",
+  }));
 
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
+
+  const clearFilter = (key: keyof typeof filters) =>
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+
+  const activeChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; clear: () => void }> = [];
+    if (query.trim()) {
+      chips.push({ key: "query", label: `“${query.trim()}”`, clear: () => setQuery("") });
+    }
+    const map: Array<[keyof typeof filters, string]> = [
+      ["productCategory", filters.productCategory],
+      ["journeyStage", filters.journeyStage],
+      ["screenshotState", filters.screenshotState],
+      ["patternCategory", filters.patternCategory],
+      ["reuseLevel", filters.reuseLevel],
+    ];
+    for (const [key, value] of map) {
+      if (value) chips.push({ key, label: value, clear: () => clearFilter(key) });
+    }
+    return chips;
+  }, [filters, query]);
 
   const filtered = useMemo(() => {
     const kw = query.trim().toLowerCase();
@@ -69,7 +101,7 @@ export default function RecordsPage() {
   }, [filters, query, records]);
 
   return (
-    <div>
+    <PageFrame>
       <PageHeader
         title="记录"
         description="模式证据数据库。"
@@ -80,14 +112,33 @@ export default function RecordsPage() {
           </>
         }
       />
-      <PageBody className="space-y-3">
+      <PageBody className="page-section-gap">
         <ErrorBanner message={error} />
 
-        <Panel noPadding className="p-2">
-          <div className="grid gap-2 lg:grid-cols-[1.4fr_repeat(5,1fr)]">
+        <Panel className="filter-panel">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="text-[11px] font-semibold text-[var(--text-muted)]">查询与筛选</div>
+            <button
+              type="button"
+              className="text-[11px] text-[var(--text-weak)] hover:text-[var(--accent)]"
+              onClick={() => {
+                setQuery("");
+                setFilters({
+                  productCategory: "",
+                  journeyStage: "",
+                  screenshotState: "",
+                  patternCategory: "",
+                  reuseLevel: "",
+                });
+              }}
+            >
+              清空条件
+            </button>
+          </div>
+          <div className="filter-grid">
             <input
               className={inputClass}
-              placeholder="搜索…"
+              placeholder="搜索模式、产品、标签或设计判断…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -97,11 +148,26 @@ export default function RecordsPage() {
             <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
             <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
           </div>
+          {activeChips.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-[var(--border)] pt-2.5">
+              <span className="mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-weak)]">
+                生效条件
+              </span>
+              {activeChips.map((chip) => (
+                <span key={chip.key} className="filter-chip">
+                  {chip.label}
+                  <button type="button" aria-label="移除筛选" onClick={chip.clear}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
         </Panel>
 
         {isLoading ? <LoadingState label="正在读取本地数据…" /> : null}
 
-        <Panel noPadding className="overflow-hidden">
+        <Panel noPadding className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
@@ -113,6 +179,7 @@ export default function RecordsPage() {
                 <th>状态</th>
                 <th>复用</th>
                 <th>Lens</th>
+                <th>标签</th>
                 <th>更新</th>
               </tr>
             </thead>
@@ -141,14 +208,27 @@ export default function RecordsPage() {
                       </td>
                       <td className="text-[12px] text-[var(--text-muted)]">{r.screenshotState}</td>
                       <td><ReuseTag level={r.reuseLevel} /></td>
-                      <td className="tabular-nums mono text-[12px]">{averageLensScore(r).toFixed(1)}</td>
+                      <td>
+                        <span className="lens-meter" title={`平均 Lens ${averageLensScore(r).toFixed(1)} / 3`}>
+                          <span className="lens-meter-track">
+                            <span
+                              className="lens-meter-fill"
+                              style={{ width: `${Math.min(100, (averageLensScore(r) / 3) * 100)}%` }}
+                            />
+                          </span>
+                          <span className="tabular-nums mono text-[12px]">{averageLensScore(r).toFixed(1)}</span>
+                        </span>
+                      </td>
+                      <td className="max-w-[120px] truncate text-[11px] text-[var(--text-muted)]">
+                        {r.tags.length ? r.tags.join(", ") : "—"}
+                      </td>
                       <td className="text-[11px] text-[var(--text-weak)]">{formatDate(r.updatedAt)}</td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="!py-8">
+                  <td colSpan={10} className="!py-8">
                     <SlotEmpty>
                       {records.length === 0 ? (
                         <>
@@ -170,7 +250,7 @@ export default function RecordsPage() {
         </Panel>
       </PageBody>
       <RecordDrawer record={selected} onClose={() => setSelected(null)} />
-    </div>
+    </PageFrame>
   );
 }
 

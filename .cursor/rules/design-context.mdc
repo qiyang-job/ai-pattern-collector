@@ -1,0 +1,47 @@
+---
+description: AI Pattern Collector 设计上下文与 UI 护栏。修改界面、组件、样式前必须遵守。
+globs: app/**/*,components/**/*,lib/design-tokens.ts,app/globals.css
+alwaysApply: true
+---
+
+# Design Context Guardrails
+
+**在开始任何 UI / 交互修改之前，必须先读取并遵守 [`docs/design-context.md`](../../docs/design-context.md)。**
+
+不要再按普通后台表单或 SaaS Dashboard 的方式生成界面。
+
+## 产品是什么
+
+面向设计研究者的 **AI 产品设计模式研究系统**，核心链路：
+
+```txt
+Screenshot → Evidence → Pattern → Classification → Matrix → Insight → Design Decision
+```
+
+不是截图管理器、笔记工具、营销页或通用 CRUD 后台。
+
+## 气质
+
+专业 · 克制 · 清晰 · 高密度 · 研究感 · 数据库感 · 设计系统文档感
+
+视觉语言：**Editorial Lab Terminal（科研终端）** — 暗色画布（深蓝黑 #0E1116）+ 克制琥珀金强调（#E0A64A）+ 电光青数据高亮（#4FC4CF）；标题衬线（Newsreader）、ID/数字等宽（IBM Plex Mono）、正文无衬线。像高级实验仪表盘，非花哨 AI 工具或浅色后台。
+
+## 修改 UI 时必守
+
+1. **先任务，后字段** — 每个界面先回答用户要完成什么判断
+2. **渐进披露** — Capture 未完成证据时不摊开 Review / Save
+3. **状态可解释** — 用 Missing screenshot / Ready to extract 等具体文案，不用 Empty / Not analyzed
+4. **空状态展示骨架** — Matrix 5×9、Journey J-01–J-09、Library 6 类、Insights 报告骨架、Export 控制台结构必须可见
+5. **高密度工作台** — 表格 / 矩阵 / 列表优先；侧栏 + 顶栏任务 + 右侧 Inspector
+6. **视觉克制（暗色）** — 暗色 token 多层叠加、细边框、圆角 5/8/12px、克制阴影、页头可磨砂玻璃；琥珀金主强调 + 电光青数据高亮；分类标签用半透明色块 + 亮文字。禁止紫蓝渐变 / 霓虹、浅色玻璃拟态卡片墙、亮色块、渐变 Hero、超大圆角卡片墙
+7. **字体** — 标题 Newsreader 衬线（`.display-serif`）、ID/编号/数据 IBM Plex Mono、正文无衬线，三层各司其职
+8. **语言** — 中文主标签 + 英文小字辅助；方法论术语 Evidence / Pattern / Matrix / Journey / Lens 保持一致
+9. **不破坏链路** — 重构不得破坏 Evidence → Pattern → Insight 数据结构与核心流程
+
+## 改前自检（摘要）
+
+- 用户知道自己在哪一步、缺什么、下一步点哪里吗？
+- 保存后记录会进入 Matrix / Journey / Library 哪里？
+- 这看起来像研究工具，还是后台表单？
+
+详细规范、页面原则、组件规范、禁止事项见 **`docs/design-context.md`**。

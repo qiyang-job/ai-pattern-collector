@@ -80,13 +80,13 @@ function RecordDrawerContent({
     <div className="fixed inset-0 z-40">
       <div className="inspector-overlay absolute inset-0" onClick={onClose} />
       <aside className="inspector-panel absolute inset-y-0 right-0 flex w-[min(600px,90vw)] flex-col">
-        <header className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+        <header className="page-gutter-x flex items-start justify-between gap-3 border-b border-[var(--border)] py-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <TypedIdBadge kind="pattern">{draft.patternId}</TypedIdBadge>
               <TypedIdBadge kind="evidence">{draft.screenshotId}</TypedIdBadge>
             </div>
-            <h2 className="mt-1 truncate text-[14px] font-semibold">{draft.patternName}</h2>
+            <h2 className="display-serif mt-1.5 truncate text-[18px]">{draft.patternName}</h2>
             <p className="mt-0.5 text-[11px] text-[var(--text-weak)]">
               {formatDate(draft.createdAt)} · 更新于 {formatDate(draft.updatedAt)}
             </p>
@@ -121,7 +121,7 @@ function RecordDrawerContent({
         </header>
 
         <div className="min-h-0 flex-1 overflow-auto">
-          <section className="border-b border-[var(--border)] p-3">
+          <section className="page-gutter border-b border-[var(--border)]">
             <SectionLabel>证据 Evidence</SectionLabel>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -146,9 +146,10 @@ function RecordDrawerContent({
                     onChange={(e) => setDraft({ ...draft, sourceUrl: e.target.value })}
                   />
                 </Field>
-                <Field label="任务上下文 Task Context" compact>
+                <Field label="当时任务 Task Context" compact>
                   <input
                     className={inputClass}
+                    placeholder="例如：让 AI 重构 auth 模块…"
                     value={draft.taskContext ?? ""}
                     onChange={(e) => setDraft({ ...draft, taskContext: e.target.value })}
                   />
@@ -157,7 +158,7 @@ function RecordDrawerContent({
             </div>
           </section>
 
-          <section className="p-3">
+          <section className="page-gutter">
             <PanelHeader title="模式分析 Pattern Analysis" />
             <RecordForm
               value={analysisValue}

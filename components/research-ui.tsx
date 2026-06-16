@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
 
@@ -153,7 +153,7 @@ export function WorkflowStep({
           className={cn(
             "mono flex h-5 w-5 items-center justify-center rounded-[var(--radius-sm)] border text-[10px] font-semibold",
             done
-              ? "border-[var(--success)] bg-[#EAF5EA] text-[var(--success)]"
+              ? "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_16%,transparent)] text-[var(--success)]"
               : active
                 ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
                 : "border-[var(--border)] bg-[var(--panel)] text-[var(--text-weak)]",
@@ -190,7 +190,14 @@ export function EvidenceSlot({
   onDrop: (e: React.DragEvent) => void;
   onPreviewClick?: () => void;
 }) {
-  const statusLabel = status === "empty" ? "空" : "就绪";
+  const statusLabel =
+    status === "empty"
+      ? "缺失截图"
+      : status === "ready"
+        ? "证据就绪"
+        : status === "analyzing"
+          ? "提炼中"
+          : "已分析";
 
   return (
     <div className="evidence-slot">
@@ -198,7 +205,15 @@ export function EvidenceSlot({
         <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
         <WorkflowStatusPill
           status={statusLabel}
-          tone={statusLabel === "就绪" ? "ready" : "neutral"}
+          tone={
+            status === "analyzed"
+              ? "success"
+              : status === "analyzing"
+                ? "active"
+                : statusLabel === "证据就绪"
+                  ? "ready"
+                  : "neutral"
+          }
         />
       </div>
       <div
@@ -214,7 +229,7 @@ export function EvidenceSlot({
             title="点击放大预览"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageDataUrl} alt="截图证据" className="max-h-[228px] w-full object-contain" />
+            <img src={imageDataUrl} alt="截图证据" className="max-h-full w-full object-contain" />
           </button>
         ) : (
           <button
@@ -354,6 +369,63 @@ export function ReportSkeletonSection({
   );
 }
 
+export function DistributionRow({
+  label,
+  count,
+  max,
+  accent,
+  core,
+  onClick,
+  active,
+}: {
+  label: ReactNode;
+  count: number;
+  max: number;
+  accent?: boolean;
+  core?: boolean;
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  const pct = max > 0 ? Math.round((count / max) * 100) : 0;
+  const body = (
+    <>
+      <span className="dist-row-label">
+        <span className="dist-row-label-text">{label}</span>
+        {core ? (
+          <span className="mono text-[8px] font-semibold uppercase tracking-wider text-[var(--accent)]">
+            核心
+          </span>
+        ) : null}
+      </span>
+      <span className="dist-row-track" aria-hidden>
+        <span
+          className={cn(
+            "dist-row-fill",
+            count === 0 && "dist-row-fill--empty",
+            accent && count > 0 && "dist-row-fill--accent",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+      <span className={cn("dist-row-value", count === 0 && "dist-row-value--zero")}>{count}</span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={cn("dist-row dist-row--clickable", core && "dist-row--core", active && "dist-row--active")}
+        onClick={onClick}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={cn("dist-row", core && "dist-row--core")}>{body}</div>;
+}
+
 export function CoverageBar({ percent }: { percent: number }) {
   return (
     <div className="coverage-bar mt-2">
@@ -379,8 +451,22 @@ export function ImageLightbox({
   alt: string;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="image-lightbox" onClick={onClose} role="presentation">
+    <div
+      className="image-lightbox"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="截图预览"
+    >
       <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} className="max-h-[85vh] max-w-[90vw] object-contain" />

@@ -56,6 +56,7 @@ export type PatternRecord = {
   id: string;
   screenshotId: string;
   imageDataUrl: string;
+  imageFileID?: string;
   rawNote: string;
   sourceUrl?: string;
   taskContext?: string;
