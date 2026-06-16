@@ -47,6 +47,89 @@ const createBrowserId = () =>
     ? crypto.randomUUID()
     : `record-${Date.now()}`;
 
+/**
+ * 压缩图片 base64，确保不超过云函数 6MB 入参限制
+ * - 缩放到最大 1920px 宽度
+ * - JPEG 质量 0.75
+ */
+async function compressImage(dataUrl: string): Promise<string> {
+  // 已经很小就不处理
+  if (dataUrl.length < 2_000_000) return dataUrl;
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_W = 1920;
+      const MAX_H = 1920;
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      
+      if (w > MAX_W || h > MAX_H) {
+        const ratio = Math.min(MAX_W / w, MAX_H / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, w, h);
+      
+      // 先试 0.75 quality
+      let result = canvas.toDataURL("image/jpeg", 0.75);
+      // 如果还是太大（>4MB），继续降低质量
+      if (result.length > 4_000_000) {
+        for (const q of [0.6, 0.5, 0.4]) {
+          result = canvas.toDataURL("image/jpeg", q);
+          if (result.length <= 4_000_000) break;
+        }
+      }
+      
+      URL.revokeObjectURL(img.src as string);
+      resolve(result);
+    };
+    img.onerror = () => reject(new Error("图片加载失败"));
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * 防御性处理 AI 返回数据，确保所有字段有安全默认值
+ */
+function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> {
+  const safeStr = (v: unknown, fallback = ""): string => {
+    if (v === null || v === undefined) return fallback;
+    if (typeof v === "string") return v;
+    try { return JSON.stringify(v); } catch { return fallback; }
+  };
+  
+  const safeObj = (v: unknown): Record<string, unknown> => {
+    if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
+    return {};
+  };
+  
+  return {
+    patternName: safeStr(raw.patternName),
+    patternCategory: safeStr(raw.patternCategory),
+    product: safeStr(raw.product),
+    productCategory: safeStr(raw.productCategory),
+    journeyStage: safeStr(raw.journeyStage),
+    screenshotState: safeStr(raw.screenshotState),
+    userProblem: safeStr(raw.userProblem),
+    aiCapability: safeStr(raw.aiCapability),
+    uiAnatomy: safeStr(raw.uiAnatomy),
+    interactionRule: safeStr(raw.interactionRule),
+    systemFeedback: safeStr(raw.systemFeedback),
+    trustMechanism: safeStr(raw.trustMechanism),
+    failureHandling: safeStr(raw.failureHandling),
+    reuseLevel: safeStr(raw.reuseLevel, "Low"),
+    designJudgment: safeStr(raw.designJudgment),
+    lensScore: raw.lensScore && typeof raw.lensScore === "object" ? raw.lensScore : {},
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+  };
+}
+
 function ComposerInlineField({
   zh,
   en,
@@ -245,14 +328,24 @@ export default function CapturePage() {
     setAnalysisStatus("analyzing");
     setError("");
     try {
+      // 压缩图片避免超云函数 6MB 入参限制
+      const compressedImage = await compressImage(imageDataUrl);
+      console.log(`[AI] 图片压缩: ${(imageDataUrl.length / 1024 / 1024).toFixed(1)}MB → ${(compressedImage.length / 1024 / 1024).toFixed(1)}MB`);
+      
       const payload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
-        imageDataUrl,
+        imageDataUrl: compressedImage,
         rawNote,
         product: analysis.product,
         sourceUrl,
         taskContext,
       });
-      setAnalysis({ ...payload, product: (payload.product as string) || analysis.product } as any);
+      
+      console.log(`[AI] 云函数返回数据:`, JSON.stringify(payload).slice(0, 1000));
+      console.log(`[AI] 云函数返回 keys:`, Object.keys(payload));
+      
+      // 防御性处理：确保所有字段都有安全默认值
+      const sanitized = sanitizePayload(payload);
+      setAnalysis({ ...sanitized, product: (sanitized.product as string) || analysis.product } as any);
       setAnalysisStatus("analyzed");
       setShowReview(true);
       toast.success("模式提炼完成，请校对后保存");

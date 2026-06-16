@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createJsonChatCompletion } from "@/lib/ai/client";
-import { ANALYZE_PATTERN_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { ANALYZE_PATTERN_SYSTEM_PROMPT, buildAnalyzeUserText } from "@/lib/ai/prompts";
 import {
   AnalyzePatternRequestSchema,
   AnalyzePatternResponseSchema,
+  normalizeAnalyzePayload,
 } from "@/lib/ai/schemas";
 
 export async function POST(request: Request) {
@@ -19,13 +20,12 @@ export async function POST(request: Request) {
         content: [
           {
             type: "text",
-            text: [
-              `Raw Note: ${body.rawNote}`,
-              `Product: ${body.product || "Unknown"}`,
-              `Source URL: ${body.sourceUrl || "N/A"}`,
-              `Task Context: ${body.taskContext || "N/A"}`,
-              "请根据截图和上下文完成 AI 产品设计模式分析，并严格输出 JSON。",
-            ].join("\n"),
+            text: buildAnalyzeUserText({
+              product: body.product,
+              rawNote: body.rawNote,
+              taskContext: body.taskContext,
+              sourceUrl: body.sourceUrl,
+            }),
           },
           {
             type: "image_url",
@@ -37,11 +37,13 @@ export async function POST(request: Request) {
       },
     ]);
 
-    const parsed = AnalyzePatternResponseSchema.safeParse(payload);
+    // 枚举映射 + 评分归一化，再做严格校验
+    const normalized = normalizeAnalyzePayload(payload as Record<string, unknown>);
+    const parsed = AnalyzePatternResponseSchema.safeParse(normalized);
     if (!parsed.success) {
       return NextResponse.json(
         {
-          error: "AI 返回 JSON 校验失败。",
+          error: "AI 返回 JSON 校验失败，请重新分析或手动补全。",
           details: parsed.error.flatten(),
         },
         { status: 422 },

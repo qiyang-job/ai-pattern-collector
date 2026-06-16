@@ -41,13 +41,59 @@ export function getDb() {
  */
 export async function callCloudFunction<T = unknown>(name: string, data: Record<string, unknown>): Promise<T> {
   const app = getApp();
-  const res = await app.callFunction({ name, data });
-  const result = res.result as { code?: number; error?: string } & T;
-  if (result.code && result.code !== 0) throw new Error(result.error || "云函数调用失败");
-  if (result.error && !("code" in result)) throw new Error(result.error);
-  // 移除内部字段，只返回业务数据
-  const { error: _err, code: _code, ...rest } = result as any;
-  return rest;
+  console.log(`[CloudBase] 调用云函数: ${name}`, { dataKeys: Object.keys(data), dataSize: JSON.stringify(data).length });
+  
+  try {
+    const res = await app.callFunction({ name, data });
+    
+    // 打印完整响应结构（不含大数据）
+    const rawResult = res?.result;
+    const logSafeResult = (() => {
+      if (!rawResult) return null;
+      const s = JSON.stringify(rawResult);
+      return s.length > 2000 ? s.slice(0, 2000) + `...(total ${s.length} chars)` : s;
+    })();
+    console.log(`[CloudBase] 云函数 ${name} 原始 res.result:`, logSafeResult);
+    
+    // CloudBase Web SDK 的 callFunction 返回格式：
+    // 成功时：res.result 直接是云函数 exports.main 的返回值
+    // 失败时：res.result 可能包含 { code, error }
+    let result: any = rawResult;
+    
+    // 如果结果是字符串（某些情况下 RetMsg 可能未解析），尝试解析
+    if (typeof result === "string") {
+      try { result = JSON.parse(result); } catch { /* keep as-is */ }
+    }
+    
+    // 检查 SDK 层错误
+    if (result?.code !== undefined && result?.code !== null && result?.code !== 0) {
+      throw new Error(result?.error || `云函数错误(code=${result?.code})`);
+    }
+    // 业务错误
+    if (result?.error && !("code" in result)) {
+      throw new Error(String(result.error));
+    }
+    
+    // 移除内部字段，保留业务数据
+    const { error: _err, code: _code, requestId: _reqId, ...rest } = result || {};
+    
+    console.log(`[CloudBase] 云函数 ${name} 提取的业务数据 keys:`, Object.keys(rest));
+    
+    // 如果 rest 为空但有原始数据，可能是字段名不匹配，直接返回全部
+    if (Object.keys(rest).length === 0 && result && typeof result === "object") {
+      console.warn(`[CloudBase] 提取后为空，直接返回原始数据`);
+      return result;
+    }
+    
+    return rest;
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error(`[CloudBase] 云函数 ${name} 调用失败:`, err.message);
+      throw err;
+    }
+    console.error(`[CloudBase] 云函数 ${name} 未知错误:`, err);
+    throw new Error("云函数调用异常");
+  }
 }
 
 let _anonymousPromise: Promise<void> | null = null;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createJsonChatCompletion } from "@/lib/ai/client";
-import { GENERATE_INSIGHTS_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { GENERATE_INSIGHTS_SYSTEM_PROMPT, buildInsightsUserText } from "@/lib/ai/prompts";
 import {
   GenerateInsightsRequestSchema,
   GenerateInsightsResponseSchema,
@@ -16,11 +16,7 @@ export async function POST(request: Request) {
       },
       {
         role: "user",
-        content: [
-          "以下是 Pattern Records 摘要，不包含图片数据。",
-          "请基于这些结构化记录生成研究洞察，严格输出 JSON。",
-          JSON.stringify(body.records, null, 2),
-        ].join("\n\n"),
+        content: buildInsightsUserText(body.records),
       },
     ]);
 
@@ -28,7 +24,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json(
         {
-          error: "AI 洞察 JSON 校验失败。",
+          error: "AI 洞察 JSON 校验失败，请重新生成。",
           details: parsed.error.flatten(),
         },
         { status: 422 },
