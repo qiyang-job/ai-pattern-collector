@@ -54,6 +54,7 @@ export const PatternRecordSchema = z.object({
   id: z.string().min(1),
   screenshotId: z.string().min(1),
   imageDataUrl: z.string().min(1),
+  extraImages: z.array(z.string().min(1)).optional(),
   rawNote: z.string(),
   sourceUrl: z.string().optional(),
   taskContext: z.string().optional(),

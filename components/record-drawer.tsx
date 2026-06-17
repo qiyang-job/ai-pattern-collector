@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { X, RefreshCw } from "lucide-react";
+import { X, RefreshCw, Copy, Braces, Save, Trash2 } from "lucide-react";
 import { RecordForm } from "@/components/record-form";
 import {
   Button,
@@ -14,6 +14,7 @@ import {
   textareaClass,
 } from "@/components/ui";
 import { ImageLightbox } from "@/components/research-ui";
+import { CLASSIFICATION_DIMENSIONS_OVERVIEW_HINT } from "@/lib/constants";
 import { recordToMarkdown, recordsToJson } from "@/lib/export";
 import { useRecordsStore } from "@/lib/records-store";
 import type { PatternAnalysisResult, PatternRecord } from "@/lib/types";
@@ -151,63 +152,106 @@ function RecordDrawerContent({
     }
   }
 
+  const createdLabel = formatDate(draft.createdAt);
+  const updatedLabel = formatDate(draft.updatedAt);
+  const timeLabel =
+    createdLabel === updatedLabel
+      ? createdLabel
+      : `${createdLabel} · 更新 ${updatedLabel}`;
+
   return (
     <div className="fixed inset-0 z-40">
       <div className="inspector-overlay absolute inset-0" onClick={onClose} />
-      <aside className="inspector-panel absolute inset-y-0 right-0 flex w-[min(600px,90vw)] flex-col">
-        <header className="page-gutter-x flex items-start justify-between gap-3 border-b border-[var(--border)] py-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <TypedIdBadge kind="pattern">{draft.patternId}</TypedIdBadge>
-              <TypedIdBadge kind="evidence">{draft.screenshotId}</TypedIdBadge>
+      <aside className="inspector-panel absolute inset-y-0 right-0 flex w-[min(800px,90vw)] flex-col">
+        <header className="page-gutter-x border-b border-[var(--border)] py-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="display-serif min-w-0 flex-1 text-[18px] leading-snug">{draft.patternName}</h2>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={copyMarkdown}
+                aria-label="复制 Markdown"
+                title="复制 Markdown"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={() =>
+                  downloadTextFile(
+                    `${draft.patternId}.json`,
+                    recordsToJson([draft]),
+                    "application/json",
+                  )
+                }
+                aria-label="导出 JSON"
+                title="导出 JSON"
+              >
+                <Braces className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={reanalyze}
+                disabled={isAnalyzing}
+                aria-label={isAnalyzing ? "分析中" : "重新分析"}
+                title={isAnalyzing ? "分析中" : "重新分析"}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isAnalyzing ? "animate-spin" : ""}`} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={saveDraft}
+                aria-label="保存"
+                title="保存"
+              >
+                <Save className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={removeDraft}
+                aria-label="删除"
+                title="删除"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={onClose}
+                aria-label="关闭"
+                title="关闭"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
-            <h2 className="display-serif mt-1.5 truncate text-[18px]">{draft.patternName}</h2>
-            <p className="mt-0.5 text-[11px] text-[var(--text-weak)]">
-              {formatDate(draft.createdAt)} · 更新于 {formatDate(draft.updatedAt)}
-            </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={copyMarkdown}>
-              复制 MD
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                downloadTextFile(
-                  `${draft.patternId}.json`,
-                  recordsToJson([draft]),
-                  "application/json",
-                )
-              }
-            >
-              JSON
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={reanalyze}
-              disabled={isAnalyzing}
-            >
-              <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isAnalyzing ? "animate-spin" : ""}`} />
-              {isAnalyzing ? "分析中…" : "重新分析"}
-            </Button>
-            <Button size="sm" onClick={saveDraft}>
-              保存
-            </Button>
-            <Button variant="danger" size="sm" onClick={removeDraft}>
-              删除
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} aria-label="关闭">
-              <X className="h-3.5 w-3.5" />
-            </Button>
+          <div className="mt-1.5 flex min-w-0 items-center gap-x-2 overflow-hidden whitespace-nowrap">
+            <TypedIdBadge kind="pattern">{draft.patternId}</TypedIdBadge>
+            <TypedIdBadge kind="evidence">{draft.screenshotId}</TypedIdBadge>
+            <span className="shrink-0 text-[var(--text-weak)]" aria-hidden="true">
+              ·
+            </span>
+            <p className="min-w-0 truncate text-[11px] text-[var(--text-weak)]" title={timeLabel}>
+              {timeLabel}
+            </p>
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-auto">
-          <section className="page-gutter border-b border-[var(--border)]">
+        <div className="inspector-scroll min-h-0 flex-1 overflow-auto">
+          <section className="inspector-section-card">
             <SectionLabel>
-              证据 Evidence
+              证据
               {allImages.length > 1 && (
                 <span className="ml-2 mono text-[10px] text-[var(--text-weak)]">
                   {allImages.length} 张截图
@@ -215,34 +259,39 @@ function RecordDrawerContent({
               )}
             </SectionLabel>
 
-            {/* 主图 */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={draft.imageDataUrl}
-              alt={draft.screenshotId}
-              className="max-h-48 w-full rounded-[var(--radius-md)] object-contain cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => { setPreviewIndex(0); setPreviewOpen(true); }}
-              title="点击放大"
-            />
-
-            /* 额外截图缩略图 */
-            {Array.isArray(draft.extraImages) && draft.extraImages.length > 0 && (
-              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-                {draft.extraImages.map((url, i) => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+            {allImages.length <= 1 ? (
+              allImages[0] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={allImages[0]}
+                  alt={draft.screenshotId}
+                  className="max-h-48 w-full rounded-[var(--radius-md)] object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => { setPreviewIndex(0); setPreviewOpen(true); }}
+                  title="点击放大"
+                />
+              ) : null
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {allImages.map((url, i) => (
+                  <button
                     key={i}
-                    src={url}
-                    alt={`截图 ${i + 2}`}
-                    className="h-16 w-16 shrink-0 rounded-[var(--radius-sm)] object-cover cursor-pointer hover:opacity-80 ring-1 ring-[var(--border)]"
-                    onClick={() => { setPreviewIndex(i + 1); setPreviewOpen(true); }}
-                    title={`截图 ${i + 2} - 点击放大`}
-                  />
+                    type="button"
+                    className="flex size-[120px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] bg-[var(--panel-muted)] ring-1 ring-[var(--border)] cursor-pointer hover:ring-[var(--border-strong)] transition-shadow"
+                    onClick={() => { setPreviewIndex(i); setPreviewOpen(true); }}
+                    title={`截图 ${i + 1} - 点击放大`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={i === 0 ? draft.screenshotId : `截图 ${i + 1}`}
+                      className="size-full object-contain"
+                    />
+                  </button>
                 ))}
               </div>
             )}
             <div className="mt-2 space-y-2">
-              <Field label="原始备注 Raw Note" compact>
+              <Field label="原始备注" compact>
                 <textarea
                   className={textareaClass}
                   rows={3}
@@ -250,28 +299,29 @@ function RecordDrawerContent({
                   onChange={(e) => setDraft({ ...draft, rawNote: e.target.value })}
                 />
               </Field>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Field label="来源链接 Source URL" compact>
-                  <input
-                    className={inputClass}
-                    value={draft.sourceUrl ?? ""}
-                    onChange={(e) => setDraft({ ...draft, sourceUrl: e.target.value })}
-                  />
-                </Field>
-                <Field label="当时任务 Task Context" compact>
-                  <input
-                    className={inputClass}
-                    placeholder="例如：让 AI 重构 auth 模块…"
-                    value={draft.taskContext ?? ""}
-                    onChange={(e) => setDraft({ ...draft, taskContext: e.target.value })}
-                  />
-                </Field>
-              </div>
+              <Field label="来源链接" compact>
+                <input
+                  className={inputClass}
+                  value={draft.sourceUrl ?? ""}
+                  onChange={(e) => setDraft({ ...draft, sourceUrl: e.target.value })}
+                />
+              </Field>
+              <Field label="当时任务" compact>
+                <input
+                  className={inputClass}
+                  placeholder="例如：让 AI 重构 auth 模块…"
+                  value={draft.taskContext ?? ""}
+                  onChange={(e) => setDraft({ ...draft, taskContext: e.target.value })}
+                />
+              </Field>
             </div>
           </section>
 
-          <section className="page-gutter">
-            <PanelHeader title="模式分析 Pattern Analysis" />
+          <section className="inspector-section-card">
+            <PanelHeader
+              title="模式分析"
+              hint={CLASSIFICATION_DIMENSIONS_OVERVIEW_HINT}
+            />
             <RecordForm
               value={analysisValue}
               onChange={(next) => setDraft({ ...draft, ...next })}

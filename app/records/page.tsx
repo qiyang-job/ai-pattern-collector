@@ -179,7 +179,9 @@ function RecordsView() {
           ) : null}
         </Panel>
 
-        {isLoading ? <LoadingState label="正在读取本地数据…" /> : null}
+        {isLoading && records.length === 0 ? (
+          <LoadingState label="正在读取本地数据…" />
+        ) : null}
 
         <Panel noPadding className="table-scroll">
           <table className="data-table">

@@ -24,9 +24,9 @@ import {
   Field,
   SegmentedControl,
   TypedIdBadge,
+  formTextareaClass,
   inputClass,
   selectClass,
-  textareaClass,
 } from "@/components/ui";
 import { FormModule } from "@/components/research-ui";
 
@@ -73,13 +73,12 @@ export function RecordForm({
     zh: string,
     en: string,
     hint?: string,
-    rows = 2,
   ) => (
     <div>
       <Field label={<DualLabel zh={zh} en={en} />} compact>
         <textarea
-          className={textareaClass}
-          rows={rows}
+          className={formTextareaClass}
+          rows={4}
           value={value[key]}
           onChange={(e) => update(key, e.target.value)}
         />
@@ -120,26 +119,25 @@ export function RecordForm({
   };
 
   const secondaryStatesField = (
-    <div className="sm:col-span-2">
+    <div>
       <Field label={<DualLabel zh="次要界面状态" en="Secondary States" />} compact>
-        <div className="flex flex-wrap gap-1">
+        <div className="checkbox-group">
           {SCREENSHOT_STATES.filter(
             (s) => s !== "Unknown" && s !== (value.screenshotState as ScreenshotState),
           ).map((s) => {
             const active = (value.secondaryScreenshotStates ?? []).includes(s);
             return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => toggleSecondaryState(s)}
-                className={`rounded-[var(--radius-sm)] border px-1.5 py-[2px] text-[10px] transition-colors ${
-                  active
-                    ? "border-[var(--accent)] bg-[var(--accent-soft,var(--accent))] text-[var(--accent)]"
-                    : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
-                }`}
-              >
-                {labelOf(s, SCREENSHOT_STATE_LABELS)}
-              </button>
+              <label key={s} className="checkbox-option">
+                <input
+                  type="checkbox"
+                  className="focus-ring"
+                  checked={active}
+                  onChange={() => toggleSecondaryState(s)}
+                />
+                <span className="checkbox-option-label">
+                  {labelOf(s, SCREENSHOT_STATE_LABELS)}
+                </span>
+              </label>
             );
           })}
         </div>
@@ -149,24 +147,17 @@ export function RecordForm({
   );
 
   const stateReasonField = (
-    <div className="sm:col-span-2">
+    <div>
       <Field label={<DualLabel zh="界面状态理由" en="State Reason" />} compact>
         <textarea
-          className={textareaClass}
-          rows={2}
+          className={formTextareaClass}
+          rows={4}
           value={value.screenshotStateReason ?? ""}
           onChange={(e) => update("screenshotStateReason", e.target.value)}
         />
       </Field>
       <p className="field-hint">解释为何判定为该主状态（及次要状态）的界面线索。</p>
     </div>
-  );
-
-  const classificationLegend = (
-    <p className="field-hint mb-1 sm:col-span-2">
-      五个分类维度各有分工：产品形态 = 这是什么 AI 产品 · 旅程阶段 = 任务流程中的哪一步 ·
-      截图状态 = 截图那一刻 UI 的操作态 · 模式分类 = 模式解决哪类设计问题 · 复用价值 = 是否值得复用。
-    </p>
   );
 
   if (guided) {
@@ -179,7 +170,6 @@ export function RecordForm({
             description="决定这条记录会进入矩阵和旅程的哪个位置。"
           >
             <div className="grid gap-2 sm:grid-cols-2">
-              {classificationLegend}
               <Field label={<DualLabel zh="产品" en="Product" />} compact>
                 <input
                   className={inputClass}
@@ -327,7 +317,6 @@ export function RecordForm({
                 "设计判断",
                 "Design Judgment",
                 "这个模式是否值得复用？复用条件是什么？",
-                3,
               )}
             </div>
           </FormModule>
@@ -386,22 +375,25 @@ export function RecordForm({
   return (
     <div className="space-y-2">
       {show("A") ? (
-        <FormModule letter="A" title="分类归位 · Classification">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {classificationLegend}
-            {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, TAXONOMY_FIELD_HINTS.productCategory, PRODUCT_CATEGORY_LABELS)}
-            {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, TAXONOMY_FIELD_HINTS.journeyStage, JOURNEY_STAGE_LABELS)}
-            {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, TAXONOMY_FIELD_HINTS.screenshotState, SCREENSHOT_STATE_LABELS)}
+        <FormModule letter="A" title="分类归位">
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
+              {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, TAXONOMY_FIELD_HINTS.productCategory, PRODUCT_CATEGORY_LABELS)}
+              {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, TAXONOMY_FIELD_HINTS.journeyStage, JOURNEY_STAGE_LABELS)}
+              {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, TAXONOMY_FIELD_HINTS.screenshotState, SCREENSHOT_STATE_LABELS)}
+            </div>
             {secondaryStatesField}
             {stateReasonField}
-            {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES, TAXONOMY_FIELD_HINTS.patternCategory, PATTERN_CATEGORY_LABELS)}
-            {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, TAXONOMY_FIELD_HINTS.reuseLevel, REUSE_LEVEL_LABELS)}
+            <div className="grid grid-cols-2 gap-2">
+              {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES, TAXONOMY_FIELD_HINTS.patternCategory, PATTERN_CATEGORY_LABELS)}
+              {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, TAXONOMY_FIELD_HINTS.reuseLevel, REUSE_LEVEL_LABELS)}
+            </div>
           </div>
         </FormModule>
       ) : null}
 
       {show("B") ? (
-        <FormModule letter="B" title="模式标识 · Pattern Identity">
+        <FormModule letter="B" title="模式标识">
           <div className="grid gap-2 sm:grid-cols-2">
             {patternId ? (
               <Field label={<DualLabel zh="模式编号" en="Pattern ID" />} compact>
@@ -441,7 +433,7 @@ export function RecordForm({
       ) : null}
 
       {show("C") ? (
-        <FormModule letter="C" title="体验诊断 · Experience Diagnosis">
+        <FormModule letter="C" title="体验诊断">
           <div className="grid gap-2 sm:grid-cols-2">
             {textField("userProblem", "用户问题", "User Problem")}
             {textField("aiCapability", "AI 能力", "AI Capability")}
@@ -452,18 +444,18 @@ export function RecordForm({
       ) : null}
 
       {show("D") ? (
-        <FormModule letter="D" title="信任与恢复 · Trust & Recovery">
+        <FormModule letter="D" title="信任与恢复">
           <div className="grid gap-2 sm:grid-cols-2">
             {textField("systemFeedback", "系统反馈", "System Feedback")}
             {textField("trustMechanism", "信任机制", "Trust Mechanism")}
             {textField("failureHandling", "失败处理", "Failure Handling")}
-            {textField("designJudgment", "设计判断", "Design Judgment", undefined, 3)}
+            {textField("designJudgment", "设计判断", "Design Judgment")}
           </div>
         </FormModule>
       ) : null}
 
       {show("E") ? (
-        <FormModule letter="E" title="分析镜头 · Lens Score">
+        <FormModule letter="E" title="分析镜头">
           <div className="space-y-1">
             {LENS_DIMENSIONS.map((dim) => (
               <div

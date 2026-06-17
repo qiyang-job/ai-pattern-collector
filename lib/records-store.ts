@@ -26,7 +26,10 @@ export const useRecordsStore = create<RecordsState>((set, get) => ({
   isLoading: false,
   error: "",
   async loadRecords() {
-    set({ isLoading: true, error: "" });
+    const hasCache = get().records.length > 0;
+    if (!hasCache) {
+      set({ isLoading: true, error: "" });
+    }
     try {
       const records = await listRecords();
       set({ records, isLoading: false });

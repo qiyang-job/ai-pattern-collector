@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 flex w-[var(--sidebar-width)] flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--panel)]">
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 flex w-[var(--sidebar-width)] flex-col overflow-hidden bg-[var(--panel)]">
         <div className="shrink-0 px-5 pb-4 pt-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--accent)_40%,var(--border))] bg-[var(--accent-muted)]">
@@ -201,7 +201,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div
         className={cn(
-          "ml-[var(--sidebar-width)] flex min-h-0 flex-1 flex-col",
+          "ml-[var(--sidebar-width)] flex min-h-0 min-w-0 flex-1 flex-col",
           isCaptureWorkbench ? "h-screen overflow-hidden" : "min-h-screen",
         )}
       >

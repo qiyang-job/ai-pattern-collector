@@ -2,7 +2,7 @@
 
 import type { PatternAnalysisResult } from "@/lib/types";
 import { JOURNEY_STAGE_LABELS, PATTERN_CATEGORY_LABELS, PRODUCT_CATEGORY_LABELS, REUSE_LEVEL_LABELS, SCREENSHOT_STATE_LABELS, labelOf } from "@/lib/constants";
-import { journeyCode } from "@/lib/utils";
+import { journeyCode, cn } from "@/lib/utils";
 import { Button, TypedIdBadge } from "@/components/ui";
 import { RecordForm } from "@/components/record-form";
 
@@ -10,8 +10,6 @@ export type WorkspacePhase = "waiting" | "ready" | "extracting" | "failed" | "re
 
 type WorkspaceProps = {
   phase: WorkspacePhase;
-  hasEvidence: boolean;
-  hasRawNote: boolean;
   hasProduct: boolean;
   isAnalyzing: boolean;
   patternId?: string;
@@ -19,24 +17,12 @@ type WorkspaceProps = {
   analysis: PatternAnalysisResult;
   saveBlockers: string[];
   canSave: boolean;
-  canExtract: boolean;
-  onExtract: () => void;
   onRetry: () => void;
   onManualFill: () => void;
   onChange: (value: PatternAnalysisResult) => void;
   onSave: () => void;
   onReset: () => void;
 };
-
-const EXTRACT_INFERENCES = [
-  "这张图属于哪类产品",
-  "发生在用户旅程的哪个阶段",
-  "展示了什么交互模式",
-  "解决了用户什么不确定性",
-  "暴露了 AI 的什么能力",
-  "如何建立信任或控制感",
-  "这个模式是否具有复用价值",
-] as const;
 
 const EXTRACTING_ITEMS = [
   { key: "screenshot", label: "截图证据", done: true },
@@ -52,16 +38,12 @@ const SAVE_DESTINATIONS = ["记录", "矩阵", "旅程", "模式库", "洞察"] 
 export function PatternExtractionWorkspace(props: WorkspaceProps) {
   const {
     phase,
-    hasEvidence,
-    hasRawNote,
     hasProduct,
     patternId,
     screenshotId,
     analysis,
     saveBlockers,
     canSave,
-    canExtract,
-    onExtract,
     onRetry,
     onManualFill,
     onChange,
@@ -70,23 +52,8 @@ export function PatternExtractionWorkspace(props: WorkspaceProps) {
   } = props;
 
   return (
-    <div className="pattern-workspace pattern-workspace--flush">
-      <div className="pattern-workspace-header">
-        <h2 className="pattern-workspace-header-title">模式提炼工作台</h2>
-      </div>
-
+    <div className={cn("pattern-workspace pattern-workspace--flush")}>
       <div className="pattern-workspace-body">
-        {phase === "waiting" || phase === "ready" ? (
-          <ExtractPanel
-            ready={phase === "ready"}
-            inferences={EXTRACT_INFERENCES}
-            canExtract={canExtract}
-            hasEvidence={hasEvidence}
-            hasRawNote={hasRawNote}
-            onExtract={onExtract}
-          />
-        ) : null}
-
         {phase === "extracting" ? (
           <ExtractingPanel hasProduct={hasProduct} />
         ) : null}
@@ -106,59 +73,6 @@ export function PatternExtractionWorkspace(props: WorkspaceProps) {
             onSave={onSave}
             onReset={onReset}
           />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ExtractPanel({
-  ready,
-  inferences,
-  canExtract,
-  hasEvidence,
-  hasRawNote,
-  onExtract,
-}: {
-  ready: boolean;
-  inferences: readonly string[];
-  canExtract: boolean;
-  hasEvidence: boolean;
-  hasRawNote: boolean;
-  onExtract: () => void;
-}) {
-  const hint = ready
-    ? "证据已齐全，可以调用 AI 提炼"
-    : !hasEvidence
-      ? "先在左侧粘贴一张产品截图"
-      : !hasRawNote
-        ? "补充研究备注后即可开始提炼"
-        : "在左侧补齐证据后即可提炼";
-
-  return (
-    <div className="workspace-panel">
-      <h3 className="workspace-panel-title">{ready ? "可以开始提炼模式" : "准备提炼模式"}</h3>
-      <p className="workspace-panel-subtitle">{hint}</p>
-
-      <div className="mt-3">
-        <div className="text-[10px] font-medium text-[var(--text-muted)]">AI 将推断：</div>
-        <ol className="workspace-numbered-list">
-          {inferences.map((item, i) => (
-            <li key={item}>
-              <span className="mono text-[10px] text-[var(--text-weak)]">{i + 1}.</span> {item}
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="mt-4 pt-3">
-        <Button className="w-full sm:w-auto" onClick={onExtract} disabled={!canExtract}>
-          用 AI 提炼模式
-        </Button>
-        {!ready ? (
-          <p className="mt-2 text-[10px] text-[var(--text-weak)]">
-            待证据齐全后可用，完成进度见顶部流程条
-          </p>
         ) : null}
       </div>
     </div>

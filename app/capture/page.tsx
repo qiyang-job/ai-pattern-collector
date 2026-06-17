@@ -7,26 +7,22 @@ import { useRecordsStore } from "@/lib/records-store";
 import {
   CapturePipeline,
   getActiveStep,
-  getCurrentTask,
   type EvidenceStepStatus,
   type ExtractStepStatus,
   type ReviewStepStatus,
 } from "@/components/capture-pipeline";
 import {
   getSaveBlockers,
-  getWorkspacePhase,
   PatternExtractionWorkspace,
 } from "@/components/capture-workspace";
 import {
+  Button,
   ErrorBanner,
   textareaClass,
 } from "@/components/ui";
 import {
-  EvidenceSlot,
-  HintChip,
   ImageLightbox,
   MultiImageEvidenceSlot,
-  type EvidenceUiStatus,
 } from "@/components/research-ui";
 import { cn } from "@/lib/utils";
 import { callCloudFunction } from "@/lib/cloudbase";
@@ -36,12 +32,6 @@ const RESEARCH_NOTE_PLACEHOLDER =
 
 const WRITING_TEMPLATE =
   "[产品] 在 [用户阶段] 通过 [界面机制] 帮用户 [解决问题]";
-
-const NOTE_HINTS = [
-  "它解决了什么不确定性？",
-  "AI 暴露了什么能力？",
-  "用户如何确认或接管？",
-] as const;
 
 const createBrowserId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -137,15 +127,11 @@ function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> 
 
 function ComposerInlineField({
   zh,
-  en,
-  mark,
   placeholder,
   value,
   onChange,
 }: {
   zh: string;
-  en: string;
-  mark?: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
@@ -156,7 +142,6 @@ function ComposerInlineField({
     <div className="composer-inline-field">
       <label className="composer-inline-field-label" htmlFor={fieldId}>
         {zh}
-        <span className="composer-inline-field-label-en">{en}</span>
       </label>
       <input
         id={fieldId}
@@ -165,7 +150,6 @@ function ComposerInlineField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      {mark ? <span className="composer-inline-field-mark">{mark}</span> : null}
     </div>
   );
 }
@@ -177,7 +161,6 @@ export default function CapturePage() {
     reservedIds,
     imageDataUrl,
     extraImages,
-    imageMeta,
     rawNote,
     sourceUrl,
     taskContext,
@@ -208,7 +191,7 @@ export default function CapturePage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [evidenceEditing, setEvidenceEditing] = useState(false);
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
 
   const totalImages = (imageDataUrl ? 1 : 0) + extraImages.length;
   const hasEvidence = totalImages > 0;
@@ -221,14 +204,6 @@ export default function CapturePage() {
   const canSave = saveBlockers.length === 0;
 
   const inReview = showReview || analysisStatus === "analyzed";
-  const collapseEvidence = inReview && !evidenceEditing;
-  const workspacePhase = getWorkspacePhase({
-    isAnalyzing,
-    analysisStatus,
-    showReview,
-    analyzeReady,
-  });
-
   const evidenceStatus: EvidenceStepStatus = !hasEvidence
     ? "缺失截图"
     : !hasRawNote
@@ -250,22 +225,6 @@ export default function CapturePage() {
     : canSave
       ? "可保存"
       : "需校对";
-
-  const evidenceUiStatus: EvidenceUiStatus = isAnalyzing
-    ? "analyzing"
-    : analysisStatus === "analyzed"
-      ? "analyzed"
-      : hasEvidence
-        ? "ready"
-        : "empty";
-
-  const currentTask = getCurrentTask({
-    savedFlash,
-    inReview,
-    analyzeReady,
-    hasEvidence,
-    hasRawNote,
-  });
 
   const activeStep = getActiveStep({
     savedFlash,
@@ -338,18 +297,8 @@ export default function CapturePage() {
   async function reset() {
     setPreviewOpen(false);
     setSavedFlash(false);
-    setEvidenceEditing(false);
+    setReviewDrawerOpen(false);
     await resetDraft();
-  }
-
-  function appendHint(hint: string) {
-    const prev = rawNote;
-    if (!prev.trim()) {
-      setRawNote(`${hint} `);
-      return;
-    }
-    if (prev.includes(hint)) return;
-    setRawNote(`${prev.trimEnd()}\n${hint} `);
   }
 
   function insertWritingTemplate() {
@@ -397,6 +346,7 @@ export default function CapturePage() {
       setAnalysis({ ...sanitized, product: (sanitized.product as string) || analysis.product } as any);
       setAnalysisStatus("analyzed");
       setShowReview(true);
+      setReviewDrawerOpen(true);
       toast.success("模式提炼完成，请校对后保存");
     } catch (e) {
       setAnalysisStatus("failed");
@@ -435,6 +385,38 @@ export default function CapturePage() {
     }, 1400);
   }
 
+  function handleBottomAction() {
+    if (isAnalyzing) return;
+    if (inReview) {
+      setReviewDrawerOpen(true);
+      return;
+    }
+    void analyze();
+  }
+
+  const bottomActionLabel = isAnalyzing
+    ? "AI 正在提炼…"
+    : inReview
+      ? "打开 Review 校对"
+      : "提取设计模式";
+
+  const drawerOpen =
+    isAnalyzing ||
+    analysisStatus === "failed" ||
+    (reviewDrawerOpen && inReview);
+
+  const drawerPhase = isAnalyzing
+    ? "extracting"
+    : analysisStatus === "failed"
+      ? "failed"
+      : "review";
+
+  const drawerTitle = drawerPhase === "extracting"
+    ? "正在提炼模式"
+    : drawerPhase === "failed"
+      ? "提炼失败"
+      : "结果校对";
+
   return (
     <div className="capture-workbench flex-1">
       <CapturePipeline
@@ -444,109 +426,16 @@ export default function CapturePage() {
         extractStatus={extractStatus}
         reviewStatus={reviewStatus}
         savedStatus={savedFlash ? "已保存" : "未保存"}
-        currentTask={currentTask}
         activeStep={activeStep}
       />
 
-      <div className={cn("capture-columns", collapseEvidence && "capture-columns--review")}>
+      <div className="capture-columns">
         <div className="capture-evidence-column">
-          {collapseEvidence ? (
-            <>
-              <header className="capture-column-header capture-column-header--compact">
-                <div>
-                  <h1 className="capture-column-header-title">证据参考</h1>
-                  <p className="capture-column-header-subtitle">校对时仅供参考，可随时修改</p>
-                </div>
-                <button
-                  type="button"
-                  className="evidence-recap-edit focus-ring"
-                  onClick={() => setEvidenceEditing(true)}
-                >
-                  修改证据
-                </button>
-              </header>
-              <div className="evidence-recap">
-                {/* 主图缩略图 */}
-                {imageDataUrl ? (
-                  <button
-                    type="button"
-                    className="evidence-recap-thumb focus-ring"
-                    onClick={() => openPreview(imageDataUrl, 0)}
-                    title="点击查看大图"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageDataUrl} alt={reservedIds?.screenshotId ?? "screenshot"} />
-                  </button>
-                ) : null}
-                /* 额外截图缩略图 */
-                {extraImages.length > 0 && (
-                  <div className="flex gap-1 mt-1">
-                    {[...extraImages].map((url, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="evidence-recap-thumb focus-ring w-12 h-12"
-                        onClick={() => openPreview(url, i + 1)}
-                        title={`截图 ${i + 2}`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`截图 ${i + 2}`} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="evidence-recap-block">
-                  <div className="evidence-recap-block-label">研究备注</div>
-                  <p className="evidence-recap-note">{rawNote || "—"}</p>
-                </div>
-                <div className="evidence-recap-block">
-                  <div className="evidence-recap-block-label">场景上下文</div>
-                  <dl className="evidence-recap-meta">
-                    <div className="evidence-recap-meta-row">
-                      <dt>证据</dt>
-                      <dd>{reservedIds?.screenshotId ?? "S---"}</dd>
-                    </div>
-                    <div className="evidence-recap-meta-row">
-                      <dt>产品</dt>
-                      <dd>{analysis.product || "—"}</dd>
-                    </div>
-                    <div className="evidence-recap-meta-row">
-                      <dt>当时任务</dt>
-                      <dd>{taskContext || "—"}</dd>
-                    </div>
-                    <div className="evidence-recap-meta-row">
-                      <dt>来源</dt>
-                      <dd>{sourceUrl || "—"}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <header className="capture-column-header capture-column-header--compact">
-                <div>
-                  <h1 className="capture-column-header-title">采集证据</h1>
-                  <p className="capture-column-header-subtitle">粘贴截图，说明值得研究的交互</p>
-                </div>
-                {inReview ? (
-                  <button
-                    type="button"
-                    className="evidence-recap-edit focus-ring"
-                    onClick={() => setEvidenceEditing(false)}
-                  >
-                    完成
-                  </button>
-                ) : null}
-              </header>
-
-              <div className="capture-evidence-body">
+          <div className="capture-evidence-body">
             <MultiImageEvidenceSlot
               screenshotId={reservedIds?.screenshotId ?? "S---"}
-              status={evidenceUiStatus}
               primaryUrl={imageDataUrl}
               extraUrls={extraImages}
-              meta={`${imageMeta}${totalImages > 0 ? ` · ${totalImages}张` : ""}`}
               onAddClick={() => fileInputRef.current?.click()}
               onRemoveExtra={removeExtraImage}
               onPreview={openPreview}
@@ -570,106 +459,117 @@ export default function CapturePage() {
               }}
             />
 
-            <div className="composer-note-block">
-              <div className="composer-note-header">
-                <div className="composer-note-title">
-                  研究备注
-                  <span className="composer-note-title-en">Research Note</span>
-                </div>
+            <div className="composer-evidence-card">
+              <div className="composer-evidence-card-header">
+                <div className="composer-evidence-card-title">研究备注</div>
                 <span className="composer-label-mark">必填</span>
               </div>
+
               <textarea
-                className={cn(textareaClass, "composer-note-input")}
+                className={cn(textareaClass, "composer-evidence-card-input")}
                 placeholder={RESEARCH_NOTE_PLACEHOLDER}
                 value={rawNote}
                 onChange={(e) => setRawNote(e.target.value)}
               />
-              <div className="composer-note-footer">
+
+              <div className="composer-evidence-card-footer">
                 <button
                   type="button"
-                  className="composer-note-template"
+                  className="composer-evidence-card-template"
                   onClick={insertWritingTemplate}
                 >
                   句式：{WRITING_TEMPLATE}
                 </button>
-                <div className="composer-note-chips">
-                  {NOTE_HINTS.map((hint) => (
-                    <HintChip key={hint} onClick={() => appendHint(hint)}>
-                      {hint}
-                    </HintChip>
-                  ))}
+              </div>
+
+              <div className="composer-evidence-card-divider" aria-hidden="true" />
+
+              <div className="composer-evidence-card-context">
+                <div className="composer-evidence-card-fields">
+                  <ComposerInlineField
+                    zh="产品"
+                    placeholder="AI 产品，如 Cursor、Claude、Notion AI"
+                    value={analysis.product}
+                    onChange={(value) => patchAnalysis({ product: value })}
+                  />
+
+                  <ComposerInlineField
+                    zh="当时任务"
+                    placeholder="具体任务，如总结论文、生成 PRD、批量改代码"
+                    value={taskContext}
+                    onChange={setTaskContext}
+                  />
+
+                  <ComposerInlineField
+                    zh="来源链接"
+                    placeholder="页面或功能 URL，便于回溯证据"
+                    value={sourceUrl}
+                    onChange={setSourceUrl}
+                  />
                 </div>
-              </div>
-            </div>
-
-            <div className="composer-context-block">
-              <div className="composer-context-header">
-                <div className="composer-context-title">场景上下文</div>
-              </div>
-
-              <div className="composer-context-fields">
-                <ComposerInlineField
-                  zh="产品"
-                  en="Product"
-                  mark="建议填写"
-                  placeholder="AI 产品，如 Cursor、Claude、Notion AI"
-                  value={analysis.product}
-                  onChange={(value) => patchAnalysis({ product: value })}
-                />
-
-                <ComposerInlineField
-                  zh="当时任务"
-                  en="Task Context"
-                  mark="可选"
-                  placeholder="具体任务，如总结论文、生成 PRD、批量改代码"
-                  value={taskContext}
-                  onChange={setTaskContext}
-                />
-
-                <ComposerInlineField
-                  zh="来源链接"
-                  en="Source URL"
-                  mark="可选"
-                  placeholder="页面或功能 URL，便于回溯证据"
-                  value={sourceUrl}
-                  onChange={setSourceUrl}
-                />
               </div>
             </div>
 
             {error ? <ErrorBanner message={error} /> : null}
           </div>
-            </>
-          )}
-        </div>
-
-        <div className="capture-analysis-column">
-          <PatternExtractionWorkspace
-            phase={workspacePhase}
-            hasEvidence={hasEvidence}
-            hasRawNote={hasRawNote}
-            hasProduct={hasProduct}
-            isAnalyzing={isAnalyzing}
-            patternId={reservedIds?.patternId}
-            screenshotId={reservedIds?.screenshotId ?? "S---"}
-            analysis={analysis}
-            saveBlockers={saveBlockers}
-            canSave={canSave}
-            canExtract={canExtract}
-            onExtract={analyze}
-            onRetry={analyze}
-            onManualFill={() => setShowReview(true)}
-            onChange={setAnalysis}
-            onSave={save}
-            onReset={reset}
-          />
-          {workspacePhase !== "waiting" && workspacePhase !== "ready" ? (
-            <div className="page-gutter-x pb-2">
-              <ErrorBanner message={error} />
-            </div>
-          ) : null}
         </div>
       </div>
+
+      <div className="capture-bottom-action" role="region" aria-label="提炼模式操作">
+        <Button
+          onClick={handleBottomAction}
+          disabled={isAnalyzing || (!inReview && !canExtract)}
+        >
+          {bottomActionLabel}
+        </Button>
+      </div>
+
+      {drawerOpen ? (
+        <div className="capture-drawer-layer">
+          <aside className="capture-review-drawer" role="dialog" aria-modal="false" aria-label={drawerTitle}>
+            <header className="capture-drawer-header">
+              <div>
+                <div className="mono text-[9px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
+                  Pattern Review
+                </div>
+                <h2 className="capture-drawer-title">{drawerTitle}</h2>
+              </div>
+              {drawerPhase === "review" ? (
+                <button
+                  type="button"
+                  className="evidence-recap-edit focus-ring"
+                  onClick={() => setReviewDrawerOpen(false)}
+                >
+                  收起
+                </button>
+              ) : null}
+            </header>
+            <PatternExtractionWorkspace
+              phase={drawerPhase}
+              hasProduct={hasProduct}
+              isAnalyzing={isAnalyzing}
+              patternId={reservedIds?.patternId}
+              screenshotId={reservedIds?.screenshotId ?? "S---"}
+              analysis={analysis}
+              saveBlockers={saveBlockers}
+              canSave={canSave}
+              onRetry={analyze}
+              onManualFill={() => {
+                setShowReview(true);
+                setReviewDrawerOpen(true);
+              }}
+              onChange={setAnalysis}
+              onSave={save}
+              onReset={reset}
+            />
+            {drawerPhase !== "review" && error ? (
+              <div className="px-3 pb-3">
+                <ErrorBanner message={error} />
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      ) : null}
 
       {previewOpen && previewUrls.length > 0 ? (
         <ImageLightbox

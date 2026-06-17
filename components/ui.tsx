@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Info } from "lucide-react";
 import type { PatternCategory, ProductCategory, ReuseLevel } from "@/lib/types";
 import { REUSE_LEVEL_LABELS, labelOf } from "@/lib/constants";
 import {
@@ -80,19 +81,39 @@ export function Panel({
   );
 }
 
+export function InfoHint({ children }: { children: ReactNode }) {
+  return (
+    <span className="info-hint">
+      <button
+        type="button"
+        className="info-hint-trigger focus-ring"
+        aria-label="查看说明"
+      >
+        <Info className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+      </button>
+      <span className="info-hint-tooltip" role="tooltip">
+        {children}
+      </span>
+    </span>
+  );
+}
+
 export function PanelHeader({
   title,
   meta,
+  hint,
   actions,
 }: {
   title: string;
   meta?: ReactNode;
+  hint?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
     <div className="panel-header mb-4 flex items-start justify-between gap-3 pb-2">
-      <div className="flex items-baseline gap-2.5">
+      <div className="flex items-center gap-2.5">
         <h2 className="display-serif text-[16px] text-[var(--text)]">{title}</h2>
+        {hint ? <InfoHint>{hint}</InfoHint> : null}
         {meta ? (
           <span className="mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-weak)]">
             {meta}
@@ -114,13 +135,8 @@ export function PageFrame({
   return <div className={cn("flex min-h-full flex-1 flex-col", className)}>{children}</div>;
 }
 
-export function DualLabel({ zh, en }: { zh: string; en: string }) {
-  return (
-    <span className="inline-flex flex-col leading-tight">
-      <span>{zh}</span>
-      <span className="text-[10px] font-normal text-[var(--text-weak)]">{en}</span>
-    </span>
-  );
+export function DualLabel({ zh }: { zh: string; en?: string }) {
+  return <span>{zh}</span>;
 }
 
 export function SectionLabel({ children }: { children: ReactNode }) {
@@ -179,21 +195,27 @@ export function Field({
   compact?: boolean;
 }) {
   return (
-    <label className={cn("block", compact ? "space-y-0.5" : "space-y-1")}>
+    <div className={cn("block", compact ? "space-y-0.5" : "space-y-1")}>
       <span className="flex items-center justify-between text-[11px] font-medium text-[var(--text-muted)]">
         {label}
         {hint ? <span className="font-normal text-[var(--text-weak)]">{hint}</span> : null}
       </span>
       {children}
-    </label>
+    </div>
   );
 }
 
 export const inputClass =
-  "focus-ring h-9 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 text-[13px] text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)] focus-visible:border-[var(--accent)]";
+  "focus-ring h-9 w-full rounded-[var(--radius-sm)] border-0 bg-[var(--border)] px-2.5 text-[13px] text-[var(--text)] transition placeholder:text-[var(--text-weak)]";
 
 export const textareaClass =
-  "focus-ring min-h-[52px] w-full resize-y rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1.5 text-[13px] leading-5 text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)] focus-visible:border-[var(--accent)]";
+  "focus-ring min-h-[52px] w-full resize-y rounded-[var(--radius-sm)] border-0 bg-[var(--border)] px-2.5 py-1.5 text-[13px] leading-5 text-[var(--text)] transition placeholder:text-[var(--text-weak)]";
+
+/** 表单网格内 textarea：固定 4 行高度、禁止拖拽改变尺寸 */
+export const formTextareaClass = cn(
+  textareaClass,
+  "h-[104px] max-h-[104px] min-h-[104px] resize-none overflow-y-auto",
+);
 
 export const selectClass = cn(inputClass, "select-field h-9 cursor-pointer");
 

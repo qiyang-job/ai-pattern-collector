@@ -130,6 +130,13 @@ button:disabled {
   gap: var(--section-gap);
 }
 
+.page-gutter.page-section-gap {
+  padding-top: 0;
+  padding-right: 32px;
+  padding-bottom: 32px;
+  padding-left: 32px;
+}
+
 .page-header {
   position: sticky;
   top: 0;
@@ -138,7 +145,6 @@ button:disabled {
   flex-direction: column;
   justify-content: center;
   min-height: var(--page-header-height);
-  border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(140%) blur(12px);
   padding-top: 12px;
@@ -390,7 +396,43 @@ button:disabled {
 }
 
 .library-category-header {
-  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.library-category-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.library-category-header-link {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.library-category-header-link:hover {
+  text-decoration: underline;
+}
+
+.library-category-header-meta {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-weak);
 }
 
 .insight-readiness {
@@ -452,8 +494,21 @@ button:disabled {
 
 .inspector-panel {
   background: var(--panel);
-  border-left: 1px solid var(--border-strong);
   box-shadow: var(--shadow-lg);
+}
+
+.inspector-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 20px 20px 24px;
+}
+
+.inspector-section-card {
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--panel-muted);
+  padding: 16px;
 }
 
 /* Sonner: keep toasts top-right only, avoid stray bottom overlays */
@@ -602,6 +657,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
   display: flex;
   flex: 1;
   min-height: 0;
+  padding-bottom: 104px;
 }
 
 /* 中等屏幕（平板/窄窗口）：保持双栏但缩小证据列 */
@@ -611,7 +667,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
   }
 
   .capture-evidence-column {
-    flex: 1 1 40%;
+    flex: 1 1 100%;
     min-width: 260px;
   }
 
@@ -630,9 +686,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
   .capture-evidence-column {
     width: 100%;
     min-width: 0;
-    max-height: 50vh;
     border-right: none;
-    border-bottom: 1px solid var(--border);
   }
 
   .capture-analysis-column {
@@ -643,10 +697,11 @@ nextjs-portal [data-nextjs-dev-tools-button],
 
 .capture-evidence-column {
   display: flex;
-  flex: 1 1 45%;
+  flex: 1 1 100%;
+  width: 100%;
   min-width: 300px;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-right: none;
   overflow: hidden;
 }
 
@@ -654,7 +709,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 10px var(--page-gutter);
+  padding: 0 32px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -667,18 +722,13 @@ nextjs-portal [data-nextjs-dev-tools-button],
 
   .capture-evidence-body > .evidence-slot {
     display: flex;
-    flex: 4 1 0;
+    flex: 1 1 auto;
     min-height: 0;
     flex-direction: column;
   }
 
-  .capture-evidence-body > .composer-note-block {
-    flex: 3.5 1 0;
-    min-height: 0;
-  }
-
-  .capture-evidence-body > .composer-context-block {
-    flex: 3.5 1 0;
+  .capture-evidence-body > .composer-evidence-card {
+    flex: 0 0 auto;
     min-height: 0;
     overflow: hidden;
   }
@@ -691,13 +741,9 @@ nextjs-portal [data-nextjs-dev-tools-button],
     min-height: 100px;
   }
 
-  .capture-evidence-body > .composer-note-block {
-    flex: 2 1 auto;
-    max-height: 180px;
-  }
-
-  .capture-evidence-body > .composer-context-block {
-    flex: 1 1 auto;
+  .capture-evidence-body > .composer-evidence-card {
+    flex: 3 1 auto;
+    max-height: none;
     overflow-y: auto;
   }
 }
@@ -713,8 +759,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
     flex: 1 1 140px;
   }
 
-  .capture-evidence-body > .composer-note-block,
-  .capture-evidence-body > .composer-context-block {
+  .capture-evidence-body > .composer-evidence-card {
     flex: 0 0 auto;
   }
 }
@@ -722,9 +767,102 @@ nextjs-portal [data-nextjs-dev-tools-button],
 .capture-analysis-column {
   display: flex;
   flex: 1 1 55%;
+  width: 100%;
   min-width: 380px;
   flex-direction: column;
   overflow: hidden;
+}
+
+.capture-bottom-action {
+  position: fixed;
+  left: var(--sidebar-width);
+  right: 0;
+  bottom: 32px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.capture-bottom-action > * {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 200px;
+  height: 40px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.capture-drawer-layer {
+  position: fixed;
+  inset: 0 0 0 var(--sidebar-width);
+  z-index: 45;
+  pointer-events: none;
+}
+
+.capture-review-drawer {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  width: min(720px, calc(100vw - var(--sidebar-width) - 32px));
+  min-width: min(560px, calc(100vw - var(--sidebar-width) - 32px));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--panel-raised) 96%, transparent);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  backdrop-filter: blur(18px);
+}
+
+.capture-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-muted);
+  padding: 12px 14px;
+}
+
+.capture-drawer-title {
+  margin: 1px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.capture-review-drawer .pattern-workspace {
+  min-height: 0;
+  flex: 1;
+  background: transparent;
+}
+
+.capture-review-drawer .pattern-workspace-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.capture-review-drawer .workspace-review {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0;
+}
+
+.capture-review-drawer .workspace-save-footer {
+  position: sticky;
+  bottom: 0;
+  margin: 12px -12px -12px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 94%, transparent);
+  padding: 10px 12px 12px;
+  backdrop-filter: blur(12px);
 }
 
 /* Review 阶段：收窄证据列，让校对表单成为焦点 */
@@ -928,11 +1066,16 @@ nextjs-portal [data-nextjs-dev-tools-button],
 /* Capture pipeline */
 .capture-pipeline-header {
   flex-shrink: 0;
+  height: fit-content;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .capture-pipeline-top {
   padding-top: 10px;
   padding-bottom: 10px;
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 /* 窄屏下 Pipeline 头部紧凑化 */
@@ -992,10 +1135,6 @@ nextjs-portal [data-nextjs-dev-tools-button],
   color: var(--text-muted);
 }
 
-.capture-current-task {
-  background: var(--panel);
-}
-
 /* Evidence composer */
 .composer-section {
   margin-bottom: var(--section-gap);
@@ -1011,33 +1150,78 @@ nextjs-portal [data-nextjs-dev-tools-button],
   grid-column: 1 / -1;
 }
 
-.composer-context-block {
+.composer-evidence-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   border-radius: var(--radius-md);
   background: var(--panel);
-  padding: 10px 12px;
+  padding: 16px;
   min-height: 0;
+  overflow: hidden;
 }
 
-.composer-context-header {
+.composer-evidence-card-header {
+  display: flex;
   flex-shrink: 0;
-  padding-bottom: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.composer-context-title {
+.composer-evidence-card-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--text);
 }
 
-.composer-context-fields {
+.composer-evidence-card-input {
+  min-height: 52px;
+  flex: none;
+  resize: none;
+  border: none;
+  background: var(--panel-muted);
+  border-radius: var(--radius-sm);
+}
+
+.composer-evidence-card-footer {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: fit-content;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.composer-evidence-card-template {
+  flex: 1 1 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-weak);
+}
+
+.composer-evidence-card-template:hover {
+  color: var(--accent);
+}
+
+.composer-evidence-card-divider {
+  flex-shrink: 0;
+  height: 1px;
+  margin: 2px 0;
+  background: var(--border);
+}
+
+.composer-evidence-card-context {
+  flex-shrink: 0;
+}
+
+.composer-evidence-card-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 1.2fr);
+  gap: 8px;
 }
 
 .composer-inline-field {
@@ -1045,39 +1229,20 @@ nextjs-portal [data-nextjs-dev-tools-button],
   align-items: center;
   height: 36px;
   min-height: 36px;
+  min-width: 0;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--panel-muted);
-  overflow: hidden;
+  gap: 8px;
 }
 
 .composer-inline-field-label {
   display: flex;
-  height: 100%;
   flex-shrink: 0;
-  flex-direction: column;
-  justify-content: center;
-  width: 88px;
-  background: var(--panel);
-  padding: 0 8px;
+  align-items: center;
+  width: auto;
   font-size: 10px;
   font-weight: 600;
   line-height: 1.2;
   color: var(--text-muted);
-}
-
-.composer-inline-field-label-en {
-  margin-left: 0;
-  font-size: 9px;
-  font-weight: 400;
-  color: var(--text-weak);
-}
-
-.composer-inline-field-mark {
-  flex-shrink: 0;
-  padding-right: 8px;
-  font-size: 9px;
-  color: var(--text-weak);
   white-space: nowrap;
 }
 
@@ -1085,8 +1250,8 @@ nextjs-portal [data-nextjs-dev-tools-button],
   min-width: 0;
   height: 100%;
   flex: 1;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--panel-muted);
   padding: 0 10px;
   font-size: 12px;
   line-height: 1.4;
@@ -1106,12 +1271,15 @@ nextjs-portal [data-nextjs-dev-tools-button],
 /* 中小屏幕：内联字段紧凑化 */
 @media (max-width: 1023px) {
   .composer-inline-field-label {
-    width: 72px;
-    padding: 0 6px;
+    width: 64px;
   }
 }
 
 @media (max-width: 767px) {
+  .composer-evidence-card-fields {
+    grid-template-columns: 1fr;
+  }
+
   .composer-inline-field {
     height: 32px;
     min-height: 32px;
@@ -1119,97 +1287,12 @@ nextjs-portal [data-nextjs-dev-tools-button],
 
   .composer-inline-field-label {
     width: 64px;
-    padding: 0 6px;
     font-size: 9px;
   }
 
   .composer-inline-field-input {
     font-size: 11px;
   }
-}
-
-.composer-note-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-radius: var(--radius-md);
-  background: var(--panel);
-  padding: 10px 12px;
-  min-height: 0;
-}
-
-.composer-note-header {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.composer-note-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.composer-note-title-en {
-  margin-left: 6px;
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--text-weak);
-}
-
-.composer-note-subtitle {
-  margin-top: 2px;
-  font-size: 10px;
-  line-height: 1.5;
-  color: var(--text-muted);
-}
-
-.composer-note-input {
-  min-height: 44px;
-  flex: 1;
-  resize: none;
-  border: none;
-  background: var(--panel-muted);
-}
-
-.composer-note-footer {
-  display: flex;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 6px;
-}
-
-.composer-note-template {
-  flex: 1 1 100%;
-  border: none;
-  background: none;
-  padding: 0;
-  text-align: left;
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--text-weak);
-}
-
-.composer-note-template:hover {
-  color: var(--accent);
-}
-
-.composer-note-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.capture-pipeline-steps {
-  margin-top: 6px !important;
-}
-
-.capture-current-task {
-  padding-top: 6px;
-  padding-bottom: 6px;
 }
 
 .composer-label {
@@ -1327,6 +1410,15 @@ nextjs-portal [data-nextjs-dev-tools-button],
   border-radius: 0;
 }
 
+.pattern-workspace--extract-shelf {
+  width: 320px;
+  height: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+}
+
 .pattern-workspace-header {
   display: flex;
   align-items: center;
@@ -1353,22 +1445,27 @@ nextjs-portal [data-nextjs-dev-tools-button],
   padding: 12px;
 }
 
+.pattern-workspace-body--extract-shelf {
+  width: 320px;
+  flex: 0 0 auto;
+  background: transparent;
+  border-left: none;
+  padding-top: 0;
+  padding-bottom: 24px;
+  padding-left: 8px;
+  padding-right: 32px;
+}
+
 .workspace-panel {
   border-radius: var(--radius-md);
   background: var(--panel-muted);
-  padding: 10px 12px;
+  padding: 10px 12px 12px;
 }
 
 .workspace-panel .workspace-numbered-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 12px;
-}
-
-@media (max-width: 1100px) {
-  .workspace-panel .workspace-numbered-list {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .workspace-panel--danger {
@@ -1545,6 +1642,111 @@ nextjs-portal [data-nextjs-dev-tools-button],
   color: var(--text-weak);
 }
 
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.checkbox-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-option input[type="checkbox"] {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--panel-muted);
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+
+.checkbox-option input[type="checkbox"]:hover {
+  border-color: var(--accent);
+}
+
+.checkbox-option input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background-color: var(--accent-muted);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='%23E0A64A' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.checkbox-option-label {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.checkbox-option:has(input:checked) .checkbox-option-label {
+  color: var(--text);
+}
+
+.info-hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-hint-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-weak);
+  cursor: help;
+  opacity: 0.72;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.info-hint:hover .info-hint-trigger,
+.info-hint:focus-within .info-hint-trigger {
+  opacity: 1;
+  color: var(--text-muted);
+}
+
+.info-hint-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: max-content;
+  max-width: min(360px, 72vw);
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-lg);
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.info-hint:hover .info-hint-tooltip,
+.info-hint:focus-within .info-hint-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 .lens-legend {
   margin-bottom: 8px;
   font-size: 10px;
@@ -1558,7 +1760,6 @@ nextjs-portal [data-nextjs-dev-tools-button],
 /* Form module */
 .form-module {
   border-radius: var(--radius-md);
-  background: var(--panel);
 }
 
 .form-module-header {
@@ -1717,21 +1918,124 @@ nextjs-portal [data-nextjs-dev-tools-button],
   background: var(--accent);
 }
 
+/* Library page */
+.library-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--bg);
+  overflow-x: clip;
+}
+
+.library-page > main {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.library-page > header {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.library-page .panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.library-table-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.library-table-scroll > table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.library-data-table th,
+.library-data-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-data-table td > * {
+  min-width: 0;
+}
+
+.library-data-table .library-cell-stack {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.library-data-table .library-cell-evidence {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.library-data-table .library-cell-evidence > * {
+  min-width: auto;
+}
+
+.library-data-table .library-col-evidence {
+  width: 132px;
+}
+
+.library-data-table .library-col-pattern {
+  width: 19%;
+}
+
+.library-data-table .library-col-product {
+  width: 11%;
+}
+
+.library-data-table .library-col-stage {
+  width: 8%;
+}
+
+.library-data-table .library-col-reuse {
+  width: 8%;
+}
+
+.library-data-table .library-col-problem {
+  width: auto;
+}
+
 /* Library category overview nav */
 .library-overview {
   display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1280px) {
+  .library-overview {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .library-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .library-overview-chip {
   display: flex;
+  flex: 1 1 0;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
   border-radius: var(--radius-md);
   background: var(--panel-muted);
-  padding: 9px 11px;
+  padding: 9px 10px;
   text-align: left;
   transition: background 0.12s;
 }
@@ -1745,6 +2049,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
 }
 
 .library-overview-chip-count {
+  flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 15px;
   font-variant-numeric: tabular-nums;

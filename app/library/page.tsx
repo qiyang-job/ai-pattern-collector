@@ -7,7 +7,6 @@ import { useRecordsStore } from "@/lib/records-store";
 import type { PatternRecord } from "@/lib/types";
 import { journeyCode } from "@/lib/utils";
 import {
-  CategoryTag,
   EvidenceThumbnail,
   PageBody,
   PageFrame,
@@ -34,7 +33,7 @@ export default function LibraryPage() {
   }, [loadRecords]);
 
   return (
-    <PageFrame>
+    <PageFrame className="library-page">
       <PageHeader
         title="模式库"
         description="模式图谱 — 八大设计模式分类。"
@@ -75,50 +74,33 @@ export default function LibraryPage() {
 
         {PATTERN_CATEGORIES.map((category) => {
           const items = records.filter((r) => r.patternCategory === category);
-          const products = [...new Set(items.map((r) => r.product).filter(Boolean))];
-
           return (
             <Panel key={category} id={categorySlug(category)} noPadding className="scroll-mt-4 overflow-hidden">
-              <div className="capture-column-header library-category-header flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="capture-column-header-title">{labelOf(category, PATTERN_CATEGORY_LABELS)}</h2>
-                    <span className="tabular-nums mono text-[11px] text-[var(--text-weak)]">
-                      {items.length}
-                    </span>
-                  </div>
-                  <p className="capture-column-header-subtitle">
-                    {PATTERN_CATEGORY_DESCRIPTIONS[category]}
-                  </p>
-                  {products.length > 0 ? (
-                    <p className="mt-0.5 text-[10px] text-[var(--text-weak)]">
-                      产品：{products.join(", ")}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <CategoryTag label={category} category={category} />
+              <div className="capture-column-header library-category-header">
+                <div className="library-category-header-row">
+                  <h2 className="capture-column-header-title">{labelOf(category, PATTERN_CATEGORY_LABELS)}</h2>
                   {items.length > 0 ? (
                     <Link
                       href={`/records?patternCategory=${encodeURIComponent(category)}`}
-                      className="inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
+                      className="library-category-header-link"
                     >
                       在记录中查看 →
                     </Link>
                   ) : null}
                 </div>
+                <p className="library-category-header-meta">{PATTERN_CATEGORY_DESCRIPTIONS[category]}</p>
               </div>
 
               {items.length > 0 ? (
-                <div className="table-scroll">
-                <table className="data-table">
+                <div className="library-table-scroll">
+                <table className="data-table library-data-table">
                   <colgroup>
-                    <col className="w-[70px]" />
-                    <col className="w-[180px]" />
-                    <col className="w-[80px]" />
-                    <col className="w-[56px]" />
-                    <col className="w-[52px]" />
-                    <col className="min-w-[200px]" />
+                    <col className="library-col-evidence" />
+                    <col className="library-col-pattern" />
+                    <col className="library-col-product" />
+                    <col className="library-col-stage" />
+                    <col className="library-col-reuse" />
+                    <col className="library-col-problem" />
                   </colgroup>
                   <thead>
                     <tr>
@@ -133,22 +115,22 @@ export default function LibraryPage() {
                   <tbody>
                     {items.map((r) => (
                       <tr key={r.id} data-clickable="true" onClick={() => setSelected(r)}>
-                        <td>
+                        <td className="library-cell-evidence">
                           <div className="flex items-center gap-1.5">
-                            <EvidenceThumbnail src={r.imageDataUrl} alt={r.screenshotId} size="xs" />
-                            <TypedIdBadge kind="evidence" className="text-[10px] px-1 py-[1px]">{r.screenshotId}</TypedIdBadge>
+                            <EvidenceThumbnail src={r.imageDataUrl} alt={r.screenshotId} size="xs" className="shrink-0" />
+                            <TypedIdBadge kind="evidence" className="shrink-0 text-[10px] px-1 py-[1px]">{r.screenshotId}</TypedIdBadge>
                           </div>
                         </td>
-                        <td>
-                          <div className="min-w-0">
+                        <td className="library-cell-stack">
+                          <div className="min-w-0 overflow-hidden">
                             <div className="truncate font-medium">{r.patternName}</div>
-                            <TypedIdBadge kind="pattern" className="mt-0.5 text-[10px] px-1 py-[1px]">{r.patternId}</TypedIdBadge>
+                            <TypedIdBadge kind="pattern" className="mt-0.5 truncate text-[10px] px-1 py-[1px]">{r.patternId}</TypedIdBadge>
                           </div>
                         </td>
                         <td className="truncate text-[12px] text-[var(--text-muted)]">{r.product || "—"}</td>
                         <td><TypedIdBadge kind="stage" className="text-[10px] px-1 py-[1px]">{journeyCode(r.journeyStage)}</TypedIdBadge></td>
                         <td><ReuseTag level={r.reuseLevel} /></td>
-                        <td className="max-w-none whitespace-normal text-[12px] leading-relaxed text-[var(--text-muted)]">
+                        <td className="truncate text-[12px] text-[var(--text-muted)]" title={r.userProblem}>
                           {r.userProblem}
                         </td>
                       </tr>

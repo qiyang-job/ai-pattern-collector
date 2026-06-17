@@ -259,10 +259,8 @@ export function EvidenceSlot({
  */
 export function MultiImageEvidenceSlot({
   screenshotId,
-  status,
   primaryUrl,
   extraUrls,
-  meta,
   onAddClick,
   onRemoveExtra,
   onPreview,
@@ -270,12 +268,10 @@ export function MultiImageEvidenceSlot({
   onDrop,
 }: {
   screenshotId: string;
-  status: EvidenceUiStatus;
   /** 主图 data URL */
   primaryUrl: string;
   /** 额外截图 data URL 数组 */
   extraUrls: string[];
-  meta: string;
   onAddClick: () => void;
   onRemoveExtra?: (index: number) => void;
   onPreview: (url: string, index: number) => void;
@@ -287,28 +283,12 @@ export function MultiImageEvidenceSlot({
 
   return (
     <div className="evidence-slot">
-      {/* 头部：编号 + 状态 + 计数 */}
-      <div className="flex items-center justify-between px-2 py-1.5">
-        <div className="flex items-center gap-2">
-          <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
-          <span className="mono text-[10px] text-[var(--text-weak)]">
-            {total}/{MAX_SCREENSHOTS}
-          </span>
-        </div>
-        <WorkflowStatusPill
-          status={
-            status === "empty" ? (total > 0 ? "证据就绪" : "缺失截图")
-            : status === "ready" ? "证据就绪"
-            : status === "analyzing" ? "提炼中"
-            : "已分析"
-          }
-          tone={
-            status === "analyzed" ? "success"
-            : status === "analyzing" ? "active"
-            : total > 0 ? "ready"
-            : "neutral"
-          }
-        />
+      {/* 头部：编号 + 计数 */}
+      <div className="flex items-center gap-2 px-2 py-1.5">
+        <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
+        <span className="mono text-[10px] text-[var(--text-weak)]">
+          {total}/{MAX_SCREENSHOTS}
+        </span>
       </div>
 
       {/* 图片区域：主图/空槽位 + 缩略图条 */}
@@ -399,14 +379,6 @@ export function MultiImageEvidenceSlot({
           </button>
         )}
       </div>
-
-      {/* 底部：元信息 + 上传按钮 */}
-      <div className="flex items-center justify-between bg-[var(--panel-muted)] px-2 py-1 mono text-[10px] text-[var(--text-weak)]">
-        <span className="truncate">{meta}</span>
-        <button type="button" className="shrink-0 text-[var(--accent)] hover:underline" onClick={onAddClick}>
-          {total > 0 ? `继续添加` : "上传"}
-        </button>
-      </div>
     </div>
   );
 }
@@ -494,7 +466,7 @@ export function FormModule({
           ) : null}
         </div>
       </div>
-      <div className="space-y-2 p-2.5">{children}</div>
+      <div className="space-y-2 py-2.5 px-0">{children}</div>
     </div>
   );
 }

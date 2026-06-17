@@ -85,6 +85,9 @@ export function normalizeRecord(raw: unknown): PatternRecord {
     id: str(r.id),
     screenshotId: str(r.screenshotId),
     imageDataUrl: str(r.imageDataUrl),
+    extraImages: Array.isArray(r.extraImages)
+      ? r.extraImages.filter((url): url is string => typeof url === "string" && url.length > 0)
+      : undefined,
     imageFileID: typeof r.imageFileID === "string" ? r.imageFileID : undefined,
     rawNote: str(r.rawNote),
     sourceUrl: typeof r.sourceUrl === "string" ? r.sourceUrl : undefined,

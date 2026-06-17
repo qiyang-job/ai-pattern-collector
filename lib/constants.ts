@@ -354,6 +354,10 @@ export const REUSE_LEVEL_OPTIONS: ReadonlyArray<TaxonomyOption<ReuseLevel>> =
     description: REUSE_LEVEL_DESCRIPTIONS[value],
   }));
 
+/** 五个分类维度的总览说明（模式分析区标题旁 Info 提示） */
+export const CLASSIFICATION_DIMENSIONS_OVERVIEW_HINT =
+  "五个分类维度各有分工：产品形态 = 这是什么 AI 产品 · 旅程阶段 = 任务流程中的哪一步 · 截图状态 = 截图那一刻 UI 的操作态 · 模式分类 = 模式解决哪类设计问题 · 复用价值 = 是否值得复用。";
+
 /** UI helper text：放在 Classification 各字段下方，帮助用户区分五个分类维度 */
 export const TAXONOMY_FIELD_HINTS = {
   productCategory: "产品形态：这是什么形态的 AI 产品（与单张截图无关）。",
