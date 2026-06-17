@@ -180,7 +180,7 @@ function RecordDrawerContent({
             <img
               src={draft.imageDataUrl}
               alt={draft.screenshotId}
-              className="max-h-48 w-full rounded-[var(--radius-md)] border border-[var(--border)] object-contain"
+              className="max-h-48 w-full rounded-[var(--radius-md)] object-contain"
             />
             <div className="mt-2 space-y-2">
               <Field label="原始备注 Raw Note" compact>

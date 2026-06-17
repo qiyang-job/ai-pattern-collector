@@ -69,7 +69,7 @@ export function Panel({
     <section
       id={id}
       className={cn(
-        "panel rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--panel)]",
+        "panel rounded-[var(--radius-lg)] bg-[var(--panel)]",
         !noPadding && "p-[var(--page-gutter)]",
         className,
       )}
@@ -89,7 +89,7 @@ export function PanelHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="panel-header mb-4 flex items-start justify-between gap-3 border-b border-[var(--border)] pb-3">
+    <div className="panel-header mb-4 flex items-start justify-between gap-3 pb-2">
       <div className="flex items-baseline gap-2.5">
         <h2 className="display-serif text-[16px] text-[var(--text)]">{title}</h2>
         {meta ? (
@@ -189,10 +189,10 @@ export function Field({
 }
 
 export const inputClass =
-  "focus-ring h-9 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 text-[13px] text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)]";
+  "focus-ring h-9 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 text-[13px] text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)] focus-visible:border-[var(--accent)]";
 
 export const textareaClass =
-  "focus-ring min-h-[52px] w-full resize-y rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1.5 text-[13px] leading-5 text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)]";
+  "focus-ring min-h-[52px] w-full resize-y rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1.5 text-[13px] leading-5 text-[var(--text)] transition placeholder:text-[var(--text-weak)] hover:border-[var(--border-strong)] focus-visible:border-[var(--accent)]";
 
 export const selectClass = cn(inputClass, "select-field h-9 cursor-pointer");
 
@@ -200,12 +200,12 @@ export type IdBadgeKind = "evidence" | "pattern" | "stage" | "lens";
 
 const ID_BADGE_STYLES: Record<IdBadgeKind, string> = {
   evidence:
-    "border-[var(--border-strong)] bg-[var(--panel-raised)] text-[var(--text-muted)]",
+    "bg-[var(--panel-raised)] text-[var(--text-muted)]",
   pattern:
-    "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] bg-[var(--accent-muted)] text-[var(--accent-strong)]",
+    "bg-[var(--accent-muted)] text-[var(--accent-strong)]",
   stage:
-    "border-[color-mix(in_srgb,var(--data)_35%,var(--border))] bg-[var(--data-muted)] text-[var(--data)]",
-  lens: "border-[var(--border)] bg-[var(--panel-muted)] text-[var(--text-muted)]",
+    "bg-[var(--data-muted)] text-[var(--data)]",
+  lens: "bg-[var(--panel-muted)] text-[var(--text-muted)]",
 };
 
 export function TypedIdBadge({
@@ -220,7 +220,7 @@ export function TypedIdBadge({
   return (
     <span
       className={cn(
-        "mono inline-flex items-center rounded-[var(--radius-sm)] border px-1.5 py-[2px] text-[11px] font-semibold tracking-tight",
+        "mono inline-flex items-center rounded-[var(--radius-sm)] px-1.5 py-[2px] text-[11px] font-semibold tracking-tight",
         ID_BADGE_STYLES[kind],
         className,
       )}
@@ -317,7 +317,7 @@ export function StatMetric({
   return (
     <div
       className={cn(
-        "stat-metric rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)]",
+        "stat-metric rounded-[var(--radius-md)] bg-[var(--panel-muted)]",
         compact ? "px-3 py-2" : "px-4 py-3",
       )}
     >
@@ -353,7 +353,7 @@ export function EvidenceThumbnail({
       src={src}
       alt={alt}
       className={cn(
-        "rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] object-cover",
+        "rounded-[var(--radius-sm)] bg-[var(--panel-muted)] object-cover",
         sizes[size],
         className,
       )}
@@ -373,7 +373,7 @@ export function SegmentedControl<T extends string | number>({
   compact?: boolean;
 }) {
   return (
-    <div className="inline-flex max-w-full gap-0.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] p-0.5">
+    <div className="inline-flex max-w-full gap-0.5 rounded-[var(--radius-md)] bg-[var(--panel-muted)] p-0.5">
       {options.map((opt) => (
         <button
           key={String(opt.value)}
@@ -426,7 +426,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-strong)] bg-[var(--panel-muted)] px-6 py-10 text-center">
+    <div className="rounded-[var(--radius-lg)] bg-[var(--panel-muted)] px-6 py-10 text-center">
       <h2 className="display-serif text-[16px] text-[var(--text)]">{title}</h2>
       <p className="mx-auto mt-2 max-w-md text-[12px] leading-5 text-[var(--text-muted)]">
         {description}
@@ -447,7 +447,7 @@ export function ErrorBanner({ message }: { message: string }) {
 
 export function LoadingState({ label = "加载中…" }: { label?: string }) {
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-[12px] text-[var(--text-muted)]">
+    <div className="rounded-[var(--radius-md)] bg-[var(--panel)] px-3 py-2 text-[12px] text-[var(--text-muted)]">
       {label}
     </div>
   );

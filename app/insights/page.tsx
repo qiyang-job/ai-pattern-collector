@@ -108,7 +108,7 @@ export default function InsightsPage() {
         }
       />
       <PageBody className="page-section-gap">
-        <Panel className="insight-readiness border-[var(--accent-muted)]">
+        <Panel className="insight-readiness">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>

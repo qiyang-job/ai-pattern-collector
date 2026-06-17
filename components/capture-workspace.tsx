@@ -150,7 +150,7 @@ function ExtractPanel({
         </ol>
       </div>
 
-      <div className="mt-4 border-t border-[var(--border)] pt-3">
+      <div className="mt-4 pt-3">
         <Button className="w-full sm:w-auto" onClick={onExtract} disabled={!canExtract}>
           用 AI 提炼模式
         </Button>
@@ -267,7 +267,7 @@ function ReviewPanel({
           </div>
         ) : null}
 
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
+        <div className="mt-3 flex items-center justify-between gap-2 pt-3">
           <Button variant="text" onClick={onReset}>
             清空
           </Button>

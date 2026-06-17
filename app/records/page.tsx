@@ -149,7 +149,7 @@ function RecordsView() {
             <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
           </div>
           {activeChips.length > 0 ? (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-[var(--border)] pt-2.5">
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2.5">
               <span className="mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-weak)]">
                 生效条件
               </span>

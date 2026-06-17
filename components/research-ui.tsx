@@ -143,20 +143,20 @@ export function WorkflowStep({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel)]",
+        "flex min-h-0 flex-col rounded-[var(--radius-md)] bg-[var(--panel)]",
         active && "ring-1 ring-[var(--accent-muted)]",
         className,
       )}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2">
+      <div className="flex shrink-0 items-center gap-2 bg-[var(--panel-muted)] px-3 py-2">
         <span
           className={cn(
-            "mono flex h-5 w-5 items-center justify-center rounded-[var(--radius-sm)] border text-[10px] font-semibold",
+            "mono flex h-5 w-5 items-center justify-center rounded-[var(--radius-sm)] text-[10px] font-semibold",
             done
-              ? "border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_16%,transparent)] text-[var(--success)]"
+              ? "bg-[color-mix(in_srgb,var(--success)_16%,transparent)] text-[var(--success)]"
               : active
-                ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
-                : "border-[var(--border)] bg-[var(--panel)] text-[var(--text-weak)]",
+                ? "bg-[var(--accent-muted)] text-[var(--accent)]"
+                : "bg-[var(--panel-muted)] text-[var(--text-weak)]",
           )}
         >
           {step}
@@ -201,7 +201,7 @@ export function EvidenceSlot({
 
   return (
     <div className="evidence-slot">
-      <div className="flex items-center justify-between border-b border-[var(--border)] px-2 py-1.5">
+      <div className="flex items-center justify-between px-2 py-1.5">
         <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
         <WorkflowStatusPill
           status={statusLabel}
@@ -243,7 +243,7 @@ export function EvidenceSlot({
           </button>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--panel-muted)] px-2 py-1 mono text-[10px] text-[var(--text-weak)]">
+      <div className="flex items-center justify-between bg-[var(--panel-muted)] px-2 py-1 mono text-[10px] text-[var(--text-weak)]">
         <span className="truncate">{meta}</span>
         <button type="button" className="shrink-0 text-[var(--accent)] hover:underline" onClick={onUploadClick}>
           上传
@@ -322,7 +322,7 @@ export function FormModule({
   return (
     <div className="form-module">
       <div className="form-module-header">
-        <span className="mono flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel)] text-[10px] font-bold text-[var(--accent)]">
+        <span className="mono flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[10px] font-bold text-[var(--accent)]">
           {letter}
         </span>
         <div className="min-w-0">

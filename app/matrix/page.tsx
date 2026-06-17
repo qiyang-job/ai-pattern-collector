@@ -49,13 +49,13 @@ export default function MatrixPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-[10px] text-[var(--text-muted)]">
-              <span className="rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] bg-[var(--accent-muted)] px-2 py-1 text-[var(--accent-strong)]">
+              <span className="rounded-[var(--radius-sm)] bg-[var(--accent-muted)] px-2 py-1 text-[var(--accent-strong)]">
                 核心阶段
               </span>
-              <span className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-1">
+              <span className="rounded-[var(--radius-sm)] bg-[var(--panel-muted)] px-2 py-1">
                 已有记录
               </span>
-              <span className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--panel)] px-2 py-1">
+              <span className="rounded-[var(--radius-sm)] bg-[var(--panel)] px-2 py-1">
                 待采样
               </span>
             </div>

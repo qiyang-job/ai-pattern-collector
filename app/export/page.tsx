@@ -223,7 +223,7 @@ export default function ExportPage() {
                 ref={fileInputRef}
                 type="file"
                 accept="application/json,.json"
-                className="block w-full text-[11px] text-[var(--text-muted)] file:mr-2 file:rounded-[var(--radius-sm)] file:border file:border-[var(--border)] file:bg-[var(--panel)] file:px-2 file:py-1 file:text-[11px] file:text-[var(--text)]"
+                className="block w-full text-[11px] text-[var(--text-muted)] file:mr-2 file:rounded-[var(--radius-sm)] file:bg-[var(--panel-muted)] file:px-2 file:py-1 file:text-[11px] file:text-[var(--text)]"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleImportFile(file);
@@ -237,7 +237,7 @@ export default function ExportPage() {
           ) : null}
 
           {importPreview && importSummary ? (
-            <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2">
+            <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--panel-muted)] px-3 py-2">
               <div className="text-[11px] font-medium text-[var(--text)]">
                 {importFileName || "已选择备份"}
               </div>

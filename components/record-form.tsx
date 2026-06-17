@@ -262,7 +262,7 @@ export function RecordForm({
               {LENS_DIMENSIONS.map((dim) => (
                 <div
                   key={dim.key}
-                  className="flex items-center justify-between gap-2 border-b border-[var(--border)] py-1 last:border-0"
+                  className="flex items-center justify-between gap-2 py-1"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <TypedIdBadge kind="lens">{dim.code}</TypedIdBadge>
@@ -290,7 +290,7 @@ export function RecordForm({
                 </div>
               ))}
             </div>
-            <div className="mt-2 border-t border-[var(--border)] pt-2">
+            <div className="mt-2 pt-2">
               {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS)}
             </div>
           </FormModule>
@@ -381,7 +381,7 @@ export function RecordForm({
             {LENS_DIMENSIONS.map((dim) => (
               <div
                 key={dim.key}
-                className="flex items-center justify-between gap-2 border-b border-[var(--border)] py-1 last:border-0"
+                className="flex items-center justify-between gap-2 py-1"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <TypedIdBadge kind="lens">{dim.code}</TypedIdBadge>
