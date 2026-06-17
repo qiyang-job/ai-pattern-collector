@@ -76,7 +76,11 @@ export default function InsightsPage() {
         lensScore: r.lensScore,
         tags: r.tags,
       }));
-      const payload = await callCloudFunction<InsightsResult>("ai-generate-insights", { records: summaries });
+      const rawPayload = await callCloudFunction<InsightsResult>("ai-generate-insights", { records: summaries });
+      // 解析 _serialized 字符串，防止 CloudBase 传输层丢弃空值属性
+      const payload = (rawPayload && typeof (rawPayload as Record<string, unknown>)._serialized === "string")
+        ? JSON.parse((rawPayload as Record<string, unknown>)._serialized as string)
+        : rawPayload;
       setInsights(payload);
       await saveLatestInsights(JSON.stringify(payload));
       toast.success("洞察报告已生成。");

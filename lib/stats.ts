@@ -4,7 +4,12 @@ import {
   PRODUCT_CATEGORIES,
 } from "@/lib/constants";
 import { average } from "@/lib/utils";
+import { normalizeLensScore } from "@/lib/normalize";
 import type { JourneyStage, PatternRecord, ProductCategory } from "@/lib/types";
+
+function lensValues(record: PatternRecord): number[] {
+  return Object.values(normalizeLensScore(record?.lensScore));
+}
 
 export function computeRecordStats(records: PatternRecord[]) {
   const products = Array.from(new Set(records.map((record) => record.product).filter(Boolean)));
@@ -12,7 +17,7 @@ export function computeRecordStats(records: PatternRecord[]) {
     new Set(records.map((record) => record.productCategory)),
   );
   const averageLensScore = average(
-    records.flatMap((record) => Object.values(record.lensScore)),
+    records.flatMap((record) => lensValues(record)),
   );
 
   return {
@@ -43,7 +48,9 @@ export function computeRecordStats(records: PatternRecord[]) {
           stage,
           category,
           count: cellRecords.length,
-          averageReusability: average(cellRecords.map((record) => record.lensScore.reusability)),
+          averageReusability: average(
+            cellRecords.map((record) => normalizeLensScore(record?.lensScore).reusability),
+          ),
         };
       }),
     ),
@@ -61,7 +68,7 @@ export function getMatrixCellRecords(
 }
 
 export function averageLensForRecords(records: PatternRecord[]) {
-  return average(records.flatMap((record) => Object.values(record.lensScore)));
+  return average(records.flatMap((record) => lensValues(record)));
 }
 
 export function computeMatrixCoverage(records: PatternRecord[]) {

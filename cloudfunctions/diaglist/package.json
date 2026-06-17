@@ -1,0 +1,8 @@
+{
+  "name": "_diag-list",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.14.6"
+  }
+}

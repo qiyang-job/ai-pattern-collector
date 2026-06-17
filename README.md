@@ -18,6 +18,16 @@ npm run dev
 
 Open http://localhost:3000.
 
+## CloudBase Deployment
+
+- **Environment ID**: `patterncollector-d6e3o08821ba3ee`
+- **Region**: `ap-shanghai`
+- **Frontend URL**: https://patterncollector-d6e3o08821ba3ee-1313643153.tcloudbaseapp.com/
+- **Cloud Functions**:
+  - `ai-analyze-pattern` — 截图 AI 分析 (Node.js 18.15)
+  - `ai-generate-insights` — 洞察生成 (Node.js 18.15)
+- **Console**: https://tcb.cloud.tencent.com/dev?envId=patterncollector-d6e3o08821ba3ee#/overview
+
 ## Environment Variables
 
 The app calls AI only from server-side API routes. `AI_API_KEY` is never read by the frontend.

@@ -1,4 +1,5 @@
 import { getDb, ensureAuth, getApp } from "./cloudbase";
+import { normalizeRecord } from "./normalize";
 import type { PatternRecord } from "./types";
 
 // ── 类型 ──────────────────────────────────────────────
@@ -198,7 +199,7 @@ export async function getRecord(id: string): Promise<PatternRecord | null> {
     const res = await records().where({ id }).get();
     if (!res.data?.length) return null;
     const { _id, _openid, ...rest } = res.data[0];
-    const rec = rest as unknown as PatternRecord;
+    const rec = normalizeRecord(rest);
     const hydrated = await hydrateImageUrls([rec]);
     return hydrated[0] ?? rec;
   });
@@ -208,7 +209,7 @@ export async function listRecords(): Promise<PatternRecord[]> {
   return authed(async () => {
     // NoSQL 不支持 orderBy，在内存中排序
     const res = await records().limit(999).get();
-    const items = (res.data ?? []).map(({ _id, _openid, ...rest }) => rest as unknown as PatternRecord);
+    const items = (res.data ?? []).map(({ _id, _openid, ...rest }) => normalizeRecord(rest));
     const sorted = items.sort(
       (a, b) =>
         new Date(b.createdAt ?? 0).getTime() -

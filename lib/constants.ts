@@ -84,6 +84,69 @@ export const LENS_SCORE_LABELS = {
   3: "Excellent",
 } as const;
 
+// ─── 中文标签映射（内部值保持英文，UI 展示用中文） ───
+
+export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
+  "AI Chat": "AI 对话",
+  "AI Search": "AI 搜索",
+  "Agent Task": "智能体任务",
+  "AI Workspace": "AI 工作台",
+  "Coding Agent": "编码智能体",
+};
+
+export const JOURNEY_STAGE_LABELS: Record<JourneyStage, string> = {
+  "J-01 Entry": "入口",
+  "J-02 Intent Capture": "意图捕获",
+  "J-03 Context Building": "上下文构建",
+  "J-04 Planning": "规划",
+  "J-05 Execution": "执行",
+  "J-06 Feedback": "反馈",
+  "J-07 Verification": "验证",
+  "J-08 Refinement": "优化迭代",
+  "J-09 Handoff": "交接",
+};
+
+export const SCREENSHOT_STATE_LABELS: Record<ScreenshotState, string> = {
+  "Default": "默认",
+  "Input Assist": "输入辅助",
+  "Context Attach": "上下文附加",
+  "Plan Preview": "计划预览",
+  "Tool Call": "工具调用",
+  "Human Approval": "人工审批",
+  "Partial Result": "部分结果",
+  "Error Recovery": "错误恢复",
+  "Final Result": "最终结果",
+  "Follow-up": "追问跟进",
+  "Export / Handoff": "导出/交接",
+};
+
+export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
+  "Intent Input Patterns": "意图输入模式",
+  "Context Management Patterns": "上下文管理模式",
+  "Planning & Reasoning Patterns": "规划与推理模式",
+  "Execution Feedback Patterns": "执行反馈模式",
+  "Trust & Verification Patterns": "信任与验证模式",
+  "Output Handoff Patterns": "输出交接模式",
+};
+
+export const REUSE_LEVEL_LABELS: Record<ReuseLevel, string> = {
+  "High": "高",
+  "Medium": "中",
+  "Low": "低",
+};
+
+export const LENS_SCORE_LABELS_ZH = {
+  0: "不可见",
+  1: "较弱",
+  2: "可用",
+  3: "优秀",
+} as const;
+
+/** 根据英文内部值获取中文标签，找不到则原样返回 */
+export function labelOf(value: string, map: Record<string, string>): string {
+  return map[value] ?? value;
+}
+
 export const LENS_DIMENSIONS: Array<{
   key: keyof LensScore;
   code: string;

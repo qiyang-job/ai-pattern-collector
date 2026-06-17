@@ -160,13 +160,14 @@ button:disabled {
 }
 
 .table-scroll {
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-scroll > table {
   width: 100%;
-  min-width: 0;
-  table-layout: fixed;
+  min-width: max-content;
+  table-layout: auto;
 }
 
 .data-table th,

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getLatestInsights, importInsights } from "@/lib/db";
-import { PATTERN_CATEGORIES } from "@/lib/constants";
+import { PATTERN_CATEGORIES, PATTERN_CATEGORY_LABELS, labelOf } from "@/lib/constants";
 import {
   recordsToBackupJson,
   recordsToCsv,
@@ -308,7 +308,7 @@ export default function ExportPage() {
                 disabled={!hasData}
               >
                 {PATTERN_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>{labelOf(c, PATTERN_CATEGORY_LABELS)}</option>
                 ))}
               </select>
             </div>

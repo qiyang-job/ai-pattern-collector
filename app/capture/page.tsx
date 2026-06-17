@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useHydratedCaptureDraft } from "@/lib/capture-draft-store";
+import { useHydratedCaptureDraft, useCaptureDraftStore } from "@/lib/capture-draft-store";
 import { useRecordsStore } from "@/lib/records-store";
 import {
   CapturePipeline,
@@ -181,6 +181,7 @@ export default function CapturePage() {
     showReview,
     error,
     ensureIds,
+    generateIds,
     setImage,
     setRawNote,
     setSourceUrl,
@@ -332,13 +333,18 @@ export default function CapturePage() {
       const compressedImage = await compressImage(imageDataUrl);
       console.log(`[AI] 图片压缩: ${(imageDataUrl.length / 1024 / 1024).toFixed(1)}MB → ${(compressedImage.length / 1024 / 1024).toFixed(1)}MB`);
       
-      const payload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
+      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
         imageDataUrl: compressedImage,
         rawNote,
         product: analysis.product,
         sourceUrl,
         taskContext,
       });
+      
+      // 云函数通过 _serialized 字符串返回完整结果，防止 CloudBase 传输层丢弃空值属性
+      const payload = (rawPayload && typeof rawPayload._serialized === "string")
+        ? JSON.parse(rawPayload._serialized)
+        : rawPayload;
       
       console.log(`[AI] 云函数返回数据:`, JSON.stringify(payload).slice(0, 1000));
       console.log(`[AI] 云函数返回 keys:`, Object.keys(payload));
@@ -358,16 +364,22 @@ export default function CapturePage() {
   }
 
   async function save() {
-    if (!reservedIds || !canSave) return;
+    if (!canSave) return;
+    // 保存时才分配编号，避免预占但未保存导致编号跳跃
+    if (!reservedIds) {
+      await generateIds();
+    }
+    const ids = useCaptureDraftStore.getState().reservedIds;
+    if (!ids) return;
     const now = new Date().toISOString();
     await saveRecord({
       id: createBrowserId(),
-      screenshotId: reservedIds.screenshotId,
+      screenshotId: ids.screenshotId,
       imageDataUrl,
       rawNote,
       sourceUrl: sourceUrl || undefined,
       taskContext: taskContext || undefined,
-      patternId: reservedIds.patternId,
+      patternId: ids.patternId,
       ...analysis,
       createdAt: now,
       updatedAt: now,

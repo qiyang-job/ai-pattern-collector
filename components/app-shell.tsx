@@ -11,12 +11,16 @@ import {
   FileSearch,
   Grid3X3,
   Lightbulb,
+  Loader2,
+  LogOut,
 } from "lucide-react";
 import { Toaster } from "sonner";
 import { useRecordsStore } from "@/lib/records-store";
+import { useAuthStore } from "@/lib/auth-store";
 import { computeMatrixCoverage } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 import { CoverageBar } from "@/components/research-ui";
+import { LoginGate } from "@/components/login-gate";
 
 const navGroups = [
   {
@@ -48,10 +52,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isCaptureWorkbench = pathname === "/capture";
   const { records, loadRecords } = useRecordsStore();
+  const { status, email, init, signOut } = useAuthStore();
 
   useEffect(() => {
-    loadRecords();
-  }, [loadRecords]);
+    init();
+  }, [init]);
+
+  useEffect(() => {
+    if (status === "authed") loadRecords();
+  }, [status, loadRecords]);
 
   const products = useMemo(
     () => new Set(records.map((r) => r.product).filter(Boolean)).size,
@@ -62,6 +71,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [records],
   );
   const coverage = useMemo(() => computeMatrixCoverage(records), [records]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--text-muted)]">
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--accent)]" />
+      </div>
+    );
+  }
+
+  if (status === "guest") {
+    return (
+      <>
+        <LoginGate />
+        <Toaster
+          position="top-right"
+          richColors
+          expand={false}
+          visibleToasts={3}
+          closeButton={false}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="app-shell flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -143,6 +175,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SidebarStat label="矩阵格" value={`${coverage.filled}/${coverage.total}`} />
           </div>
           <CoverageBar percent={coverage.percent} />
+
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--border)] pt-3">
+            <div className="min-w-0 flex-1">
+              <div className="mono text-[9px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
+                账号
+              </div>
+              <div
+                className="truncate text-[11px] text-[var(--text-muted)]"
+                title={email ?? ""}
+              >
+                {email ?? "—"}
+              </div>
+            </div>
+            <button
+              onClick={() => signOut()}
+              title="登出"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-weak)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
+            >
+              <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
       </aside>
 

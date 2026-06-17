@@ -1,6 +1,7 @@
 "use client";
 
 import type { PatternAnalysisResult } from "@/lib/types";
+import { JOURNEY_STAGE_LABELS, PATTERN_CATEGORY_LABELS, PRODUCT_CATEGORY_LABELS, REUSE_LEVEL_LABELS, SCREENSHOT_STATE_LABELS, labelOf } from "@/lib/constants";
 import { journeyCode } from "@/lib/utils";
 import { Button, TypedIdBadge } from "@/components/ui";
 import { RecordForm } from "@/components/record-form";
@@ -314,10 +315,10 @@ function RecordPreview({
       <dl className="record-preview-meta mt-2 grid gap-1 text-[11px]">
         <PreviewRow label="证据" value={screenshotId} />
         <PreviewRow label="产品" value={analysis.product || "—"} />
-        <PreviewRow label="类型" value={analysis.productCategory || "—"} />
-        <PreviewRow label="阶段" value={journeyCode(analysis.journeyStage)} />
-        <PreviewRow label="分类" value={analysis.patternCategory || "—"} />
-        <PreviewRow label="复用" value={analysis.reuseLevel || "—"} />
+        <PreviewRow label="类型" value={labelOf(analysis.productCategory, PRODUCT_CATEGORY_LABELS) || "—"} />
+        <PreviewRow label="阶段" value={`${journeyCode(analysis.journeyStage)} ${labelOf(analysis.journeyStage, JOURNEY_STAGE_LABELS)}`} />
+        <PreviewRow label="分类" value={labelOf(analysis.patternCategory, PATTERN_CATEGORY_LABELS) || "—"} />
+        <PreviewRow label="复用" value={labelOf(analysis.reuseLevel, REUSE_LEVEL_LABELS) || "—"} />
       </dl>
 
       {saveBlockers.length > 0 && !nameMissing ? (

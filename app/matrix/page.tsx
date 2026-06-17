@@ -6,6 +6,8 @@ import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGES,
   PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
+  labelOf,
 } from "@/lib/constants";
 import { useRecordsStore } from "@/lib/records-store";
 import { computeMatrixCoverage, getMatrixCellRecords } from "@/lib/stats";
@@ -68,7 +70,7 @@ export default function MatrixPage() {
               <tr>
                 <th className="sticky left-0 z-10 w-32 bg-[var(--panel-muted)]">阶段</th>
                 {PRODUCT_CATEGORIES.map((cat) => (
-                  <th key={cat}>{cat}</th>
+                  <th key={cat}>{labelOf(cat, PRODUCT_CATEGORY_LABELS)}</th>
                 ))}
                 <th className="w-16">合计</th>
               </tr>
@@ -96,7 +98,7 @@ export default function MatrixPage() {
                     {PRODUCT_CATEGORIES.map((cat) => {
                       const cell = getMatrixCellRecords(records, cat, stage);
                       const products = [...new Set(cell.map((r) => r.product).filter(Boolean))];
-                      const avgReuse = average(cell.map((r) => r.lensScore.reusability));
+                      const avgReuse = average(cell.map((r) => r.lensScore?.reusability ?? 0));
                       const filled = cell.length > 0;
                       return (
                         <td
@@ -169,7 +171,7 @@ export default function MatrixPage() {
                     <td
                       key={cat}
                       className={cn(colTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]")}
-                      title={colTotal > 0 ? `查看 ${cat} 全部记录` : undefined}
+                      title={colTotal > 0 ? `查看 ${labelOf(cat, PRODUCT_CATEGORY_LABELS)} 全部记录` : undefined}
                       onClick={() =>
                         colTotal > 0 && router.push(recordsHref({ productCategory: cat }))
                       }

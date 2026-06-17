@@ -24,6 +24,7 @@ type CaptureDraftState = {
   showAdvanced: boolean;
   error: string;
   ensureIds: () => Promise<void>;
+  generateIds: () => Promise<void>;
   setImage: (dataUrl: string, meta: string) => void;
   setRawNote: (value: string) => void;
   setSourceUrl: (value: string) => void;
@@ -72,6 +73,11 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
   },
 
   async ensureIds() {
+    // 不再预分配编号，仅在保存时由 save() 调用 generateIds
+    return;
+  },
+
+  async generateIds() {
     if (get().reservedIds) return;
     try {
       set({ reservedIds: await reserveNextRecordIds(), error: "" });
@@ -132,18 +138,12 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
   },
 
   async resetDraft() {
-    try {
-      const reservedIds = await reserveNextRecordIds();
-      set({
-        reservedIds,
-        ...INITIAL_DRAFT,
-        analysis: { ...EMPTY_ANALYSIS },
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "编号生成失败",
-      });
-    }
+    // 不再预分配下一个编号，等下次保存时再分配
+    set({
+      reservedIds: null,
+      ...INITIAL_DRAFT,
+      analysis: { ...EMPTY_ANALYSIS },
+    });
   },
 }));
 

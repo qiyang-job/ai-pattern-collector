@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { JOURNEY_STAGE_LABELS, labelOf } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,16 +19,19 @@ export function average(values: number[]) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-export function averageLensScore(record: { lensScore: Record<string, number> }) {
-  return average(Object.values(record.lensScore));
+export function averageLensScore(record: { lensScore?: Record<string, number> | null }) {
+  const score = record?.lensScore;
+  if (!score || typeof score !== "object") return 0;
+  return average(Object.values(score).filter((v) => typeof v === "number"));
 }
 
-export function journeyCode(stage: string) {
+export function journeyCode(stage: string | null | undefined) {
+  if (typeof stage !== "string") return "—";
   return stage.match(/^J-\d+/)?.[0] ?? stage;
 }
 
 export function journeyName(stage: string) {
-  return stage.replace(/^J-\d+\s+/, "");
+  return labelOf(stage, JOURNEY_STAGE_LABELS);
 }
 
 export function downloadTextFile(filename: string, content: string, type: string) {

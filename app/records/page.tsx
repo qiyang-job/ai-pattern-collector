@@ -5,11 +5,17 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   CORE_JOURNEY_STAGES,
+  JOURNEY_STAGE_LABELS,
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
+  PATTERN_CATEGORY_LABELS,
   PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
   REUSE_LEVELS,
+  REUSE_LEVEL_LABELS,
+  SCREENSHOT_STATE_LABELS,
   SCREENSHOT_STATES,
+  labelOf,
 } from "@/lib/constants";
 import { useRecordsStore } from "@/lib/records-store";
 import type { PatternRecord } from "@/lib/types";
@@ -70,6 +76,13 @@ function RecordsView() {
     if (query.trim()) {
       chips.push({ key: "query", label: `“${query.trim()}”`, clear: () => setQuery("") });
     }
+    const chipLabelMaps: Record<keyof typeof filters, Record<string, string>> = {
+      productCategory: PRODUCT_CATEGORY_LABELS,
+      journeyStage: JOURNEY_STAGE_LABELS,
+      screenshotState: SCREENSHOT_STATE_LABELS,
+      patternCategory: PATTERN_CATEGORY_LABELS,
+      reuseLevel: REUSE_LEVEL_LABELS,
+    };
     const map: Array<[keyof typeof filters, string]> = [
       ["productCategory", filters.productCategory],
       ["journeyStage", filters.journeyStage],
@@ -78,7 +91,7 @@ function RecordsView() {
       ["reuseLevel", filters.reuseLevel],
     ];
     for (const [key, value] of map) {
-      if (value) chips.push({ key, label: value, clear: () => clearFilter(key) });
+      if (value) chips.push({ key, label: labelOf(value, chipLabelMaps[key]), clear: () => clearFilter(key) });
     }
     return chips;
   }, [filters, query]);
@@ -86,7 +99,8 @@ function RecordsView() {
   const filtered = useMemo(() => {
     const kw = query.trim().toLowerCase();
     return records.filter((r) => {
-      const text = [r.patternName, r.product, r.rawNote, r.designJudgment, r.tags.join(" ")]
+      const tags = Array.isArray(r.tags) ? r.tags : [];
+      const text = [r.patternName ?? "", r.product ?? "", r.rawNote ?? "", r.designJudgment ?? "", tags.join(" ")]
         .join(" ")
         .toLowerCase();
       return (
@@ -142,11 +156,11 @@ function RecordsView() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
-            <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
-            <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
-            <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
-            <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
+            <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} optionLabels={PRODUCT_CATEGORY_LABELS} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
+            <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} optionLabels={JOURNEY_STAGE_LABELS} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
+            <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} optionLabels={SCREENSHOT_STATE_LABELS} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
+            <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
+            <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
           </div>
           {activeChips.length > 0 ? (
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2.5">
@@ -200,13 +214,13 @@ function RecordsView() {
                         <TypedIdBadge kind="pattern" className="mt-0.5">{r.patternId}</TypedIdBadge>
                       </td>
                       <td className="text-[var(--text-muted)]">{r.product || "—"}</td>
-                      <td><CategoryTag label={r.productCategory} category={r.productCategory} /></td>
+                      <td><CategoryTag label={labelOf(r.productCategory, PRODUCT_CATEGORY_LABELS)} category={r.productCategory} /></td>
                       <td>
                         <span className={cn("text-[12px]", isCore ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]")}>
                           {journeyCode(r.journeyStage)}
                         </span>
                       </td>
-                      <td className="text-[12px] text-[var(--text-muted)]">{r.screenshotState}</td>
+                      <td className="text-[12px] text-[var(--text-muted)]">{labelOf(r.screenshotState, SCREENSHOT_STATE_LABELS)}</td>
                       <td><ReuseTag level={r.reuseLevel} /></td>
                       <td>
                         <span className="lens-meter" title={`平均 Lens ${averageLensScore(r).toFixed(1)} / 3`}>
@@ -220,7 +234,7 @@ function RecordsView() {
                         </span>
                       </td>
                       <td className="max-w-[120px] truncate text-[11px] text-[var(--text-muted)]">
-                        {r.tags.length ? r.tags.join(", ") : "—"}
+                        {(Array.isArray(r.tags) && r.tags.length) ? r.tags.join(", ") : "—"}
                       </td>
                       <td className="text-[11px] text-[var(--text-weak)]">{formatDate(r.updatedAt)}</td>
                     </tr>
@@ -257,11 +271,13 @@ function RecordsView() {
 function FilterSelect<T extends string>({
   value,
   options,
+  optionLabels,
   placeholder,
   onChange,
 }: {
   value: string;
   options: readonly T[];
+  optionLabels?: Record<string, string>;
   placeholder: string;
   onChange: (v: string) => void;
 }) {
@@ -269,7 +285,7 @@ function FilterSelect<T extends string>({
     <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">{placeholder}</option>
       {options.map((o) => (
-        <option key={o} value={o}>{o}</option>
+        <option key={o} value={o}>{optionLabels ? labelOf(o, optionLabels) : o}</option>
       ))}
     </select>
   );

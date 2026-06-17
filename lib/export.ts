@@ -20,8 +20,8 @@ export function recordToMarkdown(record: PatternRecord) {
     `- Failure Handling: ${record.failureHandling}`,
     `- Reuse Level: ${record.reuseLevel}`,
     `- Design Judgment: ${record.designJudgment}`,
-    `- Lens Score: ${JSON.stringify(record.lensScore)}`,
-    `- Tags: ${record.tags.join(", ")}`,
+    `- Lens Score: ${JSON.stringify(record.lensScore ?? {})}`,
+    `- Tags: ${(Array.isArray(record.tags) ? record.tags : []).join(", ")}`,
   ].join("\n");
 }
 
@@ -127,7 +127,7 @@ export function recordsToMarkdownReport(
     "## 6. Matrix Summary",
     ...JOURNEY_STAGES.map((stage) => {
       const stageRecords = records.filter((record) => record.journeyStage === stage);
-      const avg = average(stageRecords.map((record) => record.lensScore.reusability));
+      const avg = average(stageRecords.map((record) => record.lensScore?.reusability ?? 0));
       return `- ${stage}: ${stageRecords.length} patterns, avg reusability ${avg.toFixed(1)}`;
     }),
     "",

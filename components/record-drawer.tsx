@@ -96,13 +96,18 @@ function RecordDrawerContent({
       const compressedImage = await compressImage(draft.imageDataUrl);
       console.log(`[reanalyze] 图片压缩: ${(draft.imageDataUrl.length / 1024 / 1024).toFixed(1)}MB → ${(compressedImage.length / 1024 / 1024).toFixed(1)}MB`);
 
-      const payload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
+      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
         imageDataUrl: compressedImage,
         rawNote: draft.rawNote,
         product: draft.product,
         sourceUrl: draft.sourceUrl ?? "",
         taskContext: draft.taskContext ?? "",
       });
+
+      // 云函数通过 _serialized 字符串返回完整结果，防止 CloudBase 传输层丢弃空值属性
+      const payload = (rawPayload && typeof rawPayload._serialized === "string")
+        ? JSON.parse(rawPayload._serialized)
+        : rawPayload;
 
       // 防御性处理 AI 返回数据
       const sanitized = sanitizePayload(payload);

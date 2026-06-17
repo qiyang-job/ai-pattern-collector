@@ -4,12 +4,19 @@ import type { ReactNode } from "react";
 import type { PatternAnalysisResult, LensScoreValue } from "@/lib/types";
 import {
   JOURNEY_STAGES,
+  JOURNEY_STAGE_LABELS,
   LENS_DIMENSIONS,
+  LENS_SCORE_LABELS_ZH,
   LENS_SCORE_VALUES,
   PATTERN_CATEGORIES,
+  PATTERN_CATEGORY_LABELS,
   PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
   REUSE_LEVELS,
+  REUSE_LEVEL_LABELS,
   SCREENSHOT_STATES,
+  SCREENSHOT_STATE_LABELS,
+  labelOf,
 } from "@/lib/constants";
 import {
   DualLabel,
@@ -86,12 +93,14 @@ export function RecordForm({
     en: string,
     options: readonly T[],
     hint?: string,
+    optionLabels?: Record<string, string>,
   ) => (
     <div>
       <SelectField
         label={<DualLabel zh={zh} en={en} />}
         value={value[key] as T}
         options={options}
+        optionLabels={optionLabels}
         onChange={(v) => update(key, v as PatternAnalysisResult[typeof key])}
       />
       {hint ? <p className="field-hint">{hint}</p> : null}
@@ -121,6 +130,7 @@ export function RecordForm({
                 "Product Category",
                 PRODUCT_CATEGORIES,
                 "这张图来自哪类 AI 产品？",
+                PRODUCT_CATEGORY_LABELS,
               )}
               {selectField(
                 "journeyStage",
@@ -128,14 +138,16 @@ export function RecordForm({
                 "Journey Stage",
                 JOURNEY_STAGES,
                 "这张截图发生在用户使用 AI 产品的哪个阶段？",
+                JOURNEY_STAGE_LABELS,
               )}
-              {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES)}
+              {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, undefined, SCREENSHOT_STATE_LABELS)}
               {selectField(
                 "patternCategory",
                 "模式分类",
                 "Pattern Category",
                 PATTERN_CATEGORIES,
                 "这个模式最终会进入哪类模式库？",
+                PATTERN_CATEGORY_LABELS,
               )}
             </div>
           </FormModule>
@@ -256,7 +268,7 @@ export function RecordForm({
             description="用统一分析维度评估模式价值。"
           >
             <p className="lens-legend">
-              0 Not visible · 1 Weak · 2 Usable · 3 Excellent
+              0 {LENS_SCORE_LABELS_ZH[0]} · 1 {LENS_SCORE_LABELS_ZH[1]} · 2 {LENS_SCORE_LABELS_ZH[2]} · 3 {LENS_SCORE_LABELS_ZH[3]}
             </p>
             <div className="space-y-1">
               {LENS_DIMENSIONS.map((dim) => (
@@ -266,8 +278,8 @@ export function RecordForm({
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <TypedIdBadge kind="lens">{dim.code}</TypedIdBadge>
-                    <span className="truncate text-[11px] text-[var(--text-muted)]">
-                      {dim.label}
+                    <span className="truncate text-[11px] text-[var(--text-muted)]" title={dim.label}>
+                      {dim.description}
                     </span>
                   </div>
                   <SegmentedControl
@@ -291,7 +303,7 @@ export function RecordForm({
               ))}
             </div>
             <div className="mt-2 pt-2">
-              {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS)}
+              {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, undefined, REUSE_LEVEL_LABELS)}
             </div>
           </FormModule>
         ) : null}
@@ -304,11 +316,11 @@ export function RecordForm({
       {show("A") ? (
         <FormModule letter="A" title="分类归位 · Classification">
           <div className="grid gap-2 sm:grid-cols-2">
-            {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES)}
-            {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES)}
-            {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES)}
-            {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES)}
-            {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS)}
+            {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, undefined, PRODUCT_CATEGORY_LABELS)}
+            {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, undefined, JOURNEY_STAGE_LABELS)}
+            {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, undefined, SCREENSHOT_STATE_LABELS)}
+            {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES, undefined, PATTERN_CATEGORY_LABELS)}
+            {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, undefined, REUSE_LEVEL_LABELS)}
           </div>
         </FormModule>
       ) : null}
@@ -422,11 +434,13 @@ function SelectField<T extends string>({
   label,
   value,
   options,
+  optionLabels,
   onChange,
 }: {
   label: ReactNode;
   value: T;
   options: readonly T[];
+  optionLabels?: Record<string, string>;
   onChange: (value: T) => void;
 }) {
   return (
@@ -434,7 +448,7 @@ function SelectField<T extends string>({
       <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt}
+            {optionLabels ? labelOf(opt, optionLabels) : opt}
           </option>
         ))}
       </select>

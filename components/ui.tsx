@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PatternCategory, ProductCategory, ReuseLevel } from "@/lib/types";
+import { REUSE_LEVEL_LABELS, labelOf } from "@/lib/constants";
 import {
   PATTERN_CATEGORY_COLORS,
   PRODUCT_CATEGORY_COLORS,
@@ -244,16 +245,14 @@ export function CategoryTag({
   category?: ProductCategory | PatternCategory;
   reuseLevel?: ReuseLevel;
 }) {
-  let style = { bg: "var(--panel-muted)", text: "var(--text-muted)" };
+  const fallback = { bg: "var(--panel-muted)", text: "var(--text-muted)" };
+  let style = fallback;
   if (category && category in PRODUCT_CATEGORY_COLORS) {
-    const c = PRODUCT_CATEGORY_COLORS[category as ProductCategory];
-    style = { bg: c.bg, text: c.text };
+    style = PRODUCT_CATEGORY_COLORS[category as ProductCategory] ?? fallback;
   } else if (category && category in PATTERN_CATEGORY_COLORS) {
-    const c = PATTERN_CATEGORY_COLORS[category as PatternCategory];
-    style = { bg: c.bg, text: c.text };
-  } else if (reuseLevel) {
-    const c = REUSE_LEVEL_COLORS[reuseLevel];
-    style = { bg: c.bg, text: c.text };
+    style = PATTERN_CATEGORY_COLORS[category as PatternCategory] ?? fallback;
+  } else if (reuseLevel && reuseLevel in REUSE_LEVEL_COLORS) {
+    style = REUSE_LEVEL_COLORS[reuseLevel] ?? fallback;
   }
 
   return (
@@ -267,14 +266,18 @@ export function CategoryTag({
   );
 }
 
-export function ReuseTag({ level }: { level: ReuseLevel }) {
-  const c = REUSE_LEVEL_COLORS[level];
+export function ReuseTag({ level }: { level?: ReuseLevel | null }) {
+  const c =
+    (level && REUSE_LEVEL_COLORS[level]) ?? {
+      bg: "var(--panel-muted)",
+      text: "var(--text-muted)",
+    };
   return (
     <span
       className="inline-flex rounded-[var(--radius-sm)] px-1.5 py-px text-[11px] font-medium"
       style={{ background: c.bg, color: c.text }}
     >
-      {level}
+      {level ? labelOf(level, REUSE_LEVEL_LABELS) : "—"}
     </span>
   );
 }

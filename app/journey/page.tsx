@@ -5,7 +5,9 @@ import Link from "next/link";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGE_DESCRIPTIONS,
+  JOURNEY_STAGE_LABELS,
   JOURNEY_STAGES,
+  labelOf,
 } from "@/lib/constants";
 import { useRecordsStore } from "@/lib/records-store";
 import { averageLensForRecords } from "@/lib/stats";
@@ -93,7 +95,7 @@ export default function JourneyPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="max-w-lg">
               <div className="flex items-center gap-2">
-                <TypedIdBadge kind="stage">{activeStage}</TypedIdBadge>
+                <TypedIdBadge kind="stage">{journeyCode(activeStage)} {labelOf(activeStage, JOURNEY_STAGE_LABELS)}</TypedIdBadge>
                 {CORE_JOURNEY_STAGES.some((s) => s === activeStage) ? <CoreBandLabel /> : null}
               </div>
               <p className="mt-1.5 text-[12px] leading-5 text-[var(--text-muted)]">
