@@ -317,6 +317,7 @@ function RecordPreview({
         <PreviewRow label="产品" value={analysis.product || "—"} />
         <PreviewRow label="类型" value={labelOf(analysis.productCategory, PRODUCT_CATEGORY_LABELS) || "—"} />
         <PreviewRow label="阶段" value={`${journeyCode(analysis.journeyStage)} ${labelOf(analysis.journeyStage, JOURNEY_STAGE_LABELS)}`} />
+        <PreviewRow label="状态" value={screenshotStateText(analysis)} />
         <PreviewRow label="分类" value={labelOf(analysis.patternCategory, PATTERN_CATEGORY_LABELS) || "—"} />
         <PreviewRow label="复用" value={labelOf(analysis.reuseLevel, REUSE_LEVEL_LABELS) || "—"} />
       </dl>
@@ -328,6 +329,15 @@ function RecordPreview({
       ) : null}
     </div>
   );
+}
+
+function screenshotStateText(analysis: PatternAnalysisResult): string {
+  const primary = labelOf(analysis.screenshotState, SCREENSHOT_STATE_LABELS) || "—";
+  const secondary = Array.isArray(analysis.secondaryScreenshotStates)
+    ? analysis.secondaryScreenshotStates
+    : [];
+  if (secondary.length === 0) return primary;
+  return `${primary} + ${secondary.map((s) => labelOf(s, SCREENSHOT_STATE_LABELS)).join("、")}`;
 }
 
 function PreviewRow({ label, value }: { label: string; value: string }) {

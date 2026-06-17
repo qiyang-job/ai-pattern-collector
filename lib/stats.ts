@@ -2,6 +2,7 @@ import {
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
   PRODUCT_CATEGORIES,
+  SCREENSHOT_STATES,
 } from "@/lib/constants";
 import { average } from "@/lib/utils";
 import { normalizeLensScore } from "@/lib/normalize";
@@ -41,6 +42,21 @@ export function computeRecordStats(records: PatternRecord[]) {
       category,
       count: records.filter((record) => record.patternCategory === category).length,
     })),
+    // 截图状态分布：主状态计数（次要状态另计），用于 Insights 的界面状态密度与缺失分析
+    screenshotStateCounts: SCREENSHOT_STATES.map((state) => ({
+      state,
+      count: records.filter((record) => record.screenshotState === state).length,
+      secondaryCount: records.filter((record) =>
+        Array.isArray(record.secondaryScreenshotStates) &&
+        record.secondaryScreenshotStates.includes(state),
+      ).length,
+    })),
+    // 尚未被任何记录（主状态）覆盖的界面状态，提示补采方向（排除 Unknown）
+    missingStates: SCREENSHOT_STATES.filter(
+      (state) =>
+        state !== "Unknown" &&
+        !records.some((record) => record.screenshotState === state),
+    ),
     heatmap: JOURNEY_STAGES.flatMap((stage) =>
       PRODUCT_CATEGORIES.map((category) => {
         const cellRecords = getMatrixCellRecords(records, category, stage);

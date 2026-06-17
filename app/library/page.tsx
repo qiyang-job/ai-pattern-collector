@@ -37,7 +37,7 @@ export default function LibraryPage() {
     <PageFrame>
       <PageHeader
         title="模式库"
-        description="模式图谱 — 六大设计模式分类。"
+        description="模式图谱 — 八大设计模式分类。"
         stats={<StatMetric label="模式总数" value={records.length} compact />}
       />
       <PageBody className="page-section-gap">

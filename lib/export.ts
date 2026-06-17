@@ -1,4 +1,4 @@
-import { JOURNEY_STAGES, PATTERN_CATEGORIES, PRODUCT_CATEGORIES } from "@/lib/constants";
+import { JOURNEY_STAGES, PATTERN_CATEGORIES, PRODUCT_CATEGORIES, SCREENSHOT_STATES } from "@/lib/constants";
 import { average } from "@/lib/utils";
 import type { InsightsResult, PatternRecord } from "@/lib/types";
 
@@ -10,6 +10,8 @@ export function recordToMarkdown(record: PatternRecord) {
     `- Product Category: ${record.productCategory}`,
     `- Journey Stage: ${record.journeyStage}`,
     `- Screenshot State: ${record.screenshotState}`,
+    `- Secondary Screenshot States: ${(Array.isArray(record.secondaryScreenshotStates) ? record.secondaryScreenshotStates : []).join(", ") || "—"}`,
+    `- Screenshot State Reason: ${record.screenshotStateReason || "—"}`,
     `- Pattern Category: ${record.patternCategory}`,
     `- User Problem: ${record.userProblem}`,
     `- AI Capability: ${record.aiCapability}`,
@@ -58,6 +60,8 @@ export function recordsToCsv(records: PatternRecord[]) {
     "productCategory",
     "journeyStage",
     "screenshotState",
+    "secondaryScreenshotStates",
+    "screenshotStateReason",
     "patternName",
     "patternCategory",
     "reuseLevel",
@@ -74,6 +78,8 @@ export function recordsToCsv(records: PatternRecord[]) {
       record.productCategory,
       record.journeyStage,
       record.screenshotState,
+      (Array.isArray(record.secondaryScreenshotStates) ? record.secondaryScreenshotStates : []).join("; "),
+      record.screenshotStateReason ?? "",
       record.patternName,
       record.patternCategory,
       record.reuseLevel,
@@ -113,39 +119,59 @@ export function recordsToMarkdownReport(
       (stage) => `- ${stage}: ${records.filter((record) => record.journeyStage === stage).length}`,
     ),
     "",
-    "## 4. Pattern Summary",
+    "## 4. Screenshot State Distribution",
+    ...SCREENSHOT_STATES.map((state) => {
+      const primary = records.filter((record) => record.screenshotState === state).length;
+      const secondary = records.filter(
+        (record) =>
+          Array.isArray(record.secondaryScreenshotStates) &&
+          record.secondaryScreenshotStates.includes(state),
+      ).length;
+      return `- ${state}: ${primary} primary, ${secondary} secondary`;
+    }),
+    `- Missing states: ${
+      SCREENSHOT_STATES.filter(
+        (state) =>
+          state !== "Unknown" && !records.some((record) => record.screenshotState === state),
+      ).join(", ") || "None"
+    }`,
+    "",
+    "## 5. Pattern Summary",
     ...PATTERN_CATEGORIES.map(
       (category) =>
         `- ${category}: ${records.filter((record) => record.patternCategory === category).length}`,
     ),
     "",
-    "## 5. High-value Patterns",
+    "## 6. High-value Patterns",
     ...(highValue.length
       ? highValue.map((record) => `- ${record.patternId} ${record.patternName}`)
       : ["- N/A"]),
     "",
-    "## 6. Matrix Summary",
+    "## 7. Matrix Summary",
     ...JOURNEY_STAGES.map((stage) => {
       const stageRecords = records.filter((record) => record.journeyStage === stage);
       const avg = average(stageRecords.map((record) => record.lensScore?.reusability ?? 0));
       return `- ${stage}: ${stageRecords.length} patterns, avg reusability ${avg.toFixed(1)}`;
     }),
     "",
-    "## 7. Key Insights",
+    "## 8. Key Insights",
     insights
       ? insights.researchScope
       : "No AI-generated insights yet. Use the Insights page to generate a research narrative.",
     insights ? insights.productCoverage : "",
     insights ? insights.journeyCoverage : "",
+    insights ? insights.screenshotStateDistribution : "",
+    insights ? insights.patternCategoryDistribution : "",
     insights ? insights.highValuePatterns : "",
     insights ? insights.crossProductComparison : "",
     insights ? insights.stageMaturity : "",
+    insights ? insights.missingStates : "",
     insights ? insights.designOpportunities : "",
     "",
-    "## 8. Design Recommendations",
+    "## 9. Design Recommendations",
     insights?.recommendations || "No AI recommendations generated yet.",
     "",
-    "## 9. Pattern Records",
+    "## 10. Pattern Records",
     records.map(recordToMarkdown).join("\n\n---\n\n") || "No records.",
   ]
     .filter((line) => line !== "")

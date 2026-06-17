@@ -12,7 +12,7 @@ import type {
 export const PRODUCT_CATEGORIES = [
   "AI Chat",
   "AI Search",
-  "Agent Task",
+  "AI Agent",
   "AI Workspace",
   "Coding Agent",
 ] as const satisfies readonly ProductCategory[];
@@ -38,17 +38,20 @@ export const CORE_JOURNEY_STAGES = [
 ] as const satisfies readonly JourneyStage[];
 
 export const SCREENSHOT_STATES = [
-  "Default",
-  "Input Assist",
-  "Context Attach",
-  "Plan Preview",
-  "Tool Call",
-  "Human Approval",
-  "Partial Result",
-  "Error Recovery",
-  "Final Result",
-  "Follow-up",
-  "Export / Handoff",
+  "Idle",
+  "Inputting",
+  "Context Ready",
+  "Thinking",
+  "Planning Ready",
+  "Running",
+  "Waiting Approval",
+  "Streaming",
+  "Reviewing",
+  "Error",
+  "Completed",
+  "Follow-up Ready",
+  "Export Ready",
+  "Unknown",
 ] as const satisfies readonly ScreenshotState[];
 
 export const PATTERN_CATEGORIES = [
@@ -57,7 +60,9 @@ export const PATTERN_CATEGORIES = [
   "Planning & Reasoning Patterns",
   "Execution Feedback Patterns",
   "Trust & Verification Patterns",
+  "Refinement Patterns",
   "Output Handoff Patterns",
+  "Failure Recovery Patterns",
 ] as const satisfies readonly PatternCategory[];
 
 export const PATTERN_CATEGORY_DESCRIPTIONS: Record<PatternCategory, string> = {
@@ -66,7 +71,9 @@ export const PATTERN_CATEGORY_DESCRIPTIONS: Record<PatternCategory, string> = {
   "Planning & Reasoning Patterns": "AI 如何在执行前暴露计划、步骤与推理过程。",
   "Execution Feedback Patterns": "进度、中间结果与状态如何被持续反馈。",
   "Trust & Verification Patterns": "信任、确认与验证机制如何被设计。",
+  "Refinement Patterns": "用户如何基于结果继续追问、修改、重试与细化迭代。",
   "Output Handoff Patterns": "结果如何被打包以便复用、导出或交接。",
+  "Failure Recovery Patterns": "出错、超时或能力边界时，如何解释、兜底与恢复。",
 };
 
 export const REUSE_LEVELS = [
@@ -89,9 +96,18 @@ export const LENS_SCORE_LABELS = {
 export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
   "AI Chat": "AI 对话",
   "AI Search": "AI 搜索",
-  "Agent Task": "智能体任务",
+  "AI Agent": "AI 智能体",
   "AI Workspace": "AI 工作台",
   "Coding Agent": "编码智能体",
+};
+
+/** Product Category 描述：以产品整体交互范式为准，而非单张截图的界面状态 */
+export const PRODUCT_CATEGORY_DESCRIPTIONS: Record<ProductCategory, string> = {
+  "AI Chat": "以多轮对话为主交互的通用助手（如 ChatGPT、Claude、Gemini 对话）。",
+  "AI Search": "以检索 + 答案生成为核心的产品（如 Perplexity、AI 搜索结果页）。",
+  "AI Agent": "可自主规划、调用工具并执行多步任务的智能体产品（原 Agent Task）。",
+  "AI Workspace": "围绕文档/画布/表格等工作产物协作的 AI 工作台（如 Notion AI、Canvas）。",
+  "Coding Agent": "面向代码库的编程智能体（如 Cursor、Copilot、Windsurf）。",
 };
 
 export const JOURNEY_STAGE_LABELS: Record<JourneyStage, string> = {
@@ -106,18 +122,46 @@ export const JOURNEY_STAGE_LABELS: Record<JourneyStage, string> = {
   "J-09 Handoff": "交接",
 };
 
+/**
+ * Screenshot State 中文标签映射
+ * 截图界面当前所处的动态操作状态
+ */
 export const SCREENSHOT_STATE_LABELS: Record<ScreenshotState, string> = {
-  "Default": "默认",
-  "Input Assist": "输入辅助",
-  "Context Attach": "上下文附加",
-  "Plan Preview": "计划预览",
-  "Tool Call": "工具调用",
-  "Human Approval": "人工审批",
-  "Partial Result": "部分结果",
-  "Error Recovery": "错误恢复",
-  "Final Result": "最终结果",
-  "Follow-up": "追问跟进",
-  "Export / Handoff": "导出/交接",
+  Idle: "空闲",
+  Inputting: "正在输入",
+  "Context Ready": "上下文就绪",
+  Thinking: "思考处理中",
+  "Planning Ready": "计划已生成",
+  Running: "执行中",
+  "Waiting Approval": "等待确认",
+  Streaming: "流式生成中",
+  Reviewing: "审阅验证中",
+  Error: "错误阻断",
+  Completed: "已完成",
+  "Follow-up Ready": "可继续追问",
+  "Export Ready": "可导出交接",
+  Unknown: "未知",
+};
+
+/**
+ * Screenshot State 描述 + 判定线索
+ * 用于 UI helper text 与 AI prompt：描述截图那一刻 UI 处于什么操作态。
+ */
+export const SCREENSHOT_STATE_DESCRIPTIONS: Record<ScreenshotState, string> = {
+  Idle: "界面空闲、等待用户开始，无输入内容与进行中任务（空对话框、欢迎页、建议提示）。",
+  Inputting: "用户正在输入或编辑指令（输入框聚焦、有草稿文本、附件选择中）。",
+  "Context Ready": "上下文已附加并就绪、尚未开始处理（已附文件/已选范围/已加引用）。",
+  Thinking: "AI 已接收请求、正在思考但尚未产出可见内容（thinking、转圈、reasoning 折叠）。",
+  "Planning Ready": "AI 已生成计划/步骤/待办，等待用户查看或确认（plan 列表、TODO、diff 预览）。",
+  Running: "AI 正在执行工具调用或多步任务（terminal 运行、tool call、进度条、step 推进）。",
+  "Waiting Approval": "执行被暂停、等待用户批准或授权（确认弹窗、Allow/Run 按钮、权限请求）。",
+  Streaming: "答案正在逐字流式输出中（光标闪烁、文本增量出现、Stop 按钮）。",
+  Reviewing: "结果已产出、用户/系统正在审阅校验（diff 审查、引用核对、对比视图）。",
+  Error: "出现错误、超时或被阻断（报错信息、失败态、红色提示、重试按钮）。",
+  Completed: "任务已完成、结果稳定呈现（完整答案、成功态、无进行中指示）。",
+  "Follow-up Ready": "结果已给出并引导继续追问/下一步（追问建议、相关问题、继续按钮）。",
+  "Export Ready": "结果可被复制/导出/交接（导出菜单、分享、下载、复制代码块）。",
+  Unknown: "无法从截图中明确判断界面状态时使用（仅作兜底，应尽量避免）。",
 };
 
 export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
@@ -126,13 +170,22 @@ export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
   "Planning & Reasoning Patterns": "规划与推理模式",
   "Execution Feedback Patterns": "执行反馈模式",
   "Trust & Verification Patterns": "信任与验证模式",
+  "Refinement Patterns": "优化迭代模式",
   "Output Handoff Patterns": "输出交接模式",
+  "Failure Recovery Patterns": "失败恢复模式",
 };
 
 export const REUSE_LEVEL_LABELS: Record<ReuseLevel, string> = {
   "High": "高",
   "Medium": "中",
   "Low": "低",
+};
+
+/** Reuse Level 描述：该模式是否值得复用到其他 AI 产品 */
+export const REUSE_LEVEL_DESCRIPTIONS: Record<ReuseLevel, string> = {
+  High: "通用且高价值，强烈建议作为可复用模式沉淀到其他 AI 产品。",
+  Medium: "在特定场景下有条件复用，需结合产品形态与上下文调整。",
+  Low: "场景高度特化或属反面案例，参考价值有限，谨慎复用。",
 };
 
 export const LENS_SCORE_LABELS_ZH = {
@@ -230,7 +283,9 @@ export const EMPTY_ANALYSIS: PatternAnalysisResult = {
   product: "",
   productCategory: "AI Chat",
   journeyStage: "J-01 Entry",
-  screenshotState: "Default",
+  screenshotState: "Idle",
+  secondaryScreenshotStates: [],
+  screenshotStateReason: "",
   patternName: "",
   patternCategory: "Intent Input Patterns",
   userProblem: "",
@@ -245,3 +300,130 @@ export const EMPTY_ANALYSIS: PatternAnalysisResult = {
   lensScore: EMPTY_LENS_SCORE,
   tags: [],
 };
+
+// ─────────────────────────────────────────────────────────────
+// 集中分类选项（value / label / description）
+//
+// 这是所有分类下拉/筛选/表单的唯一数据源，避免在多个文件重复定义。
+// 五个核心字段职责区分：
+//   Product Category  = 产品形态（这是什么形态的 AI 产品）
+//   Journey Stage     = 用户路径（任务流程中的哪个步骤，宏观纵向）
+//   Screenshot State  = 界面状态（截图那一刻 UI 处于什么操作态，微观）
+//   Pattern Category  = 模式库分类（提炼出的模式解决哪一类设计问题）
+//   Reuse Level       = 复用价值（是否值得复用到其他 AI 产品）
+// ─────────────────────────────────────────────────────────────
+
+export type TaxonomyOption<T extends string> = {
+  value: T;
+  label: string;
+  description: string;
+};
+
+export const PRODUCT_CATEGORY_OPTIONS: ReadonlyArray<TaxonomyOption<ProductCategory>> =
+  PRODUCT_CATEGORIES.map((value) => ({
+    value,
+    label: PRODUCT_CATEGORY_LABELS[value],
+    description: PRODUCT_CATEGORY_DESCRIPTIONS[value],
+  }));
+
+export const JOURNEY_STAGE_OPTIONS: ReadonlyArray<TaxonomyOption<JourneyStage>> =
+  JOURNEY_STAGES.map((value) => ({
+    value,
+    label: JOURNEY_STAGE_LABELS[value],
+    description: JOURNEY_STAGE_DESCRIPTIONS[value],
+  }));
+
+export const SCREENSHOT_STATE_OPTIONS: ReadonlyArray<TaxonomyOption<ScreenshotState>> =
+  SCREENSHOT_STATES.map((value) => ({
+    value,
+    label: SCREENSHOT_STATE_LABELS[value],
+    description: SCREENSHOT_STATE_DESCRIPTIONS[value],
+  }));
+
+export const PATTERN_CATEGORY_OPTIONS: ReadonlyArray<TaxonomyOption<PatternCategory>> =
+  PATTERN_CATEGORIES.map((value) => ({
+    value,
+    label: PATTERN_CATEGORY_LABELS[value],
+    description: PATTERN_CATEGORY_DESCRIPTIONS[value],
+  }));
+
+export const REUSE_LEVEL_OPTIONS: ReadonlyArray<TaxonomyOption<ReuseLevel>> =
+  REUSE_LEVELS.map((value) => ({
+    value,
+    label: REUSE_LEVEL_LABELS[value],
+    description: REUSE_LEVEL_DESCRIPTIONS[value],
+  }));
+
+/** UI helper text：放在 Classification 各字段下方，帮助用户区分五个分类维度 */
+export const TAXONOMY_FIELD_HINTS = {
+  productCategory: "产品形态：这是什么形态的 AI 产品（与单张截图无关）。",
+  journeyStage: "用户路径：任务流程中的哪个步骤（宏观纵向阶段）。",
+  screenshotState: "界面状态：截图那一刻 UI 处于什么操作态（微观瞬时）。",
+  secondaryScreenshotStates: "次要界面状态：同一截图同时呈现的其他状态（可多选/留空）。",
+  patternCategory: "模式分类：提炼出的模式解决哪一类设计问题。",
+  reuseLevel: "复用价值：该模式是否值得复用到其他 AI 产品。",
+} as const;
+
+// ─────────────────────────────────────────────────────────────
+// 旧值迁移映射（normalize / import / 云函数均复用同一套规则）
+//
+// 凡是历史数据或 AI 偶发返回的旧枚举值，必须先经 migration 转成新值，
+// 不允许旧值直接通过校验。
+// ─────────────────────────────────────────────────────────────
+
+/** Product Category：Agent Task → AI Agent */
+export const PRODUCT_CATEGORY_MIGRATION_MAP: Record<string, ProductCategory> = {
+  "Agent Task": "AI Agent",
+  "AI Task": "AI Agent",
+  Agent: "AI Agent",
+};
+
+/** Screenshot State：旧「路径/组件」导向值 → 新「界面状态」导向值 */
+export const SCREENSHOT_STATE_MIGRATION_MAP: Record<string, ScreenshotState> = {
+  Default: "Idle",
+  "Input Assist": "Inputting",
+  "Context Attach": "Context Ready",
+  "Plan Preview": "Planning Ready",
+  "Tool Call": "Running",
+  "Human Approval": "Waiting Approval",
+  "Partial Result": "Streaming",
+  "Error Recovery": "Error",
+  "Final Result": "Completed",
+  "Follow-up": "Follow-up Ready",
+  "Export / Handoff": "Export Ready",
+  "Export/Handoff": "Export Ready",
+};
+
+/** Pattern Category：旧值兼容（命名微调与扩展前的别名） */
+export const PATTERN_CATEGORY_MIGRATION_MAP: Record<string, PatternCategory> = {
+  "Intent Patterns": "Intent Input Patterns",
+  "Context Patterns": "Context Management Patterns",
+  "Planning Patterns": "Planning & Reasoning Patterns",
+  "Reasoning Patterns": "Planning & Reasoning Patterns",
+  "Execution Patterns": "Execution Feedback Patterns",
+  "Feedback Patterns": "Execution Feedback Patterns",
+  "Trust Patterns": "Trust & Verification Patterns",
+  "Verification Patterns": "Trust & Verification Patterns",
+  "Refine Patterns": "Refinement Patterns",
+  "Iteration Patterns": "Refinement Patterns",
+  "Output Patterns": "Output Handoff Patterns",
+  "Handoff Patterns": "Output Handoff Patterns",
+  "Recovery Patterns": "Failure Recovery Patterns",
+  "Error Recovery Patterns": "Failure Recovery Patterns",
+};
+
+/**
+ * 迁移单个枚举值：命中迁移表则返回新值，命中合法集合则原样返回，否则返回 fallback。
+ */
+export function migrateEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  migration: Record<string, T>,
+  fallback: T,
+): T {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  if ((allowed as readonly string[]).includes(trimmed)) return trimmed as T;
+  if (migration[trimmed]) return migration[trimmed];
+  return fallback;
+}

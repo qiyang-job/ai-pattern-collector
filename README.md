@@ -66,6 +66,19 @@ AI_MODEL=gpt-4o-mini
 - Insights page with local statistics and AI-generated research insights.
 - Export page for JSON, CSV, and Markdown research reports.
 
+## Taxonomy
+
+分类体系是本系统的核心方法论框架，五个核心字段职责严格区分：
+
+- **Product Category**（产品形态）：`AI Chat` · `AI Search` · `AI Agent` · `AI Workspace` · `Coding Agent`
+- **Journey Stage**（用户路径）：`J-01` ～ `J-09`
+- **Screenshot State**（界面状态，14 项）：`Idle` · `Inputting` · `Context Ready` · `Thinking` · `Planning Ready` · `Running` · `Waiting Approval` · `Streaming` · `Reviewing` · `Error` · `Completed` · `Follow-up Ready` · `Export Ready` · `Unknown`
+  - 配套 `secondaryScreenshotStates`（次要状态，多选）与 `screenshotStateReason`（判定理由）
+- **Pattern Category**（模式分类，8 类）：Intent Input · Context Management · Planning & Reasoning · Execution Feedback · Trust & Verification · **Refinement** · Output Handoff · **Failure Recovery**
+- **Reuse Level**（复用价值）：`High` · `Medium` · `Low`
+
+完整定义、判定线索与旧值迁移规则见 [`docs/taxonomy.md`](docs/taxonomy.md)。代码层唯一数据源为 [`lib/constants.ts`](lib/constants.ts)。
+
 ## Data Storage
 
 Records are stored in browser IndexedDB via Dexie. Refreshing the page does not remove saved records. MVP stores screenshots as `imageDataUrl`; future versions can migrate images to object storage or cloud database tables.

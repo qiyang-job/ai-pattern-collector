@@ -20,18 +20,27 @@ import {
   TypedIdBadge,
 } from "@/components/ui";
 import { DistributionRow, ReportSkeletonSection } from "@/components/research-ui";
-import { CORE_JOURNEY_STAGES } from "@/lib/constants";
+import {
+  CORE_JOURNEY_STAGES,
+  PATTERN_CATEGORY_LABELS,
+  PRODUCT_CATEGORY_LABELS,
+  SCREENSHOT_STATE_LABELS,
+  labelOf,
+} from "@/lib/constants";
 import { journeyCode, journeyName } from "@/lib/utils";
 
 const INSIGHT_KEYS: Array<{ key: keyof InsightsResult; title: string; num: string }> = [
   { key: "researchScope", title: "研究范围", num: "01" },
   { key: "productCoverage", title: "产品覆盖", num: "02" },
   { key: "journeyCoverage", title: "旅程覆盖", num: "03" },
-  { key: "highValuePatterns", title: "高价值模式", num: "04" },
-  { key: "crossProductComparison", title: "跨产品对比", num: "05" },
-  { key: "stageMaturity", title: "阶段成熟度", num: "06" },
-  { key: "designOpportunities", title: "设计机会", num: "07" },
-  { key: "recommendations", title: "建议", num: "08" },
+  { key: "screenshotStateDistribution", title: "界面状态分布", num: "04" },
+  { key: "patternCategoryDistribution", title: "模式分类分布", num: "05" },
+  { key: "highValuePatterns", title: "高价值模式", num: "06" },
+  { key: "crossProductComparison", title: "跨产品对比", num: "07" },
+  { key: "stageMaturity", title: "阶段成熟度", num: "08" },
+  { key: "missingStates", title: "缺失界面状态", num: "09" },
+  { key: "designOpportunities", title: "设计机会", num: "10" },
+  { key: "recommendations", title: "建议", num: "11" },
 ];
 
 export default function InsightsPage() {
@@ -66,6 +75,10 @@ export default function InsightsPage() {
         productCategory: r.productCategory,
         journeyStage: r.journeyStage,
         screenshotState: r.screenshotState,
+        secondaryScreenshotStates: Array.isArray(r.secondaryScreenshotStates)
+          ? r.secondaryScreenshotStates
+          : [],
+        screenshotStateReason: r.screenshotStateReason ?? "",
         patternName: r.patternName,
         patternCategory: r.patternCategory,
         userProblem: r.userProblem,
@@ -173,7 +186,47 @@ export default function InsightsPage() {
                   return stats.productCategoryCounts.map((item) => (
                     <DistributionRow
                       key={item.category}
-                      label={item.category}
+                      label={labelOf(item.category, PRODUCT_CATEGORY_LABELS)}
+                      count={item.count}
+                      max={max}
+                    />
+                  ));
+                })()}
+              </div>
+            </Panel>
+            <Panel>
+              <PanelHeader
+                title="界面状态分布"
+                meta={stats.missingStates.length > 0 ? `缺 ${stats.missingStates.length} 态` : "全覆盖"}
+              />
+              <div className="dist-list">
+                {(() => {
+                  const max = Math.max(1, ...stats.screenshotStateCounts.map((i) => i.count + i.secondaryCount));
+                  return stats.screenshotStateCounts.map((item) => (
+                    <DistributionRow
+                      key={item.state}
+                      label={labelOf(item.state, SCREENSHOT_STATE_LABELS)}
+                      count={item.count}
+                      max={max}
+                    />
+                  ));
+                })()}
+              </div>
+              {stats.missingStates.length > 0 ? (
+                <p className="mt-2 text-[10px] text-[var(--text-weak)]">
+                  尚未采集：{stats.missingStates.map((s) => labelOf(s, SCREENSHOT_STATE_LABELS)).join("、")}
+                </p>
+              ) : null}
+            </Panel>
+            <Panel>
+              <PanelHeader title="模式分类分布" meta="8 类模式库" />
+              <div className="dist-list">
+                {(() => {
+                  const max = Math.max(1, ...stats.patternCategoryCounts.map((i) => i.count));
+                  return stats.patternCategoryCounts.map((item) => (
+                    <DistributionRow
+                      key={item.category}
+                      label={labelOf(item.category, PATTERN_CATEGORY_LABELS)}
                       count={item.count}
                       max={max}
                     />

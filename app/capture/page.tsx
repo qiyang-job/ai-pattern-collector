@@ -25,6 +25,7 @@ import {
   EvidenceSlot,
   HintChip,
   ImageLightbox,
+  MultiImageEvidenceSlot,
   type EvidenceUiStatus,
 } from "@/components/research-ui";
 import { cn } from "@/lib/utils";
@@ -116,6 +117,10 @@ function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> 
     productCategory: safeStr(raw.productCategory),
     journeyStage: safeStr(raw.journeyStage),
     screenshotState: safeStr(raw.screenshotState),
+    secondaryScreenshotStates: Array.isArray(raw.secondaryScreenshotStates)
+      ? raw.secondaryScreenshotStates.filter((s) => typeof s === "string")
+      : [],
+    screenshotStateReason: safeStr(raw.screenshotStateReason),
     userProblem: safeStr(raw.userProblem),
     aiCapability: safeStr(raw.aiCapability),
     uiAnatomy: safeStr(raw.uiAnatomy),
@@ -171,6 +176,7 @@ export default function CapturePage() {
   const {
     reservedIds,
     imageDataUrl,
+    extraImages,
     imageMeta,
     rawNote,
     sourceUrl,
@@ -183,6 +189,9 @@ export default function CapturePage() {
     ensureIds,
     generateIds,
     setImage,
+    addExtraImage,
+    removeExtraImage,
+    clearImages,
     setRawNote,
     setSourceUrl,
     setTaskContext,
@@ -196,10 +205,13 @@ export default function CapturePage() {
   } = useHydratedCaptureDraft();
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [savedFlash, setSavedFlash] = useState(false);
   const [evidenceEditing, setEvidenceEditing] = useState(false);
 
-  const hasEvidence = Boolean(imageDataUrl);
+  const totalImages = (imageDataUrl ? 1 : 0) + extraImages.length;
+  const hasEvidence = totalImages > 0;
   const hasRawNote = Boolean(rawNote.trim());
   const hasProduct = Boolean(analysis.product.trim());
   const analyzeReady = hasEvidence && hasRawNote;
@@ -267,7 +279,7 @@ export default function CapturePage() {
     ensureIds();
   }, [ensureIds]);
 
-  const handleImageFile = useCallback(async (file: File) => {
+  const handleImageFile = useCallback(async (file: File, forcePrimary = false) => {
     if (!file.type.startsWith("image/")) {
       setError("请选择图片文件。");
       return;
@@ -275,11 +287,22 @@ export default function CapturePage() {
     try {
       const dataUrl = await readAndResizeImage(file);
       const kb = Math.round(file.size / 1024);
-      setImage(dataUrl, `${file.type} · ${kb} KB · ${new Date().toLocaleTimeString()}`);
+      const meta = `${file.type} · ${kb} KB · ${new Date().toLocaleTimeString()}`;
+      // 如果没有主图，或者强制设置为主图，则设为主图
+      if (forcePrimary || !imageDataUrl) {
+        setImage(dataUrl, meta);
+      } else if (totalImages < 5) {
+        // 否则添加为额外截图
+        addExtraImage(dataUrl, meta);
+        toast.success(`已添加第 ${totalImages + 1} 张截图`);
+      } else {
+        setError(`最多支持 5 张截图（当前已有 ${totalImages} 张）`);
+        return;
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "图片读取失败");
     }
-  }, [setError, setImage]);
+  }, [setError, setImage, addExtraImage, imageDataUrl, totalImages]);
 
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
@@ -289,12 +312,28 @@ export default function CapturePage() {
       if (file) {
         event.preventDefault();
         void handleImageFile(file);
-        toast.success("截图已粘贴");
+        toast.success(totalImages === 0 ? "截图已粘贴" : `已添加第 ${totalImages + 1} 张截图`);
       }
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [handleImageFile]);
+  }, [handleImageFile, totalImages]);
+
+  /** 打开预览（支持多图） */
+  function openPreview(url: string, index: number) {
+    const all = imageDataUrl ? [imageDataUrl, ...extraImages] : [...extraImages];
+    setPreviewUrls(all);
+    setPreviewIndex(index);
+    setPreviewOpen(true);
+  }
+
+  function previewNext() {
+    setPreviewIndex((i) => Math.min(i + 1, previewUrls.length - 1));
+  }
+
+  function previewPrev() {
+    setPreviewIndex((i) => Math.max(i - 1, 0));
+  }
 
   async function reset() {
     setPreviewOpen(false);
@@ -323,18 +362,22 @@ export default function CapturePage() {
   }
 
   async function analyze() {
-    if (!imageDataUrl) return setError("请先添加截图证据。");
+    if (totalImages === 0) return setError("请先添加截图证据。");
     if (!rawNote.trim()) return setError("请填写研究备注。");
     setIsAnalyzing(true);
     setAnalysisStatus("analyzing");
     setError("");
     try {
-      // 压缩图片避免超云函数 6MB 入参限制
-      const compressedImage = await compressImage(imageDataUrl);
-      console.log(`[AI] 图片压缩: ${(imageDataUrl.length / 1024 / 1024).toFixed(1)}MB → ${(compressedImage.length / 1024 / 1024).toFixed(1)}MB`);
-      
+      // 收集所有图片并压缩
+      const allImages = imageDataUrl ? [imageDataUrl, ...extraImages] : [...extraImages];
+      const compressedImages = await Promise.all(allImages.map(img => compressImage(img)));
+      const totalBefore = allImages.reduce((s, u) => s + u.length, 0);
+      const totalAfter = compressedImages.reduce((s, u) => s + u.length, 0);
+      console.log(`[AI] ${allImages.length}张图片压缩: ${(totalBefore / 1024 / 1024).toFixed(1)}MB → ${(totalAfter / 1024 / 1024).toFixed(1)}MB`);
+
       const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
-        imageDataUrl: compressedImage,
+        imageDataUrls: compressedImages,
+        imageDataUrl: compressedImages[0], // 兼容旧字段
         rawNote,
         product: analysis.product,
         sourceUrl,
@@ -376,6 +419,7 @@ export default function CapturePage() {
       id: createBrowserId(),
       screenshotId: ids.screenshotId,
       imageDataUrl,
+      ...(extraImages.length > 0 ? { extraImages } : {}),
       rawNote,
       sourceUrl: sourceUrl || undefined,
       taskContext: taskContext || undefined,
@@ -422,17 +466,35 @@ export default function CapturePage() {
                 </button>
               </header>
               <div className="evidence-recap">
+                {/* 主图缩略图 */}
                 {imageDataUrl ? (
                   <button
                     type="button"
                     className="evidence-recap-thumb focus-ring"
-                    onClick={() => setPreviewOpen(true)}
+                    onClick={() => openPreview(imageDataUrl, 0)}
                     title="点击查看大图"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={imageDataUrl} alt={reservedIds?.screenshotId ?? "screenshot"} />
                   </button>
                 ) : null}
+                /* 额外截图缩略图 */
+                {extraImages.length > 0 && (
+                  <div className="flex gap-1 mt-1">
+                    {[...extraImages].map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="evidence-recap-thumb focus-ring w-12 h-12"
+                        onClick={() => openPreview(url, i + 1)}
+                        title={`截图 ${i + 2}`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`截图 ${i + 2}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="evidence-recap-block">
                   <div className="evidence-recap-block-label">研究备注</div>
                   <p className="evidence-recap-note">{rawNote || "—"}</p>
@@ -479,13 +541,15 @@ export default function CapturePage() {
               </header>
 
               <div className="capture-evidence-body">
-            <EvidenceSlot
+            <MultiImageEvidenceSlot
               screenshotId={reservedIds?.screenshotId ?? "S---"}
               status={evidenceUiStatus}
-              imageDataUrl={imageDataUrl}
-              meta={imageMeta}
-              onUploadClick={() => fileInputRef.current?.click()}
-              onPreviewClick={() => imageDataUrl && setPreviewOpen(true)}
+              primaryUrl={imageDataUrl}
+              extraUrls={extraImages}
+              meta={`${imageMeta}${totalImages > 0 ? ` · ${totalImages}张` : ""}`}
+              onAddClick={() => fileInputRef.current?.click()}
+              onRemoveExtra={removeExtraImage}
+              onPreview={openPreview}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
@@ -607,10 +671,10 @@ export default function CapturePage() {
         </div>
       </div>
 
-      {previewOpen && imageDataUrl ? (
+      {previewOpen && previewUrls.length > 0 ? (
         <ImageLightbox
-          src={imageDataUrl}
-          alt={reservedIds?.screenshotId ?? "screenshot"}
+          src={previewUrls[previewIndex]}
+          alt={`截图 ${previewIndex + 1}/${previewUrls.length}`}
           onClose={() => setPreviewOpen(false)}
         />
       ) : null}

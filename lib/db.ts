@@ -7,6 +7,39 @@ import type { PatternRecord } from "./types";
 export interface CounterMeta {
   screenshotSeq: number;
   patternSeq: number;
+  /** 上次分配编号的时间戳，用于防止短时间内重复分配 */
+  lastReservedAt?: string;
+}
+
+// ── 防重入锁：同一秒内不重复分配 ────────────────────────
+let _lastReservedMs = 0;
+const RESERVE_DEBOUNCE_MS = 1000; // 1s 内不重复分配
+
+/** 原子递增并返回新编号（带防重入保护） */
+export async function reserveNextRecordIds(): Promise<{
+  screenshotId: string;
+  patternId: string;
+}> {
+  // 防抖：1 秒内多次调用直接拒绝
+  const now = Date.now();
+  if (now - _lastReservedMs < RESERVE_DEBOUNCE_MS) {
+    throw new Error("编号分配过于频繁，请稍后再试");
+  }
+  _lastReservedMs = now;
+
+  return authed(async () => {
+    const cur = await readCounters();
+    const next = {
+      screenshotSeq: cur.screenshotSeq + 1,
+      patternSeq: cur.patternSeq + 1,
+      lastReservedAt: new Date().toISOString(),
+    };
+    await writeCounters(next);
+    return {
+      screenshotId: `S-${String(next.screenshotSeq).padStart(3, "0")}`,
+      patternId: `P-${String(next.patternSeq).padStart(3, "0")}`,
+    };
+  });
 }
 
 export interface InsightMeta {
@@ -109,25 +142,6 @@ async function writeCounters(val: CounterMeta): Promise<void> {
   }
 }
 
-/** 原子递增并返回新编号 */
-export async function reserveNextRecordIds(): Promise<{
-  screenshotId: string;
-  patternId: string;
-}> {
-  return authed(async () => {
-    const cur = await readCounters();
-    const next = {
-      screenshotSeq: cur.screenshotSeq + 1,
-      patternSeq: cur.patternSeq + 1,
-    };
-    await writeCounters(next);
-    return {
-      screenshotId: `S-${String(next.screenshotSeq).padStart(3, "0")}`,
-      patternId: `P-${String(next.patternSeq).padStart(3, "0")}`,
-    };
-  });
-}
-
 // ─── Records CRUD ──────────────────────────────────────
 
 export async function saveRecord(record: PatternRecord): Promise<void> {
@@ -210,10 +224,11 @@ export async function listRecords(): Promise<PatternRecord[]> {
     // NoSQL 不支持 orderBy，在内存中排序
     const res = await records().limit(999).get();
     const items = (res.data ?? []).map(({ _id, _openid, ...rest }) => normalizeRecord(rest));
+    // 新的在上，旧的在下：按 updatedAt 降序（updatedAt 更准确反映实际操作时间）
     const sorted = items.sort(
       (a, b) =>
-        new Date(b.createdAt ?? 0).getTime() -
-        new Date(a.createdAt ?? 0).getTime(),
+        new Date(b.updatedAt ?? b.createdAt ?? 0).getTime() -
+        new Date(a.updatedAt ?? a.createdAt ?? 0).getTime(),
     );
     return hydrateImageUrls(sorted);
   });

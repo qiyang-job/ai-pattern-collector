@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { PatternAnalysisResult, LensScoreValue } from "@/lib/types";
+import type { PatternAnalysisResult, LensScoreValue, ScreenshotState } from "@/lib/types";
 import {
   JOURNEY_STAGES,
   JOURNEY_STAGE_LABELS,
@@ -16,6 +16,7 @@ import {
   REUSE_LEVEL_LABELS,
   SCREENSHOT_STATES,
   SCREENSHOT_STATE_LABELS,
+  TAXONOMY_FIELD_HINTS,
   labelOf,
 } from "@/lib/constants";
 import {
@@ -107,6 +108,67 @@ export function RecordForm({
     </div>
   );
 
+  /** 次要界面状态：同一截图可同时呈现的其他状态（多选，排除主状态） */
+  const toggleSecondaryState = (state: ScreenshotState) => {
+    const current = Array.isArray(value.secondaryScreenshotStates)
+      ? value.secondaryScreenshotStates
+      : [];
+    const next = current.includes(state)
+      ? current.filter((s) => s !== state)
+      : [...current, state];
+    update("secondaryScreenshotStates", next);
+  };
+
+  const secondaryStatesField = (
+    <div className="sm:col-span-2">
+      <Field label={<DualLabel zh="次要界面状态" en="Secondary States" />} compact>
+        <div className="flex flex-wrap gap-1">
+          {SCREENSHOT_STATES.filter(
+            (s) => s !== "Unknown" && s !== (value.screenshotState as ScreenshotState),
+          ).map((s) => {
+            const active = (value.secondaryScreenshotStates ?? []).includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleSecondaryState(s)}
+                className={`rounded-[var(--radius-sm)] border px-1.5 py-[2px] text-[10px] transition-colors ${
+                  active
+                    ? "border-[var(--accent)] bg-[var(--accent-soft,var(--accent))] text-[var(--accent)]"
+                    : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+                }`}
+              >
+                {labelOf(s, SCREENSHOT_STATE_LABELS)}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <p className="field-hint">{TAXONOMY_FIELD_HINTS.secondaryScreenshotStates}</p>
+    </div>
+  );
+
+  const stateReasonField = (
+    <div className="sm:col-span-2">
+      <Field label={<DualLabel zh="界面状态理由" en="State Reason" />} compact>
+        <textarea
+          className={textareaClass}
+          rows={2}
+          value={value.screenshotStateReason ?? ""}
+          onChange={(e) => update("screenshotStateReason", e.target.value)}
+        />
+      </Field>
+      <p className="field-hint">解释为何判定为该主状态（及次要状态）的界面线索。</p>
+    </div>
+  );
+
+  const classificationLegend = (
+    <p className="field-hint mb-1 sm:col-span-2">
+      五个分类维度各有分工：产品形态 = 这是什么 AI 产品 · 旅程阶段 = 任务流程中的哪一步 ·
+      截图状态 = 截图那一刻 UI 的操作态 · 模式分类 = 模式解决哪类设计问题 · 复用价值 = 是否值得复用。
+    </p>
+  );
+
   if (guided) {
     return (
       <div className="space-y-2">
@@ -117,6 +179,7 @@ export function RecordForm({
             description="决定这条记录会进入矩阵和旅程的哪个位置。"
           >
             <div className="grid gap-2 sm:grid-cols-2">
+              {classificationLegend}
               <Field label={<DualLabel zh="产品" en="Product" />} compact>
                 <input
                   className={inputClass}
@@ -129,7 +192,7 @@ export function RecordForm({
                 "产品类型",
                 "Product Category",
                 PRODUCT_CATEGORIES,
-                "这张图来自哪类 AI 产品？",
+                TAXONOMY_FIELD_HINTS.productCategory,
                 PRODUCT_CATEGORY_LABELS,
               )}
               {selectField(
@@ -137,16 +200,25 @@ export function RecordForm({
                 "旅程阶段",
                 "Journey Stage",
                 JOURNEY_STAGES,
-                "这张截图发生在用户使用 AI 产品的哪个阶段？",
+                TAXONOMY_FIELD_HINTS.journeyStage,
                 JOURNEY_STAGE_LABELS,
               )}
-              {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, undefined, SCREENSHOT_STATE_LABELS)}
+              {selectField(
+                "screenshotState",
+                "截图状态",
+                "Screenshot State",
+                SCREENSHOT_STATES,
+                TAXONOMY_FIELD_HINTS.screenshotState,
+                SCREENSHOT_STATE_LABELS,
+              )}
+              {secondaryStatesField}
+              {stateReasonField}
               {selectField(
                 "patternCategory",
                 "模式分类",
                 "Pattern Category",
                 PATTERN_CATEGORIES,
-                "这个模式最终会进入哪类模式库？",
+                TAXONOMY_FIELD_HINTS.patternCategory,
                 PATTERN_CATEGORY_LABELS,
               )}
             </div>
@@ -316,11 +388,14 @@ export function RecordForm({
       {show("A") ? (
         <FormModule letter="A" title="分类归位 · Classification">
           <div className="grid gap-2 sm:grid-cols-2">
-            {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, undefined, PRODUCT_CATEGORY_LABELS)}
-            {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, undefined, JOURNEY_STAGE_LABELS)}
-            {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, undefined, SCREENSHOT_STATE_LABELS)}
-            {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES, undefined, PATTERN_CATEGORY_LABELS)}
-            {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, undefined, REUSE_LEVEL_LABELS)}
+            {classificationLegend}
+            {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, TAXONOMY_FIELD_HINTS.productCategory, PRODUCT_CATEGORY_LABELS)}
+            {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, TAXONOMY_FIELD_HINTS.journeyStage, JOURNEY_STAGE_LABELS)}
+            {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, TAXONOMY_FIELD_HINTS.screenshotState, SCREENSHOT_STATE_LABELS)}
+            {secondaryStatesField}
+            {stateReasonField}
+            {selectField("patternCategory", "模式分类", "Pattern Category", PATTERN_CATEGORIES, TAXONOMY_FIELD_HINTS.patternCategory, PATTERN_CATEGORY_LABELS)}
+            {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, TAXONOMY_FIELD_HINTS.reuseLevel, REUSE_LEVEL_LABELS)}
           </div>
         </FormModule>
       ) : null}

@@ -13,6 +13,7 @@ import {
   inputClass,
   textareaClass,
 } from "@/components/ui";
+import { ImageLightbox } from "@/components/research-ui";
 import { recordToMarkdown, recordsToJson } from "@/lib/export";
 import { useRecordsStore } from "@/lib/records-store";
 import type { PatternAnalysisResult, PatternRecord } from "@/lib/types";
@@ -40,12 +41,23 @@ function RecordDrawerContent({
   const { saveRecord, deleteRecord } = useRecordsStore();
   const [draft, setDraft] = useState<PatternRecord>(record);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
+
+  /** 获取所有图片（主图 + 额外图） */
+  const allImages = draft.imageDataUrl
+    ? [draft.imageDataUrl, ...(Array.isArray(draft.extraImages) ? draft.extraImages : [])]
+    : (Array.isArray(draft.extraImages) ? draft.extraImages : []);
 
   const analysisValue: PatternAnalysisResult = {
     product: draft.product,
     productCategory: draft.productCategory,
     journeyStage: draft.journeyStage,
     screenshotState: draft.screenshotState,
+    secondaryScreenshotStates: Array.isArray(draft.secondaryScreenshotStates)
+      ? draft.secondaryScreenshotStates
+      : [],
+    screenshotStateReason: draft.screenshotStateReason ?? "",
     patternName: draft.patternName,
     patternCategory: draft.patternCategory,
     userProblem: draft.userProblem,
@@ -62,15 +74,26 @@ function RecordDrawerContent({
   };
 
   async function saveDraft() {
-    await saveRecord({ ...draft, updatedAt: new Date().toISOString() });
-    toast.success("记录已更新。");
+    try {
+      await saveRecord({ ...draft, updatedAt: new Date().toISOString() });
+      toast.success("记录已更新。");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err ?? {});
+      console.error("[saveDraft] 保存失败:", err);
+      toast.error(`保存失败: ${msg}`);
+    }
   }
 
   async function removeDraft() {
     if (!window.confirm(`确认删除 ${draft.patternId}？`)) return;
-    await deleteRecord(draft.id);
-    toast.success("记录已删除。");
-    onClose();
+    try {
+      await deleteRecord(draft.id);
+      toast.success("记录已删除。");
+      onClose();
+    } catch (err) {
+      console.error("[removeDraft] 删除失败:", err);
+      toast.error(err instanceof Error ? err.message : "删除失败");
+    }
   }
 
   async function copyMarkdown() {
@@ -79,7 +102,7 @@ function RecordDrawerContent({
   }
 
   async function reanalyze() {
-    if (!draft.imageDataUrl) {
+    if (allImages.length === 0) {
       toast.error("该记录没有截图，无法重新分析。");
       return;
     }
@@ -92,12 +115,15 @@ function RecordDrawerContent({
     try {
       await ensureAuth();
 
-      // 压缩图片避免超云函数 6MB 入参限制
-      const compressedImage = await compressImage(draft.imageDataUrl);
-      console.log(`[reanalyze] 图片压缩: ${(draft.imageDataUrl.length / 1024 / 1024).toFixed(1)}MB → ${(compressedImage.length / 1024 / 1024).toFixed(1)}MB`);
+      // 压缩所有图片
+      const compressedImages = await Promise.all(allImages.map(img => compressImage(img)));
+      const totalBefore = allImages.reduce((s, u) => s + u.length, 0);
+      const totalAfter = compressedImages.reduce((s, u) => s + u.length, 0);
+      console.log(`[reanalyze] ${allImages.length}张图片压缩: ${(totalBefore / 1024 / 1024).toFixed(1)}MB → ${(totalAfter / 1024 / 1024).toFixed(1)}MB`);
 
       const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
-        imageDataUrl: compressedImage,
+        imageDataUrls: compressedImages,
+        imageDataUrl: compressedImages[0], // 兼容旧字段
         rawNote: draft.rawNote,
         product: draft.product,
         sourceUrl: draft.sourceUrl ?? "",
@@ -180,13 +206,41 @@ function RecordDrawerContent({
 
         <div className="min-h-0 flex-1 overflow-auto">
           <section className="page-gutter border-b border-[var(--border)]">
-            <SectionLabel>证据 Evidence</SectionLabel>
+            <SectionLabel>
+              证据 Evidence
+              {allImages.length > 1 && (
+                <span className="ml-2 mono text-[10px] text-[var(--text-weak)]">
+                  {allImages.length} 张截图
+                </span>
+              )}
+            </SectionLabel>
+
+            {/* 主图 */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={draft.imageDataUrl}
               alt={draft.screenshotId}
-              className="max-h-48 w-full rounded-[var(--radius-md)] object-contain"
+              className="max-h-48 w-full rounded-[var(--radius-md)] object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => { setPreviewIndex(0); setPreviewOpen(true); }}
+              title="点击放大"
             />
+
+            /* 额外截图缩略图 */
+            {Array.isArray(draft.extraImages) && draft.extraImages.length > 0 && (
+              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+                {draft.extraImages.map((url, i) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`截图 ${i + 2}`}
+                    className="h-16 w-16 shrink-0 rounded-[var(--radius-sm)] object-cover cursor-pointer hover:opacity-80 ring-1 ring-[var(--border)]"
+                    onClick={() => { setPreviewIndex(i + 1); setPreviewOpen(true); }}
+                    title={`截图 ${i + 2} - 点击放大`}
+                  />
+                ))}
+              </div>
+            )}
             <div className="mt-2 space-y-2">
               <Field label="原始备注 Raw Note" compact>
                 <textarea
@@ -224,6 +278,14 @@ function RecordDrawerContent({
             />
           </section>
         </div>
+
+        {previewOpen && allImages.length > 0 ? (
+          <ImageLightbox
+            src={allImages[previewIndex]}
+            alt={`截图 ${previewIndex + 1}/${allImages.length}`}
+            onClose={() => setPreviewOpen(false)}
+          />
+        ) : null}
       </aside>
     </div>
   );
@@ -293,6 +355,10 @@ function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> 
     productCategory: safeStr(raw.productCategory),
     journeyStage: safeStr(raw.journeyStage),
     screenshotState: safeStr(raw.screenshotState),
+    secondaryScreenshotStates: Array.isArray(raw.secondaryScreenshotStates)
+      ? raw.secondaryScreenshotStates.filter((s) => typeof s === "string")
+      : [],
+    screenshotStateReason: safeStr(raw.screenshotStateReason),
     userProblem: safeStr(raw.userProblem),
     aiCapability: safeStr(raw.aiCapability),
     uiAnatomy: safeStr(raw.uiAnatomy),

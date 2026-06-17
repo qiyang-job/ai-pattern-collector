@@ -2,11 +2,20 @@ import {
   EMPTY_LENS_SCORE,
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
+  PATTERN_CATEGORY_MIGRATION_MAP,
   PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_MIGRATION_MAP,
   REUSE_LEVELS,
   SCREENSHOT_STATES,
+  SCREENSHOT_STATE_MIGRATION_MAP,
+  migrateEnum,
 } from "@/lib/constants";
-import type { LensScore, LensScoreValue, PatternRecord } from "@/lib/types";
+import type {
+  LensScore,
+  LensScoreValue,
+  PatternRecord,
+  ScreenshotState,
+} from "@/lib/types";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -37,12 +46,41 @@ function oneOf<T extends readonly string[]>(
     : fallback;
 }
 
+/** 归一次要界面状态数组：逐项迁移旧值，过滤掉无法识别（Unknown 兜底后去重）的项 */
+function normalizeSecondaryStates(
+  raw: unknown,
+  primary: ScreenshotState,
+): ScreenshotState[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<ScreenshotState>();
+  const out: ScreenshotState[] = [];
+  for (const item of raw) {
+    const migrated = migrateEnum(
+      item,
+      SCREENSHOT_STATES,
+      SCREENSHOT_STATE_MIGRATION_MAP,
+      "Unknown",
+    );
+    // 去重、剔除与主状态相同的项、剔除 Unknown 噪声
+    if (migrated === "Unknown" || migrated === primary || seen.has(migrated)) continue;
+    seen.add(migrated);
+    out.push(migrated);
+  }
+  return out;
+}
+
 /**
  * 将来自数据库 / 导入 / 任意来源的原始对象，归一化为字段完整的 PatternRecord。
  * 防止脏记录（缺字段、空值被传输层丢弃、枚举非法）导致下游统计 / 渲染崩溃。
  */
 export function normalizeRecord(raw: unknown): PatternRecord {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const screenshotState = migrateEnum(
+    r.screenshotState,
+    SCREENSHOT_STATES,
+    SCREENSHOT_STATE_MIGRATION_MAP,
+    "Unknown",
+  );
   return {
     id: str(r.id),
     screenshotId: str(r.screenshotId),
@@ -66,10 +104,25 @@ export function normalizeRecord(raw: unknown): PatternRecord {
       ? r.tags.filter((t): t is string => typeof t === "string")
       : [],
     product: str(r.product),
-    productCategory: oneOf(PRODUCT_CATEGORIES, r.productCategory, "AI Chat"),
+    productCategory: migrateEnum(
+      r.productCategory,
+      PRODUCT_CATEGORIES,
+      PRODUCT_CATEGORY_MIGRATION_MAP,
+      "AI Chat",
+    ),
     journeyStage: oneOf(JOURNEY_STAGES, r.journeyStage, "J-01 Entry"),
-    screenshotState: oneOf(SCREENSHOT_STATES, r.screenshotState, "Default"),
-    patternCategory: oneOf(PATTERN_CATEGORIES, r.patternCategory, "Intent Input Patterns"),
+    screenshotState,
+    secondaryScreenshotStates: normalizeSecondaryStates(
+      r.secondaryScreenshotStates,
+      screenshotState,
+    ),
+    screenshotStateReason: str(r.screenshotStateReason),
+    patternCategory: migrateEnum(
+      r.patternCategory,
+      PATTERN_CATEGORIES,
+      PATTERN_CATEGORY_MIGRATION_MAP,
+      "Intent Input Patterns",
+    ),
     lensScore: normalizeLensScore(r.lensScore),
     createdAt: str(r.createdAt),
     updatedAt: str(r.updatedAt),

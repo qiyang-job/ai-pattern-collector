@@ -19,7 +19,7 @@ export const tokens = {
 export const PRODUCT_CATEGORY_COLORS: Record<ProductCategory, { bg: string; text: string }> = {
   "AI Chat": { bg: "rgba(99,142,232,0.16)", text: "#9FB8F0" },
   "AI Search": { bg: "rgba(79,196,207,0.16)", text: "#7FD6DE" },
-  "Agent Task": { bg: "rgba(168,130,232,0.16)", text: "#C0A6EE" },
+  "AI Agent": { bg: "rgba(168,130,232,0.16)", text: "#C0A6EE" },
   "AI Workspace": { bg: "rgba(91,191,122,0.16)", text: "#86D49E" },
   "Coding Agent": { bg: "rgba(224,166,74,0.16)", text: "#E9C079" },
 };
@@ -36,5 +36,7 @@ export const PATTERN_CATEGORY_COLORS: Record<PatternCategory, { bg: string; text
   "Planning & Reasoning Patterns": { bg: "rgba(168,130,232,0.16)", text: "#C0A6EE" },
   "Execution Feedback Patterns": { bg: "rgba(91,191,122,0.16)", text: "#86D49E" },
   "Trust & Verification Patterns": { bg: "rgba(224,166,74,0.16)", text: "#E9C079" },
+  "Refinement Patterns": { bg: "rgba(232,130,168,0.16)", text: "#EEA6C4" },
   "Output Handoff Patterns": { bg: "rgba(184,150,120,0.16)", text: "#D6B79A" },
+  "Failure Recovery Patterns": { bg: "rgba(224,106,82,0.16)", text: "#EE9A86" },
 };

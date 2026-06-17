@@ -3,11 +3,50 @@ import { GenerateInsightsResponseSchema, LensScoreSchema } from "@/lib/ai/schema
 import {
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
+  PATTERN_CATEGORY_MIGRATION_MAP,
   PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_MIGRATION_MAP,
   REUSE_LEVELS,
   SCREENSHOT_STATES,
+  SCREENSHOT_STATE_MIGRATION_MAP,
+  migrateEnum,
 } from "@/lib/constants";
-import type { InsightsResult, PatternRecord } from "@/lib/types";
+import type {
+  InsightsResult,
+  PatternRecord,
+  ProductCategory,
+  PatternCategory,
+  ScreenshotState,
+} from "@/lib/types";
+
+/** 导入时把旧枚举值预迁移成新值，避免历史备份因旧值校验失败 */
+const productCategoryField = z.preprocess(
+  (v) => migrateEnum(v, PRODUCT_CATEGORIES, PRODUCT_CATEGORY_MIGRATION_MAP, "AI Chat") as ProductCategory,
+  z.enum(PRODUCT_CATEGORIES),
+);
+const screenshotStateField = z.preprocess(
+  (v) => migrateEnum(v, SCREENSHOT_STATES, SCREENSHOT_STATE_MIGRATION_MAP, "Unknown") as ScreenshotState,
+  z.enum(SCREENSHOT_STATES),
+);
+const patternCategoryField = z.preprocess(
+  (v) =>
+    migrateEnum(
+      v,
+      PATTERN_CATEGORIES,
+      PATTERN_CATEGORY_MIGRATION_MAP,
+      "Intent Input Patterns",
+    ) as PatternCategory,
+  z.enum(PATTERN_CATEGORIES),
+);
+const secondaryStatesField = z.preprocess(
+  (v) =>
+    Array.isArray(v)
+      ? v.map((s) =>
+          migrateEnum(s, SCREENSHOT_STATES, SCREENSHOT_STATE_MIGRATION_MAP, "Unknown"),
+        )
+      : [],
+  z.array(z.enum(SCREENSHOT_STATES)),
+);
 
 export type ImportMode = "merge" | "replace";
 
@@ -31,10 +70,12 @@ export const PatternRecordSchema = z.object({
   designJudgment: z.string(),
   tags: z.array(z.string()),
   product: z.string(),
-  productCategory: z.enum(PRODUCT_CATEGORIES),
+  productCategory: productCategoryField,
   journeyStage: z.enum(JOURNEY_STAGES),
-  screenshotState: z.enum(SCREENSHOT_STATES),
-  patternCategory: z.enum(PATTERN_CATEGORIES),
+  screenshotState: screenshotStateField,
+  secondaryScreenshotStates: secondaryStatesField.optional().default([]),
+  screenshotStateReason: z.string().optional().default(""),
+  patternCategory: patternCategoryField,
   lensScore: LensScoreSchema,
   createdAt: z.string(),
   updatedAt: z.string(),

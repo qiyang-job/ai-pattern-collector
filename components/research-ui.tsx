@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
+import { MAX_SCREENSHOTS } from "@/lib/capture-draft-store";
 
 export type AnalysisUiStatus = "idle" | "analyzing" | "analyzed" | "failed";
 export type EvidenceUiStatus = "empty" | "ready" | "analyzing" | "analyzed";
@@ -247,6 +248,163 @@ export function EvidenceSlot({
         <span className="truncate">{meta}</span>
         <button type="button" className="shrink-0 text-[var(--accent)] hover:underline" onClick={onUploadClick}>
           上传
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 多截图证据槽 — 支持最多 5 张截图的采集、预览和删除
+ */
+export function MultiImageEvidenceSlot({
+  screenshotId,
+  status,
+  primaryUrl,
+  extraUrls,
+  meta,
+  onAddClick,
+  onRemoveExtra,
+  onPreview,
+  onDragOver,
+  onDrop,
+}: {
+  screenshotId: string;
+  status: EvidenceUiStatus;
+  /** 主图 data URL */
+  primaryUrl: string;
+  /** 额外截图 data URL 数组 */
+  extraUrls: string[];
+  meta: string;
+  onAddClick: () => void;
+  onRemoveExtra?: (index: number) => void;
+  onPreview: (url: string, index: number) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+}) {
+  const allImages = primaryUrl ? [primaryUrl, ...extraUrls] : [...extraUrls];
+  const total = allImages.length;
+
+  return (
+    <div className="evidence-slot">
+      {/* 头部：编号 + 状态 + 计数 */}
+      <div className="flex items-center justify-between px-2 py-1.5">
+        <div className="flex items-center gap-2">
+          <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
+          <span className="mono text-[10px] text-[var(--text-weak)]">
+            {total}/{MAX_SCREENSHOTS}
+          </span>
+        </div>
+        <WorkflowStatusPill
+          status={
+            status === "empty" ? (total > 0 ? "证据就绪" : "缺失截图")
+            : status === "ready" ? "证据就绪"
+            : status === "analyzing" ? "提炼中"
+            : "已分析"
+          }
+          tone={
+            status === "analyzed" ? "success"
+            : status === "analyzing" ? "active"
+            : total > 0 ? "ready"
+            : "neutral"
+          }
+        />
+      </div>
+
+      {/* 图片区域：主图/空槽位 + 缩略图条 */}
+      <div
+        className="evidence-slot-preview relative bg-[var(--panel)] min-h-[140px]"
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        {total > 0 ? (
+          <div className="flex flex-col h-full">
+            {/* 主图预览区（可点击放大） */}
+            <button
+              type="button"
+              className="flex h-[120px] w-full items-center justify-center hover:bg-[var(--panel-muted)] border-b border-[var(--border)]"
+              onClick={() => primaryUrl && onPreview(primaryUrl, 0)}
+              title="点击放大预览"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={primaryUrl || extraUrls[0]} alt={`截图证据 ${screenshotId}`} className="max-h-full max-w-full object-contain" />
+            </button>
+
+            {/* 缩略图条 */}
+            {total > 1 && (
+              <div className="flex items-center gap-1 p-1.5 overflow-x-auto">
+                {allImages.map((url, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={cn(
+                      "relative shrink-0 rounded-[var(--radius-sm)] overflow-hidden border",
+                      i === 0 ? "w-14 h-14 border-[var(--accent)]" : "w-11 h-11 border-[var(--border)] hover:border-[var(--accent-muted)]",
+                    )}
+                    onClick={() => onPreview(url, i)}
+                    title={`截图 ${i + 1}${i > 0 ? '（点击删除）' : ''}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`截图 ${i + 1}`} className="h-full w-full object-cover" />
+                    {/* 非主图的删除按钮 */}
+                    {i > 0 && onRemoveExtra && (
+                      <span
+                        className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] text-white cursor-pointer hover:bg-red-700"
+                        onClick={(e) => { e.stopPropagation(); onRemoveExtra(i - 1); }}
+                        role="button"
+                        aria-label="删除此截图"
+                      >
+                        ×
+                      </span>
+                    )}
+                  </button>
+                ))}
+                {/* 添加更多按钮 */}
+                {total < MAX_SCREENSHOTS && (
+                  <button
+                    type="button"
+                    className="shrink-0 flex w-11 h-11 items-center justify-center rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] text-[var(--text-weak)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                    onClick={onAddClick}
+                    title={`添加截图 (${total}/${MAX_SCREENSHOTS})`}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  </button>
+                )}
+              </div>
+            )}
+            {total === 1 && total < MAX_SCREENSHOTS && (
+              <div className="flex items-center justify-center p-1.5">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 rounded-[var(--radius-sm)] px-2 py-1 text-[10px] text-[var(--text-weak)] hover:text-[var(--accent)] border border-dashed border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+                  onClick={onAddClick}
+                  title={`添加更多截图 (${total}/${MAX_SCREENSHOTS})`}
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  添加截图 ({total}/{MAX_SCREENSHOTS})
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* 空状态：粘贴/上传入口 */
+          <button
+            type="button"
+            className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-[11px] text-[var(--text-weak)] hover:bg-[var(--panel-muted)]"
+            onClick={onAddClick}
+          >
+            <span className="mono text-[12px] font-medium text-[var(--text-muted)]">Cmd + V</span>
+            <span className="text-[var(--text-muted)]">粘贴截图</span>
+            <span className="mt-0.5 text-[10px]">支持最多 {MAX_SCREENSHOTS} 张</span>
+          </button>
+        )}
+      </div>
+
+      {/* 底部：元信息 + 上传按钮 */}
+      <div className="flex items-center justify-between bg-[var(--panel-muted)] px-2 py-1 mono text-[10px] text-[var(--text-weak)]">
+        <span className="truncate">{meta}</span>
+        <button type="button" className="shrink-0 text-[var(--accent)] hover:underline" onClick={onAddClick}>
+          {total > 0 ? `继续添加` : "上传"}
         </button>
       </div>
     </div>

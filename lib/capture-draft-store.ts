@@ -10,9 +10,14 @@ export type CaptureAnalysisStatus = "idle" | "analyzing" | "analyzed" | "failed"
 
 export type ReservedIds = { screenshotId: string; patternId: string };
 
+/** 最多支持截图数量 */
+export const MAX_SCREENSHOTS = 5;
+
 type CaptureDraftState = {
   reservedIds: ReservedIds | null;
   imageDataUrl: string;
+  /** 额外截图 data URL 数组 */
+  extraImages: string[];
   imageMeta: string;
   rawNote: string;
   sourceUrl: string;
@@ -26,6 +31,12 @@ type CaptureDraftState = {
   ensureIds: () => Promise<void>;
   generateIds: () => Promise<void>;
   setImage: (dataUrl: string, meta: string) => void;
+  /** 追加一张额外截图（最多 MAX_SCREENSHOTS 张总计） */
+  addExtraImage: (dataUrl: string, meta: string) => void;
+  /** 移除指定索引的额外截图 */
+  removeExtraImage: (index: number) => void;
+  /** 清空所有截图 */
+  clearImages: () => void;
   setRawNote: (value: string) => void;
   setSourceUrl: (value: string) => void;
   setTaskContext: (value: string) => void;
@@ -42,6 +53,7 @@ type CaptureDraftState = {
 
 const INITIAL_DRAFT = {
   imageDataUrl: "",
+  extraImages: [] as string[],
   imageMeta: "等待截图",
   rawNote: "",
   sourceUrl: "",
@@ -62,6 +74,7 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     const s = get();
     return Boolean(
       s.imageDataUrl ||
+        s.extraImages.length > 0 ||
         s.rawNote.trim() ||
         s.sourceUrl.trim() ||
         s.taskContext.trim() ||
@@ -73,8 +86,14 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
   },
 
   async ensureIds() {
-    // 不再预分配编号，仅在保存时由 save() 调用 generateIds
-    return;
+    // 预分配编号：页面加载时即分配，让 UI 能立即显示真实编号
+    if (get().reservedIds) return;
+    try {
+      set({ reservedIds: await reserveNextRecordIds(), error: "" });
+    } catch (error) {
+      // 静默失败，保存时会重试
+      console.warn("[capture-draft] 预分配编号失败:", error);
+    }
   },
 
   async generateIds() {
@@ -94,6 +113,36 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
       imageMeta: meta,
       analysisStatus: "idle",
       error: "",
+    });
+  },
+
+  addExtraImage(dataUrl, meta) {
+    const s = get();
+    const total = (s.imageDataUrl ? 1 : 0) + s.extraImages.length;
+    if (total >= MAX_SCREENSHOTS) {
+      set({ error: `最多支持 ${MAX_SCREENSHOTS} 张截图（当前 ${total} 张）` });
+      return;
+    }
+    set({
+      extraImages: [...s.extraImages, dataUrl],
+      imageMeta: meta,
+      analysisStatus: "idle",
+      error: "",
+    });
+  },
+
+  removeExtraImage(index) {
+    set((s) => ({
+      extraImages: s.extraImages.filter((_, i) => i !== index),
+    }));
+  },
+
+  clearImages() {
+    set({
+      imageDataUrl: "",
+      extraImages: [],
+      imageMeta: INITIAL_DRAFT.imageMeta,
+      analysisStatus: "idle",
     });
   },
 
@@ -142,6 +191,7 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     set({
       reservedIds: null,
       ...INITIAL_DRAFT,
+      extraImages: [],
       analysis: { ...EMPTY_ANALYSIS },
     });
   },
@@ -152,6 +202,7 @@ function getCaptureSsrSnapshot(store: CaptureDraftState): CaptureDraftState {
     ...store,
     reservedIds: null,
     imageDataUrl: "",
+    extraImages: [],
     imageMeta: INITIAL_DRAFT.imageMeta,
     rawNote: "",
     sourceUrl: "",
