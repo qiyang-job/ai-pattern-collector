@@ -1,16 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PanelRightClose } from "lucide-react";
 import { toast } from "sonner";
 import { useHydratedCaptureDraft, useCaptureDraftStore } from "@/lib/capture-draft-store";
 import { useRecordsStore } from "@/lib/records-store";
-import {
-  CapturePipeline,
-  getActiveStep,
-  type EvidenceStepStatus,
-  type ExtractStepStatus,
-  type ReviewStepStatus,
-} from "@/components/capture-pipeline";
 import {
   getSaveBlockers,
   PatternExtractionWorkspace,
@@ -18,6 +12,7 @@ import {
 import {
   Button,
   ErrorBanner,
+  PageHeader,
   textareaClass,
 } from "@/components/ui";
 import {
@@ -32,6 +27,25 @@ const RESEARCH_NOTE_PLACEHOLDER =
 
 const WRITING_TEMPLATE =
   "[产品] 在 [用户阶段] 通过 [界面机制] 帮用户 [解决问题]";
+
+const CAPTURE_DRAWER_MS = 280;
+
+function buildEvidenceFingerprint(params: {
+  imageDataUrl: string;
+  extraImages: string[];
+  rawNote: string;
+  product: string;
+  sourceUrl: string;
+  taskContext: string;
+}) {
+  return JSON.stringify({
+    images: params.imageDataUrl ? [params.imageDataUrl, ...params.extraImages] : params.extraImages,
+    rawNote: params.rawNote.trim(),
+    product: params.product.trim(),
+    sourceUrl: params.sourceUrl.trim(),
+    taskContext: params.taskContext.trim(),
+  });
+}
 
 const createBrowserId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -169,11 +183,11 @@ export default function CapturePage() {
     isAnalyzing,
     showReview,
     error,
-    ensureIds,
     generateIds,
+    clearReservedIds,
     setImage,
     addExtraImage,
-    removeExtraImage,
+    removeImageAt,
     clearImages,
     setRawNote,
     setSourceUrl,
@@ -190,8 +204,11 @@ export default function CapturePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const [savedFlash, setSavedFlash] = useState(false);
   const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
+  const [drawerDismissed, setDrawerDismissed] = useState(false);
+  const [drawerPresent, setDrawerPresent] = useState(false);
+  const [drawerEntered, setDrawerEntered] = useState(false);
+  const [analyzedFingerprint, setAnalyzedFingerprint] = useState<string | null>(null);
 
   const totalImages = (imageDataUrl ? 1 : 0) + extraImages.length;
   const hasEvidence = totalImages > 0;
@@ -200,43 +217,27 @@ export default function CapturePage() {
   const analyzeReady = hasEvidence && hasRawNote;
   const canExtract = analyzeReady && !isAnalyzing;
 
-  const saveBlockers = getSaveBlockers({ hasEvidence, hasRawNote, analysis });
-  const canSave = saveBlockers.length === 0;
+  const evidenceFingerprint = useMemo(
+    () =>
+      buildEvidenceFingerprint({
+        imageDataUrl,
+        extraImages,
+        rawNote,
+        product: analysis.product,
+        sourceUrl,
+        taskContext,
+      }),
+    [imageDataUrl, extraImages, rawNote, analysis.product, sourceUrl, taskContext],
+  );
 
   const inReview = showReview || analysisStatus === "analyzed";
-  const evidenceStatus: EvidenceStepStatus = !hasEvidence
-    ? "缺失截图"
-    : !hasRawNote
-      ? "缺失备注"
-      : "证据就绪";
-
-  const extractStatus: ExtractStepStatus = isAnalyzing
-    ? "提炼中"
-    : analysisStatus === "analyzed"
-      ? "已完成"
-      : analysisStatus === "failed"
-        ? "提炼失败"
-        : analyzeReady
-          ? "可提炼"
-          : "尚未提炼";
-
-  const reviewStatus: ReviewStepStatus = !inReview
-    ? "已锁定"
-    : canSave
-      ? "可保存"
-      : "需校对";
-
-  const activeStep = getActiveStep({
-    savedFlash,
-    inReview,
-    isAnalyzing,
-    analyzeReady,
-    evidenceReady: evidenceStatus === "证据就绪",
-  });
-
-  useEffect(() => {
-    ensureIds();
-  }, [ensureIds]);
+  const evidenceStale =
+    inReview &&
+    analyzedFingerprint !== null &&
+    analyzedFingerprint !== evidenceFingerprint;
+  const inReviewReady = inReview && !evidenceStale;
+  const saveBlockers = getSaveBlockers({ hasEvidence, hasRawNote, analysis });
+  const canSave = saveBlockers.length === 0;
 
   const handleImageFile = useCallback(async (file: File, forcePrimary = false) => {
     if (!file.type.startsWith("image/")) {
@@ -296,8 +297,8 @@ export default function CapturePage() {
 
   async function reset() {
     setPreviewOpen(false);
-    setSavedFlash(false);
     setReviewDrawerOpen(false);
+    setAnalyzedFingerprint(null);
     await resetDraft();
   }
 
@@ -315,6 +316,7 @@ export default function CapturePage() {
     if (!rawNote.trim()) return setError("请填写研究备注。");
     setIsAnalyzing(true);
     setAnalysisStatus("analyzing");
+    setDrawerDismissed(false);
     setError("");
     try {
       // 收集所有图片并压缩
@@ -343,13 +345,26 @@ export default function CapturePage() {
       
       // 防御性处理：确保所有字段都有安全默认值
       const sanitized = sanitizePayload(payload);
-      setAnalysis({ ...sanitized, product: (sanitized.product as string) || analysis.product } as any);
+      const nextProduct = (sanitized.product as string) || analysis.product;
+      setAnalysis({ ...sanitized, product: nextProduct } as any);
       setAnalysisStatus("analyzed");
       setShowReview(true);
       setReviewDrawerOpen(true);
+      setDrawerDismissed(false);
+      setAnalyzedFingerprint(
+        buildEvidenceFingerprint({
+          imageDataUrl,
+          extraImages,
+          rawNote,
+          product: nextProduct,
+          sourceUrl,
+          taskContext,
+        }),
+      );
       toast.success("模式提炼完成，请校对后保存");
     } catch (e) {
       setAnalysisStatus("failed");
+      setDrawerDismissed(false);
       setError(e instanceof Error ? e.message : "AI 分析失败");
     } finally {
       setIsAnalyzing(false);
@@ -358,10 +373,9 @@ export default function CapturePage() {
 
   async function save() {
     if (!canSave) return;
-    // 保存时才分配编号，避免预占但未保存导致编号跳跃
-    if (!reservedIds) {
-      await generateIds();
-    }
+    // 每次保存都重新分配，避免复用上次未落库或已漂高的预占编号
+    clearReservedIds();
+    await generateIds({ force: true });
     const ids = useCaptureDraftStore.getState().reservedIds;
     if (!ids) return;
     const now = new Date().toISOString();
@@ -378,7 +392,6 @@ export default function CapturePage() {
       createdAt: now,
       updatedAt: now,
     });
-    setSavedFlash(true);
     toast.success("模式记录已保存");
     window.setTimeout(() => {
       void reset();
@@ -387,8 +400,9 @@ export default function CapturePage() {
 
   function handleBottomAction() {
     if (isAnalyzing) return;
-    if (inReview) {
+    if (inReviewReady) {
       setReviewDrawerOpen(true);
+      setDrawerDismissed(false);
       return;
     }
     void analyze();
@@ -396,14 +410,23 @@ export default function CapturePage() {
 
   const bottomActionLabel = isAnalyzing
     ? "AI 正在提炼…"
-    : inReview
+    : inReviewReady
       ? "打开 Review 校对"
       : "提取设计模式";
 
-  const drawerOpen =
+  const drawerIntent =
     isAnalyzing ||
     analysisStatus === "failed" ||
-    (reviewDrawerOpen && inReview);
+    (reviewDrawerOpen && inReviewReady);
+
+  const drawerOpen = drawerIntent && !drawerDismissed;
+
+  function closeDrawer() {
+    setDrawerDismissed(true);
+    if (inReviewReady) {
+      setReviewDrawerOpen(false);
+    }
+  }
 
   const drawerPhase = isAnalyzing
     ? "extracting"
@@ -417,27 +440,45 @@ export default function CapturePage() {
       ? "提炼失败"
       : "结果校对";
 
+  useEffect(() => {
+    if (evidenceStale) {
+      setReviewDrawerOpen(false);
+    }
+  }, [evidenceStale]);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      setDrawerPresent(true);
+      let enterFrame = 0;
+      const mountFrame = requestAnimationFrame(() => {
+        enterFrame = requestAnimationFrame(() => setDrawerEntered(true));
+      });
+      return () => {
+        cancelAnimationFrame(mountFrame);
+        cancelAnimationFrame(enterFrame);
+      };
+    }
+
+    setDrawerEntered(false);
+    const timer = window.setTimeout(() => setDrawerPresent(false), CAPTURE_DRAWER_MS);
+    return () => window.clearTimeout(timer);
+  }, [drawerOpen]);
+
   return (
     <div className="capture-workbench flex-1">
-      <CapturePipeline
-        screenshotId={reservedIds?.screenshotId ?? "S---"}
-        patternId={inReview ? reservedIds?.patternId : undefined}
-        evidenceStatus={evidenceStatus}
-        extractStatus={extractStatus}
-        reviewStatus={reviewStatus}
-        savedStatus={savedFlash ? "已保存" : "未保存"}
-        activeStep={activeStep}
+      <PageHeader
+        title="采集"
+        description="粘贴截图与研究备注，提炼 AI 产品设计模式。"
       />
 
       <div className="capture-columns">
         <div className="capture-evidence-column">
           <div className="capture-evidence-body">
             <MultiImageEvidenceSlot
-              screenshotId={reservedIds?.screenshotId ?? "S---"}
               primaryUrl={imageDataUrl}
               extraUrls={extraImages}
               onAddClick={() => fileInputRef.current?.click()}
-              onRemoveExtra={removeExtraImage}
+              onRemoveImage={removeImageAt}
               onPreview={openPreview}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -518,29 +559,43 @@ export default function CapturePage() {
       <div className="capture-bottom-action" role="region" aria-label="提炼模式操作">
         <Button
           onClick={handleBottomAction}
-          disabled={isAnalyzing || (!inReview && !canExtract)}
+          disabled={isAnalyzing || (!inReviewReady && !canExtract)}
         >
           {bottomActionLabel}
         </Button>
       </div>
 
-      {drawerOpen ? (
+      {drawerPresent ? (
         <div className="capture-drawer-layer">
-          <aside className="capture-review-drawer" role="dialog" aria-modal="false" aria-label={drawerTitle}>
-            <header className="capture-drawer-header">
-              <div>
+          <button
+            type="button"
+            className="capture-drawer-backdrop"
+            aria-label="关闭面板"
+            onClick={closeDrawer}
+          />
+          <aside
+            className={cn("capture-review-drawer", drawerEntered && "is-open")}
+            role="dialog"
+            aria-modal="true"
+            aria-label={drawerTitle}
+            aria-hidden={!drawerEntered}
+          >
+            <header className="capture-drawer-header page-gutter-x">
+              <div className="min-w-0">
                 <div className="mono text-[9px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
                   Pattern Review
                 </div>
-                <h2 className="capture-drawer-title">{drawerTitle}</h2>
+                <h2 className="capture-drawer-title display-serif">{drawerTitle}</h2>
               </div>
               {drawerPhase === "review" ? (
                 <button
                   type="button"
                   className="evidence-recap-edit focus-ring"
-                  onClick={() => setReviewDrawerOpen(false)}
+                  onClick={closeDrawer}
+                  aria-label="收起"
+                  title="收起"
                 >
-                  收起
+                  <PanelRightClose className="h-3.5 w-3.5" />
                 </button>
               ) : null}
             </header>
@@ -549,7 +604,7 @@ export default function CapturePage() {
               hasProduct={hasProduct}
               isAnalyzing={isAnalyzing}
               patternId={reservedIds?.patternId}
-              screenshotId={reservedIds?.screenshotId ?? "S---"}
+              screenshotId={reservedIds?.screenshotId}
               analysis={analysis}
               saveBlockers={saveBlockers}
               canSave={canSave}
@@ -557,10 +612,10 @@ export default function CapturePage() {
               onManualFill={() => {
                 setShowReview(true);
                 setReviewDrawerOpen(true);
+                setDrawerDismissed(false);
               }}
               onChange={setAnalysis}
               onSave={save}
-              onReset={reset}
             />
             {drawerPhase !== "review" && error ? (
               <div className="px-3 pb-3">

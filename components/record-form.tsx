@@ -162,45 +162,47 @@ export function RecordForm({
 
   if (guided) {
     return (
-      <div className="space-y-2">
+      <div className="capture-review-form">
         {show("A") ? (
           <FormModule
             letter="A"
             title="分类归位"
             description="决定这条记录会进入矩阵和旅程的哪个位置。"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={<DualLabel zh="产品" en="Product" />} compact>
-                <input
-                  className={inputClass}
-                  value={value.product}
-                  onChange={(e) => update("product", e.target.value)}
-                />
-              </Field>
-              {selectField(
-                "productCategory",
-                "产品类型",
-                "Product Category",
-                PRODUCT_CATEGORIES,
-                TAXONOMY_FIELD_HINTS.productCategory,
-                PRODUCT_CATEGORY_LABELS,
-              )}
-              {selectField(
-                "journeyStage",
-                "旅程阶段",
-                "Journey Stage",
-                JOURNEY_STAGES,
-                TAXONOMY_FIELD_HINTS.journeyStage,
-                JOURNEY_STAGE_LABELS,
-              )}
-              {selectField(
-                "screenshotState",
-                "截图状态",
-                "Screenshot State",
-                SCREENSHOT_STATES,
-                TAXONOMY_FIELD_HINTS.screenshotState,
-                SCREENSHOT_STATE_LABELS,
-              )}
+            <div className="capture-form-stack">
+              <div className="capture-form-grid">
+                <Field label={<DualLabel zh="产品" en="Product" />} compact>
+                  <input
+                    className={inputClass}
+                    value={value.product}
+                    onChange={(e) => update("product", e.target.value)}
+                  />
+                </Field>
+                {selectField(
+                  "productCategory",
+                  "产品类型",
+                  "Product Category",
+                  PRODUCT_CATEGORIES,
+                  TAXONOMY_FIELD_HINTS.productCategory,
+                  PRODUCT_CATEGORY_LABELS,
+                )}
+                {selectField(
+                  "journeyStage",
+                  "旅程阶段",
+                  "Journey Stage",
+                  JOURNEY_STAGES,
+                  TAXONOMY_FIELD_HINTS.journeyStage,
+                  JOURNEY_STAGE_LABELS,
+                )}
+                {selectField(
+                  "screenshotState",
+                  "截图状态",
+                  "Screenshot State",
+                  SCREENSHOT_STATES,
+                  TAXONOMY_FIELD_HINTS.screenshotState,
+                  SCREENSHOT_STATE_LABELS,
+                )}
+              </div>
               {secondaryStatesField}
               {stateReasonField}
               {selectField(
@@ -221,21 +223,23 @@ export function RecordForm({
             title="模式标识"
             description="把这张截图抽象成一个可复用、可检索的模式。"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              {patternId ? (
-                <Field label={<DualLabel zh="模式编号" en="Pattern ID" />} compact>
-                  <div className="flex h-8 items-center">
-                    <TypedIdBadge kind="pattern">{patternId}</TypedIdBadge>
-                  </div>
+            <div className="capture-form-stack">
+              <div className="capture-form-grid">
+                {patternId ? (
+                  <Field label={<DualLabel zh="模式编号" en="Pattern ID" />} compact>
+                    <div className="flex h-9 items-center">
+                      <TypedIdBadge kind="pattern">{patternId}</TypedIdBadge>
+                    </div>
+                  </Field>
+                ) : null}
+                <Field label={<DualLabel zh="模式名称" en="Pattern Name" />} compact>
+                  <input
+                    className={inputClass}
+                    value={value.patternName}
+                    onChange={(e) => update("patternName", e.target.value)}
+                  />
                 </Field>
-              ) : null}
-              <Field label={<DualLabel zh="模式名称" en="Pattern Name" />} compact>
-                <input
-                  className={inputClass}
-                  value={value.patternName}
-                  onChange={(e) => update("patternName", e.target.value)}
-                />
-              </Field>
+              </div>
               <Field label={<DualLabel zh="标签" en="Tags" />} hint="逗号分隔" compact>
                 <input
                   className={inputClass}
@@ -258,7 +262,7 @@ export function RecordForm({
             title="体验诊断"
             description="解释这个模式解决了什么体验问题。"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="capture-form-grid">
               {textField(
                 "userProblem",
                 "用户问题",
@@ -293,7 +297,7 @@ export function RecordForm({
             title="信任与恢复"
             description="判断这个模式是否可靠、可控、可恢复。"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="capture-form-grid">
               {textField(
                 "systemFeedback",
                 "系统反馈",
@@ -328,42 +332,42 @@ export function RecordForm({
             title="分析镜头与复用"
             description="用统一分析维度评估模式价值。"
           >
-            <p className="lens-legend">
-              0 {LENS_SCORE_LABELS_ZH[0]} · 1 {LENS_SCORE_LABELS_ZH[1]} · 2 {LENS_SCORE_LABELS_ZH[2]} · 3 {LENS_SCORE_LABELS_ZH[3]}
-            </p>
-            <div className="space-y-1">
-              {LENS_DIMENSIONS.map((dim) => (
-                <div
-                  key={dim.key}
-                  className="flex items-center justify-between gap-2 py-1"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <TypedIdBadge kind="lens">{dim.code}</TypedIdBadge>
-                    <span className="truncate text-[11px] text-[var(--text-muted)]" title={dim.label}>
-                      {dim.description}
-                    </span>
+            <div className="capture-form-stack">
+              <p className="lens-legend">
+                0 {LENS_SCORE_LABELS_ZH[0]} · 1 {LENS_SCORE_LABELS_ZH[1]} · 2 {LENS_SCORE_LABELS_ZH[2]} · 3 {LENS_SCORE_LABELS_ZH[3]}
+              </p>
+              <div className="lens-score-list">
+                {LENS_DIMENSIONS.map((dim) => (
+                  <div
+                    key={dim.key}
+                    className="lens-score-row flex items-center justify-between gap-2"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <TypedIdBadge kind="lens">{dim.code}</TypedIdBadge>
+                      <span className="truncate text-[11px] text-[var(--text-muted)]" title={dim.label}>
+                        {dim.description}
+                      </span>
+                    </div>
+                    <SegmentedControl
+                      compact
+                      value={value.lensScore[dim.key]}
+                      options={LENS_SCORE_VALUES.map((s) => ({
+                        value: s,
+                        label: String(s),
+                      }))}
+                      onChange={(score) =>
+                        onChange({
+                          ...value,
+                          lensScore: {
+                            ...value.lensScore,
+                            [dim.key]: score as LensScoreValue,
+                          },
+                        })
+                      }
+                    />
                   </div>
-                  <SegmentedControl
-                    compact
-                    value={value.lensScore[dim.key]}
-                    options={LENS_SCORE_VALUES.map((s) => ({
-                      value: s,
-                      label: String(s),
-                    }))}
-                    onChange={(score) =>
-                      onChange({
-                        ...value,
-                        lensScore: {
-                          ...value.lensScore,
-                          [dim.key]: score as LensScoreValue,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 pt-2">
+                ))}
+              </div>
               {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, undefined, REUSE_LEVEL_LABELS)}
             </div>
           </FormModule>

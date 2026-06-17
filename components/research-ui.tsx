@@ -258,22 +258,20 @@ export function EvidenceSlot({
  * 多截图证据槽 — 支持最多 5 张截图的采集、预览和删除
  */
 export function MultiImageEvidenceSlot({
-  screenshotId,
   primaryUrl,
   extraUrls,
   onAddClick,
-  onRemoveExtra,
+  onRemoveImage,
   onPreview,
   onDragOver,
   onDrop,
 }: {
-  screenshotId: string;
   /** 主图 data URL */
   primaryUrl: string;
   /** 额外截图 data URL 数组 */
   extraUrls: string[];
   onAddClick: () => void;
-  onRemoveExtra?: (index: number) => void;
+  onRemoveImage?: (index: number) => void;
   onPreview: (url: string, index: number) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
@@ -283,9 +281,9 @@ export function MultiImageEvidenceSlot({
 
   return (
     <div className="evidence-slot">
-      {/* 头部：编号 + 计数 */}
+      {/* 头部：计数 */}
       <div className="flex items-center gap-2 px-2 py-1.5">
-        <TypedIdBadge kind="evidence">{screenshotId}</TypedIdBadge>
+        <span className="text-[10px] font-medium text-[var(--text-muted)]">截图证据</span>
         <span className="mono text-[10px] text-[var(--text-weak)]">
           {total}/{MAX_SCREENSHOTS}
         </span>
@@ -302,12 +300,25 @@ export function MultiImageEvidenceSlot({
             {/* 主图预览区（可点击放大） */}
             <button
               type="button"
-              className="flex h-[120px] w-full items-center justify-center hover:bg-[var(--panel-muted)] border-b border-[var(--border)]"
+              className="relative flex h-[120px] w-full items-center justify-center hover:bg-[var(--panel-muted)] border-b border-[var(--border)]"
               onClick={() => primaryUrl && onPreview(primaryUrl, 0)}
               title="点击放大预览"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={primaryUrl || extraUrls[0]} alt={`截图证据 ${screenshotId}`} className="max-h-full max-w-full object-contain" />
+              <img src={primaryUrl || extraUrls[0]} alt="截图证据" className="max-h-full max-w-full object-contain" />
+              {total === 1 && onRemoveImage ? (
+                <span
+                  className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--danger)] text-[11px] text-white cursor-pointer hover:bg-red-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveImage(0);
+                  }}
+                  role="button"
+                  aria-label="删除此截图"
+                >
+                  ×
+                </span>
+              ) : null}
             </button>
 
             {/* 缩略图条 */}
@@ -322,21 +333,23 @@ export function MultiImageEvidenceSlot({
                       i === 0 ? "w-14 h-14 border-[var(--accent)]" : "w-11 h-11 border-[var(--border)] hover:border-[var(--accent-muted)]",
                     )}
                     onClick={() => onPreview(url, i)}
-                    title={`截图 ${i + 1}${i > 0 ? '（点击删除）' : ''}`}
+                    title={`截图 ${i + 1}（点击删除）`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt={`截图 ${i + 1}`} className="h-full w-full object-cover" />
-                    {/* 非主图的删除按钮 */}
-                    {i > 0 && onRemoveExtra && (
+                    {onRemoveImage ? (
                       <span
                         className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] text-white cursor-pointer hover:bg-red-700"
-                        onClick={(e) => { e.stopPropagation(); onRemoveExtra(i - 1); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveImage(i);
+                        }}
                         role="button"
                         aria-label="删除此截图"
                       >
                         ×
                       </span>
-                    )}
+                    ) : null}
                   </button>
                 ))}
                 {/* 添加更多按钮 */}
@@ -444,7 +457,7 @@ export function FormModule({
   description,
   children,
 }: {
-  letter: "A" | "B" | "C" | "D" | "E";
+  letter: "A" | "B" | "C" | "D" | "E" | "Ev";
   title: string;
   description?: string;
   children: ReactNode;
@@ -452,15 +465,15 @@ export function FormModule({
   return (
     <div className="form-module">
       <div className="form-module-header">
-        <span className="mono flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[10px] font-bold text-[var(--accent)]">
+        <TypedIdBadge kind="pattern" className="shrink-0 self-center">
           {letter}
-        </span>
-        <div className="min-w-0">
-          <span className="text-[11px] font-semibold tracking-wide text-[var(--text-muted)]">
+        </TypedIdBadge>
+        <div className="min-w-0 flex flex-col justify-center gap-0.5">
+          <span className="block text-[11px] font-semibold leading-4 tracking-wide text-[var(--text-muted)]">
             {title}
           </span>
           {description ? (
-            <p className="mt-0.5 text-[10px] font-normal leading-4 text-[var(--text-weak)]">
+            <p className="text-[10px] font-normal leading-4 text-[var(--text-weak)]">
               {description}
             </p>
           ) : null}

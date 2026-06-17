@@ -28,13 +28,15 @@ type CaptureDraftState = {
   showReview: boolean;
   showAdvanced: boolean;
   error: string;
-  ensureIds: () => Promise<void>;
-  generateIds: () => Promise<void>;
+  generateIds: (options?: { force?: boolean }) => Promise<void>;
+  clearReservedIds: () => void;
   setImage: (dataUrl: string, meta: string) => void;
   /** 追加一张额外截图（最多 MAX_SCREENSHOTS 张总计） */
   addExtraImage: (dataUrl: string, meta: string) => void;
   /** 移除指定索引的额外截图 */
   removeExtraImage: (index: number) => void;
+  /** 按全局索引移除截图（0 为主图） */
+  removeImageAt: (index: number) => void;
   /** 清空所有截图 */
   clearImages: () => void;
   setRawNote: (value: string) => void;
@@ -85,19 +87,8 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     );
   },
 
-  async ensureIds() {
-    // 预分配编号：页面加载时即分配，让 UI 能立即显示真实编号
-    if (get().reservedIds) return;
-    try {
-      set({ reservedIds: await reserveNextRecordIds(), error: "" });
-    } catch (error) {
-      // 静默失败，保存时会重试
-      console.warn("[capture-draft] 预分配编号失败:", error);
-    }
-  },
-
-  async generateIds() {
-    if (get().reservedIds) return;
+  async generateIds(options) {
+    if (!options?.force && get().reservedIds) return;
     try {
       set({ reservedIds: await reserveNextRecordIds(), error: "" });
     } catch (error) {
@@ -105,6 +96,10 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
         error: error instanceof Error ? error.message : "编号生成失败",
       });
     }
+  },
+
+  clearReservedIds() {
+    set({ reservedIds: null });
   },
 
   setImage(dataUrl, meta) {
@@ -135,6 +130,31 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     set((s) => ({
       extraImages: s.extraImages.filter((_, i) => i !== index),
     }));
+  },
+
+  removeImageAt(index) {
+    set((s) => {
+      const extras = [...s.extraImages];
+      let nextPrimary = s.imageDataUrl;
+
+      if (index === 0) {
+        if (extras.length > 0) {
+          nextPrimary = extras[0];
+          extras.shift();
+        } else {
+          nextPrimary = "";
+        }
+      } else {
+        extras.splice(index - 1, 1);
+      }
+
+      const hasImages = Boolean(nextPrimary) || extras.length > 0;
+      return {
+        imageDataUrl: nextPrimary,
+        extraImages: extras,
+        imageMeta: hasImages ? s.imageMeta : INITIAL_DRAFT.imageMeta,
+      };
+    });
   },
 
   clearImages() {
@@ -187,7 +207,6 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
   },
 
   async resetDraft() {
-    // 不再预分配下一个编号，等下次保存时再分配
     set({
       reservedIds: null,
       ...INITIAL_DRAFT,

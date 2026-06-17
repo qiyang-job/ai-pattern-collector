@@ -14,7 +14,6 @@ import {
   Loader2,
   LogOut,
 } from "lucide-react";
-import { Toaster } from "sonner";
 import { useRecordsStore } from "@/lib/records-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { computeMatrixCoverage } from "@/lib/stats";
@@ -81,18 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (status === "guest") {
-    return (
-      <>
-        <LoginGate />
-        <Toaster
-          position="top-right"
-          richColors
-          expand={false}
-          visibleToasts={3}
-          closeButton={false}
-        />
-      </>
-    );
+    return <LoginGate />;
   }
 
   return (
@@ -207,13 +195,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      <Toaster
-        position="top-right"
-        richColors
-        expand={false}
-        visibleToasts={3}
-        closeButton={false}
-      />
     </div>
   );
 }

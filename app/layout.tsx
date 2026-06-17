@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
+import { AppToaster } from "@/components/app-toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AppShell>{children}</AppShell>
+        <AppToaster />
       </body>
     </html>
   );

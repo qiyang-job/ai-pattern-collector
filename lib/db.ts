@@ -15,12 +15,11 @@ export interface CounterMeta {
 let _lastReservedMs = 0;
 const RESERVE_DEBOUNCE_MS = 1000; // 1s 内不重复分配
 
-/** 原子递增并返回新编号（带防重入保护） */
+/** 基于已保存记录分配下一个编号，并回写 meta 计数器保持同步 */
 export async function reserveNextRecordIds(): Promise<{
   screenshotId: string;
   patternId: string;
 }> {
-  // 防抖：1 秒内多次调用直接拒绝
   const now = Date.now();
   if (now - _lastReservedMs < RESERVE_DEBOUNCE_MS) {
     throw new Error("编号分配过于频繁，请稍后再试");
@@ -28,17 +27,14 @@ export async function reserveNextRecordIds(): Promise<{
   _lastReservedMs = now;
 
   return authed(async () => {
-    const cur = await readCounters();
+    const savedMax = await readMaxSavedSeq();
     const next = {
-      screenshotSeq: cur.screenshotSeq + 1,
-      patternSeq: cur.patternSeq + 1,
+      screenshotSeq: savedMax.screenshotSeq + 1,
+      patternSeq: savedMax.patternSeq + 1,
       lastReservedAt: new Date().toISOString(),
     };
     await writeCounters(next);
-    return {
-      screenshotId: `S-${String(next.screenshotSeq).padStart(3, "0")}`,
-      patternId: `P-${String(next.patternSeq).padStart(3, "0")}`,
-    };
+    return formatRecordIds(next);
   });
 }
 
@@ -124,6 +120,49 @@ async function readCounters(): Promise<CounterMeta> {
   const res = await countersDoc();
   if (res.data?.[0]?.value) return res.data[0].value as CounterMeta;
   return { screenshotSeq: 0, patternSeq: 0 };
+}
+
+function parseSeq(id: string | undefined, prefix: "S" | "P"): number {
+  const match = String(id ?? "").match(new RegExp(`^${prefix}-(\\d+)$`, "i"));
+  return match ? Number.parseInt(match[1], 10) : 0;
+}
+
+async function readAllRecordsRaw(): Promise<Record<string, unknown>[]> {
+  const pageSize = 100;
+  let skip = 0;
+  const all: Record<string, unknown>[] = [];
+
+  while (true) {
+    const res = await records().skip(skip).limit(pageSize).get();
+    const batch = (res.data ?? []) as Record<string, unknown>[];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    skip += pageSize;
+  }
+
+  return all;
+}
+
+/** 从已保存记录推导当前最大序号（唯一可信来源） */
+async function readMaxSavedSeq(): Promise<Pick<CounterMeta, "screenshotSeq" | "patternSeq">> {
+  const items = await readAllRecordsRaw();
+  let screenshotSeq = 0;
+  let patternSeq = 0;
+
+  for (const raw of items) {
+    const record = normalizeRecord(raw);
+    screenshotSeq = Math.max(screenshotSeq, parseSeq(record.screenshotId, "S"));
+    patternSeq = Math.max(patternSeq, parseSeq(record.patternId, "P"));
+  }
+
+  return { screenshotSeq, patternSeq };
+}
+
+function formatRecordIds(seq: Pick<CounterMeta, "screenshotSeq" | "patternSeq">) {
+  return {
+    screenshotId: `S-${String(seq.screenshotSeq).padStart(3, "0")}`,
+    patternId: `P-${String(seq.patternSeq).padStart(3, "0")}`,
+  };
 }
 
 async function writeCounters(val: CounterMeta): Promise<void> {
