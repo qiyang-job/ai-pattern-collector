@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createJsonChatCompletion } from "@/lib/ai/client";
+import { createInsightsJsonChatCompletion } from "@/lib/ai/client";
 import { GENERATE_INSIGHTS_SYSTEM_PROMPT, buildInsightsUserText } from "@/lib/ai/prompts";
 import {
   GenerateInsightsRequestSchema,
@@ -9,7 +9,7 @@ import {
 export async function POST(request: Request) {
   try {
     const body = GenerateInsightsRequestSchema.parse(await request.json());
-    const payload = await createJsonChatCompletion([
+    const payload = await createInsightsJsonChatCompletion([
       {
         role: "system",
         content: GENERATE_INSIGHTS_SYSTEM_PROMPT,

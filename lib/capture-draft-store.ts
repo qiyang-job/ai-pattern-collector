@@ -11,7 +11,7 @@ export type CaptureAnalysisStatus = "idle" | "analyzing" | "analyzed" | "failed"
 export type ReservedIds = { screenshotId: string; patternId: string };
 
 /** 最多支持截图数量 */
-export const MAX_SCREENSHOTS = 5;
+export const MAX_SCREENSHOTS = 9;
 
 type CaptureDraftState = {
   reservedIds: ReservedIds | null;
@@ -19,6 +19,12 @@ type CaptureDraftState = {
   /** 额外截图 data URL 数组 */
   extraImages: string[];
   imageMeta: string;
+  videoFile: File | null;
+  videoPreviewUrl: string;
+  videoFileID: string;
+  videoName: string;
+  videoMime: string;
+  videoMeta: string;
   rawNote: string;
   sourceUrl: string;
   taskContext: string;
@@ -39,6 +45,9 @@ type CaptureDraftState = {
   removeImageAt: (index: number) => void;
   /** 清空所有截图 */
   clearImages: () => void;
+  setVideo: (file: File, previewUrl: string, meta: string) => void;
+  setVideoFileID: (fileID: string) => void;
+  clearVideo: () => void;
   setRawNote: (value: string) => void;
   setSourceUrl: (value: string) => void;
   setTaskContext: (value: string) => void;
@@ -57,6 +66,12 @@ const INITIAL_DRAFT = {
   imageDataUrl: "",
   extraImages: [] as string[],
   imageMeta: "等待截图",
+  videoFile: null as File | null,
+  videoPreviewUrl: "",
+  videoFileID: "",
+  videoName: "",
+  videoMime: "",
+  videoMeta: "等待录屏",
   rawNote: "",
   sourceUrl: "",
   taskContext: "",
@@ -77,6 +92,8 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     return Boolean(
       s.imageDataUrl ||
         s.extraImages.length > 0 ||
+        s.videoPreviewUrl ||
+        s.videoFileID ||
         s.rawNote.trim() ||
         s.sourceUrl.trim() ||
         s.taskContext.trim() ||
@@ -166,6 +183,38 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     });
   },
 
+  setVideo(file, previewUrl, meta) {
+    const prev = get().videoPreviewUrl;
+    if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+    set({
+      videoFile: file,
+      videoPreviewUrl: previewUrl,
+      videoName: file.name,
+      videoMime: file.type,
+      videoMeta: meta,
+      videoFileID: "",
+      analysisStatus: "idle",
+      error: "",
+    });
+  },
+
+  setVideoFileID(fileID) {
+    set({ videoFileID: fileID });
+  },
+
+  clearVideo() {
+    const prev = get().videoPreviewUrl;
+    if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+    set({
+      videoFile: null,
+      videoPreviewUrl: "",
+      videoFileID: "",
+      videoName: "",
+      videoMime: "",
+      videoMeta: INITIAL_DRAFT.videoMeta,
+    });
+  },
+
   setRawNote(value) {
     set({ rawNote: value });
   },
@@ -207,10 +256,13 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
   },
 
   async resetDraft() {
+    const prev = get().videoPreviewUrl;
+    if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
     set({
       reservedIds: null,
       ...INITIAL_DRAFT,
       extraImages: [],
+      videoFile: null,
       analysis: { ...EMPTY_ANALYSIS },
     });
   },
@@ -223,6 +275,12 @@ function getCaptureSsrSnapshot(store: CaptureDraftState): CaptureDraftState {
     imageDataUrl: "",
     extraImages: [],
     imageMeta: INITIAL_DRAFT.imageMeta,
+    videoFile: null,
+    videoPreviewUrl: "",
+    videoFileID: "",
+    videoName: "",
+    videoMime: "",
+    videoMeta: INITIAL_DRAFT.videoMeta,
     rawNote: "",
     sourceUrl: "",
     taskContext: "",

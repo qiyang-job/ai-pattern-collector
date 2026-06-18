@@ -1,0 +1,28 @@
+{
+  "envId": "patterncollector-d6e3o08821ba3ee",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "ai-analyze-pattern",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 180,
+      "memorySize": 512,
+      "installDependency": false,
+      "envVariables": {
+        "AI_MODEL": "qwen3.7-plus"
+      }
+    },
+    {
+      "name": "ai-generate-insights",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 120,
+      "memorySize": 512,
+      "installDependency": false,
+      "envVariables": {
+        "AI_MODEL_INSIGHTS": "qwen3.7-max"
+      }
+    }
+  ]
+}

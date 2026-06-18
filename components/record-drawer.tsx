@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Braces, Trash2 } from "lucide-react";
 import { RecordForm } from "@/components/record-form";
@@ -14,12 +14,27 @@ import {
   formTextareaClass,
   inputClass,
 } from "@/components/ui";
-import { FormModule, ImageLightbox } from "@/components/research-ui";
+import {
+  EvidenceMediaSlot,
+  FormModule,
+  ImageLightbox,
+  VideoLightbox,
+} from "@/components/research-ui";
+import { MAX_SCREENSHOTS } from "@/lib/capture-draft-store";
 import { recordToMarkdown, recordsToJson } from "@/lib/export";
+import { getImageTempUrl } from "@/lib/db";
+import {
+  MAX_VIDEO_BYTES,
+  isVideoMime,
+  captureVideoPoster,
+  uploadVideoForAnalysis,
+  VIDEO_ANALYZE_FPS,
+} from "@/lib/evidence-media";
 import { useRecordsStore } from "@/lib/records-store";
 import type { PatternAnalysisResult, PatternRecord } from "@/lib/types";
 import { cn, downloadTextFile, formatDate } from "@/lib/utils";
 import { callCloudFunction, ensureAuth } from "@/lib/cloudbase";
+import { prepareImagesForAnalysis, parseAnalyzeCloudResult } from "@/lib/prepare-evidence-for-analyze";
 
 export function RecordDrawer({
   record,
@@ -43,13 +58,161 @@ function RecordDrawerContent({
   const [draft, setDraft] = useState<PatternRecord>(record);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [videoLightboxOpen, setVideoLightboxOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState("");
+  const [pendingVideoFile, setPendingVideoFile] = useState<File | null>(null);
 
+  const extraImages = Array.isArray(draft.extraImages) ? draft.extraImages : [];
   const allImages = draft.imageDataUrl
-    ? [draft.imageDataUrl, ...(Array.isArray(draft.extraImages) ? draft.extraImages : [])]
-    : Array.isArray(draft.extraImages)
-      ? draft.extraImages
-      : [];
+    ? [draft.imageDataUrl, ...extraImages]
+    : extraImages;
+  const hasVideo = Boolean(videoPreviewUrl || draft.videoFileID || pendingVideoFile);
+  const hasEvidence = allImages.length > 0 || hasVideo;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (pendingVideoFile) return;
+
+    async function loadVideoUrl() {
+      if (!draft.videoFileID) {
+        setVideoPreviewUrl("");
+        return;
+      }
+      const url = await getImageTempUrl(draft.videoFileID);
+      if (!cancelled) {
+        setVideoPreviewUrl(url ?? "");
+      }
+    }
+
+    void loadVideoUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [draft.videoFileID, pendingVideoFile]);
+
+  const handleImageFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("请选择图片文件。");
+        return;
+      }
+      try {
+        const dataUrl = await readAndResizeImage(file);
+        const total = allImages.length;
+        if (total >= MAX_SCREENSHOTS) {
+          toast.error(`最多支持 ${MAX_SCREENSHOTS} 张截图（当前已有 ${total} 张）`);
+          return;
+        }
+        setDraft((prev) => {
+          if (!prev.imageDataUrl) {
+            return { ...prev, imageDataUrl: dataUrl };
+          }
+          return {
+            ...prev,
+            extraImages: [...(prev.extraImages ?? []), dataUrl],
+          };
+        });
+        toast.success(total === 0 ? "截图已粘贴" : `已添加第 ${total + 1} 张截图`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "图片读取失败");
+      }
+    },
+    [allImages.length],
+  );
+
+  useEffect(() => {
+    if (isAnalyzing) return;
+
+    const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("textarea, input, [contenteditable='true']")) return;
+
+      const file = Array.from(event.clipboardData?.files ?? []).find((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (!file) return;
+
+      event.preventDefault();
+      void handleImageFile(file);
+    };
+
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [handleImageFile, isAnalyzing]);
+
+  const handleVideoFile = useCallback(async (file: File) => {
+    if (!isVideoMime(file.type) && !/\.(mp4|webm|mov)$/i.test(file.name)) {
+      toast.error("请选择 MP4、WebM 或 MOV 录屏文件。");
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(`录屏文件过大（最大 ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)}MB）`);
+      return;
+    }
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      setPendingVideoFile(file);
+      setVideoPreviewUrl(previewUrl);
+      setDraft((prev) => ({
+        ...prev,
+        videoFileID: undefined,
+        videoName: file.name,
+        videoMime: file.type,
+      }));
+      toast.success("录屏已添加");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "录屏读取失败");
+    }
+  }, []);
+
+  function clearVideo() {
+    if (videoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+    setPendingVideoFile(null);
+    setVideoPreviewUrl("");
+    setDraft((prev) => ({
+      ...prev,
+      videoFileID: undefined,
+      videoName: undefined,
+      videoMime: undefined,
+    }));
+  }
+
+  function handleEvidenceFile(file: File) {
+    if (isVideoMime(file.type) || /\.(mp4|webm|mov)$/i.test(file.name)) {
+      void handleVideoFile(file);
+      return;
+    }
+    if (file.type.startsWith("image/")) {
+      void handleImageFile(file);
+    }
+  }
+
+  function removeImageAt(index: number) {
+    setDraft((prev) => {
+      const extras = [...(prev.extraImages ?? [])];
+      let nextPrimary = prev.imageDataUrl;
+
+      if (index === 0) {
+        if (extras.length > 0) {
+          nextPrimary = extras[0];
+          extras.shift();
+        } else {
+          nextPrimary = "";
+        }
+      } else {
+        extras.splice(index - 1, 1);
+      }
+
+      return {
+        ...prev,
+        imageDataUrl: nextPrimary,
+        extraImages: extras,
+      };
+    });
+  }
 
   const analysisValue: PatternAnalysisResult = {
     product: draft.product,
@@ -77,9 +240,27 @@ function RecordDrawerContent({
 
   async function saveDraft() {
     try {
-      await saveRecord({ ...draft, updatedAt: new Date().toISOString() });
+      let next: PatternRecord = { ...draft, updatedAt: new Date().toISOString() };
+      if (pendingVideoFile) {
+        toast.loading("正在上传录屏…", { id: "drawer-video-upload" });
+        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile);
+        toast.dismiss("drawer-video-upload");
+        if (!next.imageDataUrl) {
+          next.imageDataUrl = await captureVideoPoster(pendingVideoFile);
+        }
+        next = {
+          ...next,
+          videoFileID: uploaded.fileID,
+          videoName: pendingVideoFile.name,
+          videoMime: pendingVideoFile.type,
+        };
+        setPendingVideoFile(null);
+      }
+      setDraft(next);
+      await saveRecord(next);
       toast.success("记录已更新。");
     } catch (err) {
+      toast.dismiss("drawer-video-upload");
       const msg = err instanceof Error ? err.message : JSON.stringify(err ?? {});
       console.error("[saveDraft] 保存失败:", err);
       toast.error(`保存失败: ${msg}`);
@@ -104,8 +285,8 @@ function RecordDrawerContent({
   }
 
   async function reanalyze() {
-    if (allImages.length === 0) {
-      toast.error("该记录没有截图，无法重新提取。");
+    if (!hasEvidence) {
+      toast.error("该记录没有截图或录屏，无法重新提取。");
       return;
     }
     if (!draft.rawNote?.trim()) {
@@ -117,30 +298,62 @@ function RecordDrawerContent({
     try {
       await ensureAuth();
 
-      const compressedImages = await Promise.all(allImages.map((img) => compressImage(img)));
-      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
-        imageDataUrls: compressedImages,
-        imageDataUrl: compressedImages[0],
+      const analyzeContext = {
         rawNote: draft.rawNote,
         product: draft.product,
         sourceUrl: draft.sourceUrl ?? "",
         taskContext: draft.taskContext ?? "",
+      };
+      const compressedImages = await prepareImagesForAnalysis(allImages, analyzeContext, {
+        storageKeyPrefix: draft.screenshotId,
+        onProgress: (msg) => toast.loading(msg, { id: "drawer-analyze-upload" }),
+      });
+      toast.dismiss("drawer-analyze-upload");
+
+      let videoUrl: string | undefined;
+      let nextVideoFileID = draft.videoFileID;
+
+      if (pendingVideoFile) {
+        toast.loading("正在上传录屏…", { id: "drawer-reanalyze-video" });
+        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile);
+        toast.dismiss("drawer-reanalyze-video");
+        videoUrl = uploaded.videoUrl;
+        nextVideoFileID = uploaded.fileID;
+      } else if (draft.videoFileID) {
+        videoUrl = (await getImageTempUrl(draft.videoFileID)) ?? undefined;
+        if (!videoUrl) throw new Error("录屏临时链接失效，请重新上传录屏");
+      }
+
+      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
+        ...(compressedImages.length > 0
+          ? { imageDataUrls: compressedImages, imageDataUrl: compressedImages[0] }
+          : {}),
+        ...(videoUrl ? { videoUrl, videoFps: VIDEO_ANALYZE_FPS } : {}),
+        ...analyzeContext,
       });
 
-      const payload =
-        rawPayload && typeof rawPayload._serialized === "string"
-          ? JSON.parse(rawPayload._serialized)
-          : rawPayload;
-
+      const payload = parseAnalyzeCloudResult(rawPayload);
       const sanitized = sanitizePayload(payload);
 
       setDraft((prev) => ({
         ...prev,
         ...sanitized,
+        ...(nextVideoFileID
+          ? {
+              videoFileID: nextVideoFileID,
+              videoName: pendingVideoFile?.name ?? prev.videoName,
+              videoMime: pendingVideoFile?.type ?? prev.videoMime,
+            }
+          : {}),
         updatedAt: new Date().toISOString(),
       }));
+      if (pendingVideoFile) {
+        setPendingVideoFile(null);
+      }
       toast.success("重新提取完成，请检查并保存。");
     } catch (err) {
+      toast.dismiss("drawer-analyze-upload");
+      toast.dismiss("drawer-reanalyze-video");
       toast.error(err instanceof Error ? err.message : "重新提取失败");
     } finally {
       setIsAnalyzing(false);
@@ -232,53 +445,31 @@ function RecordDrawerContent({
               <FormModule
                 letter="Ev"
                 title="证据上下文"
-                description="截图、研究备注与采集时的任务上下文"
+                description="截图、录屏、研究备注与采集时的任务上下文"
               >
-                {allImages.length === 1 ? (
-                  <button
-                    type="button"
-                    className="record-evidence-hero-btn"
-                    onClick={() => {
-                      setPreviewIndex(0);
-                      setPreviewOpen(true);
-                    }}
-                    title="点击放大预览"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={allImages[0]}
-                      alt={draft.screenshotId}
-                      className="record-evidence-hero"
-                    />
-                  </button>
-                ) : allImages.length > 1 ? (
-                  <div className="record-evidence-gallery">
-                    {allImages.map((url, index) => (
-                      <button
-                        key={`${url.slice(0, 24)}-${index}`}
-                        type="button"
-                        className={cn(
-                          "record-evidence-thumb",
-                          index === 0 && "record-evidence-thumb--primary",
-                        )}
-                        onClick={() => {
-                          setPreviewIndex(index);
-                          setPreviewOpen(true);
-                        }}
-                        title={`截图 ${index + 1} · 点击放大`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt={index === 0 ? draft.screenshotId : `截图 ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-[var(--text-weak)]">暂无截图证据</p>
-                )}
+                <EvidenceMediaSlot
+                  imageUrls={allImages}
+                  videoUrl={videoPreviewUrl || undefined}
+                  onFileSelect={handleEvidenceFile}
+                  onRemoveImage={removeImageAt}
+                  onRemoveVideo={hasVideo ? clearVideo : undefined}
+                  onPreviewImage={(_url, index) => {
+                    setPreviewIndex(index);
+                    setPreviewOpen(true);
+                  }}
+                  onPlayVideo={() => setVideoLightboxOpen(true)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files);
+                    const video = files.find(
+                      (f) => isVideoMime(f.type) || /\.(mp4|webm|mov)$/i.test(f.name),
+                    );
+                    const image = files.find((f) => f.type.startsWith("image/"));
+                    if (video) void handleVideoFile(video);
+                    else if (image) void handleImageFile(image);
+                  }}
+                />
 
                 <div className="capture-form-stack">
                   <Field label={<DualLabel zh="研究备注" en="Research Note" />} compact>
@@ -323,9 +514,17 @@ function RecordDrawerContent({
 
       {previewOpen && allImages.length > 0 ? (
         <ImageLightbox
-          src={allImages[previewIndex]}
-          alt={`截图 ${previewIndex + 1}/${allImages.length}`}
+          images={allImages}
+          index={previewIndex}
+          onIndexChange={setPreviewIndex}
           onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
+
+      {videoLightboxOpen && videoPreviewUrl ? (
+        <VideoLightbox
+          src={videoPreviewUrl}
+          onClose={() => setVideoLightboxOpen(false)}
         />
       ) : null}
     </>
@@ -356,42 +555,30 @@ function DrawerIconButton({
   );
 }
 
-async function compressImage(dataUrl: string): Promise<string> {
-  if (dataUrl.length < 2_000_000) return dataUrl;
-
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_W = 1920;
-      const MAX_H = 1920;
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-
-      if (w > MAX_W || h > MAX_H) {
-        const ratio = Math.min(MAX_W / w, MAX_H / h);
-        w = Math.round(w * ratio);
-        h = Math.round(h * ratio);
+async function readAndResizeImage(file: File) {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("图片读取失败。"));
+    reader.readAsDataURL(file);
+  });
+  return new Promise<string>((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const max = 1920;
+      const scale = Math.min(1, max / Math.max(image.width, image.height));
+      if (scale === 1) {
+        resolve(dataUrl);
+        return;
       }
-
       const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-
-      let result = canvas.toDataURL("image/jpeg", 0.75);
-      if (result.length > 4_000_000) {
-        for (const q of [0.6, 0.5, 0.4]) {
-          result = canvas.toDataURL("image/jpeg", q);
-          if (result.length <= 4_000_000) break;
-        }
-      }
-
-      URL.revokeObjectURL(img.src as string);
-      resolve(result);
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.9));
     };
-    img.onerror = () => reject(new Error("图片加载失败"));
-    img.src = dataUrl;
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
   });
 }
 

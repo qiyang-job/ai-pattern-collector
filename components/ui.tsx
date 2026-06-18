@@ -368,10 +368,25 @@ export function EvidenceThumbnail({
   className?: string;
 }) {
   const sizes = {
-    xs: "h-8 w-12",
-    sm: "h-8 w-12",
-    md: "h-10 w-16",
+    xs: "h-8 w-8",
+    sm: "h-8 w-8",
+    md: "h-10 w-10",
   };
+  if (!src) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--panel-muted)] text-[10px] text-[var(--text-weak)]",
+          sizes[size],
+          className,
+        )}
+        title="录屏证据"
+        aria-label={alt}
+      >
+        ▶
+      </div>
+    );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img

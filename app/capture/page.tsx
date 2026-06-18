@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PanelRightClose } from "lucide-react";
 import { toast } from "sonner";
-import { useHydratedCaptureDraft, useCaptureDraftStore } from "@/lib/capture-draft-store";
+import {
+  MAX_SCREENSHOTS,
+  useHydratedCaptureDraft,
+  useCaptureDraftStore,
+} from "@/lib/capture-draft-store";
 import { useRecordsStore } from "@/lib/records-store";
 import {
   getSaveBlockers,
@@ -16,11 +20,21 @@ import {
   textareaClass,
 } from "@/components/ui";
 import {
+  EvidenceMediaSlot,
   ImageLightbox,
-  MultiImageEvidenceSlot,
+  VideoLightbox,
 } from "@/components/research-ui";
+import {
+  MAX_VIDEO_BYTES,
+  captureVideoPoster,
+  formatVideoMeta,
+  isVideoMime,
+  uploadVideoForAnalysis,
+  VIDEO_ANALYZE_FPS,
+} from "@/lib/evidence-media";
 import { cn } from "@/lib/utils";
-import { callCloudFunction } from "@/lib/cloudbase";
+import { callCloudFunction, ensureAuth } from "@/lib/cloudbase";
+import { prepareImagesForAnalysis, parseAnalyzeCloudResult } from "@/lib/prepare-evidence-for-analyze";
 
 const RESEARCH_NOTE_PLACEHOLDER =
   "这张图里值得研究的交互是什么，例如：修改代码前展示待改文件并要求确认。";
@@ -33,6 +47,8 @@ const CAPTURE_DRAWER_MS = 280;
 function buildEvidenceFingerprint(params: {
   imageDataUrl: string;
   extraImages: string[];
+  videoFileID: string;
+  videoName: string;
   rawNote: string;
   product: string;
   sourceUrl: string;
@@ -40,6 +56,7 @@ function buildEvidenceFingerprint(params: {
 }) {
   return JSON.stringify({
     images: params.imageDataUrl ? [params.imageDataUrl, ...params.extraImages] : params.extraImages,
+    video: params.videoFileID || params.videoName,
     rawNote: params.rawNote.trim(),
     product: params.product.trim(),
     sourceUrl: params.sourceUrl.trim(),
@@ -51,53 +68,6 @@ const createBrowserId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `record-${Date.now()}`;
-
-/**
- * 压缩图片 base64，确保不超过云函数 6MB 入参限制
- * - 缩放到最大 1920px 宽度
- * - JPEG 质量 0.75
- */
-async function compressImage(dataUrl: string): Promise<string> {
-  // 已经很小就不处理
-  if (dataUrl.length < 2_000_000) return dataUrl;
-  
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_W = 1920;
-      const MAX_H = 1920;
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      
-      if (w > MAX_W || h > MAX_H) {
-        const ratio = Math.min(MAX_W / w, MAX_H / h);
-        w = Math.round(w * ratio);
-        h = Math.round(h * ratio);
-      }
-      
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-      
-      // 先试 0.75 quality
-      let result = canvas.toDataURL("image/jpeg", 0.75);
-      // 如果还是太大（>4MB），继续降低质量
-      if (result.length > 4_000_000) {
-        for (const q of [0.6, 0.5, 0.4]) {
-          result = canvas.toDataURL("image/jpeg", q);
-          if (result.length <= 4_000_000) break;
-        }
-      }
-      
-      URL.revokeObjectURL(img.src as string);
-      resolve(result);
-    };
-    img.onerror = () => reject(new Error("图片加载失败"));
-    img.src = dataUrl;
-  });
-}
 
 /**
  * 防御性处理 AI 返回数据，确保所有字段有安全默认值
@@ -169,12 +139,16 @@ function ComposerInlineField({
 }
 
 export default function CapturePage() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { saveRecord } = useRecordsStore();
   const {
     reservedIds,
     imageDataUrl,
     extraImages,
+    videoFile,
+    videoPreviewUrl,
+    videoFileID,
+    videoName,
+    videoMime,
     rawNote,
     sourceUrl,
     taskContext,
@@ -189,6 +163,9 @@ export default function CapturePage() {
     addExtraImage,
     removeImageAt,
     clearImages,
+    setVideo,
+    setVideoFileID,
+    clearVideo,
     setRawNote,
     setSourceUrl,
     setTaskContext,
@@ -202,6 +179,7 @@ export default function CapturePage() {
   } = useHydratedCaptureDraft();
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [videoLightboxOpen, setVideoLightboxOpen] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
@@ -211,7 +189,8 @@ export default function CapturePage() {
   const [analyzedFingerprint, setAnalyzedFingerprint] = useState<string | null>(null);
 
   const totalImages = (imageDataUrl ? 1 : 0) + extraImages.length;
-  const hasEvidence = totalImages > 0;
+  const hasVideo = Boolean(videoPreviewUrl || videoFileID);
+  const hasEvidence = totalImages > 0 || hasVideo;
   const hasRawNote = Boolean(rawNote.trim());
   const hasProduct = Boolean(analysis.product.trim());
   const analyzeReady = hasEvidence && hasRawNote;
@@ -222,12 +201,14 @@ export default function CapturePage() {
       buildEvidenceFingerprint({
         imageDataUrl,
         extraImages,
+        videoFileID,
+        videoName,
         rawNote,
         product: analysis.product,
         sourceUrl,
         taskContext,
       }),
-    [imageDataUrl, extraImages, rawNote, analysis.product, sourceUrl, taskContext],
+    [imageDataUrl, extraImages, videoFileID, videoName, rawNote, analysis.product, sourceUrl, taskContext],
   );
 
   const inReview = showReview || analysisStatus === "analyzed";
@@ -251,12 +232,13 @@ export default function CapturePage() {
       // 如果没有主图，或者强制设置为主图，则设为主图
       if (forcePrimary || !imageDataUrl) {
         setImage(dataUrl, meta);
-      } else if (totalImages < 5) {
+        toast.success(totalImages === 0 ? "截图已粘贴" : `已添加第 ${totalImages + 1} 张截图`);
+      } else if (totalImages < MAX_SCREENSHOTS) {
         // 否则添加为额外截图
         addExtraImage(dataUrl, meta);
         toast.success(`已添加第 ${totalImages + 1} 张截图`);
       } else {
-        setError(`最多支持 5 张截图（当前已有 ${totalImages} 张）`);
+        setError(`最多支持 ${MAX_SCREENSHOTS} 张截图（当前已有 ${totalImages} 张）`);
         return;
       }
     } catch (e) {
@@ -264,15 +246,38 @@ export default function CapturePage() {
     }
   }, [setError, setImage, addExtraImage, imageDataUrl, totalImages]);
 
+  const handleVideoFile = useCallback(
+    async (file: File) => {
+      if (!isVideoMime(file.type) && !/\.(mp4|webm|mov)$/i.test(file.name)) {
+        setError("请选择 MP4、WebM 或 MOV 录屏文件。");
+        return;
+      }
+      if (file.size > MAX_VIDEO_BYTES) {
+        setError(`录屏文件过大（最大 ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)}MB）`);
+        return;
+      }
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        setVideo(file, previewUrl, formatVideoMeta(file));
+        toast.success("录屏已添加");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "录屏读取失败");
+      }
+    },
+    [setError, setVideo],
+  );
+
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("textarea, input, [contenteditable='true']")) return;
+
       const file = Array.from(event.clipboardData?.files ?? []).find((f) =>
         f.type.startsWith("image/"),
       );
       if (file) {
         event.preventDefault();
         void handleImageFile(file);
-        toast.success(totalImages === 0 ? "截图已粘贴" : `已添加第 ${totalImages + 1} 张截图`);
       }
     };
     window.addEventListener("paste", onPaste);
@@ -280,19 +285,21 @@ export default function CapturePage() {
   }, [handleImageFile, totalImages]);
 
   /** 打开预览（支持多图） */
+  function handleEvidenceFile(file: File) {
+    if (isVideoMime(file.type) || /\.(mp4|webm|mov)$/i.test(file.name)) {
+      void handleVideoFile(file);
+      return;
+    }
+    if (file.type.startsWith("image/")) {
+      void handleImageFile(file);
+    }
+  }
+
   function openPreview(url: string, index: number) {
     const all = imageDataUrl ? [imageDataUrl, ...extraImages] : [...extraImages];
     setPreviewUrls(all);
     setPreviewIndex(index);
     setPreviewOpen(true);
-  }
-
-  function previewNext() {
-    setPreviewIndex((i) => Math.min(i + 1, previewUrls.length - 1));
-  }
-
-  function previewPrev() {
-    setPreviewIndex((i) => Math.max(i - 1, 0));
   }
 
   async function reset() {
@@ -312,38 +319,54 @@ export default function CapturePage() {
   }
 
   async function analyze() {
-    if (totalImages === 0) return setError("请先添加截图证据。");
+    if (!hasEvidence) return setError("请先添加截图或录屏证据。");
     if (!rawNote.trim()) return setError("请填写研究备注。");
     setIsAnalyzing(true);
     setAnalysisStatus("analyzing");
     setDrawerDismissed(false);
     setError("");
     try {
-      // 收集所有图片并压缩
+      await ensureAuth();
       const allImages = imageDataUrl ? [imageDataUrl, ...extraImages] : [...extraImages];
-      const compressedImages = await Promise.all(allImages.map(img => compressImage(img)));
-      const totalBefore = allImages.reduce((s, u) => s + u.length, 0);
-      const totalAfter = compressedImages.reduce((s, u) => s + u.length, 0);
-      console.log(`[AI] ${allImages.length}张图片压缩: ${(totalBefore / 1024 / 1024).toFixed(1)}MB → ${(totalAfter / 1024 / 1024).toFixed(1)}MB`);
-
-      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
-        imageDataUrls: compressedImages,
-        imageDataUrl: compressedImages[0], // 兼容旧字段
+      const analyzeContext = {
         rawNote,
         product: analysis.product,
         sourceUrl,
         taskContext,
+      };
+      const storageKey = reservedIds?.screenshotId || `draft-${Date.now()}`;
+      const compressedImages = await prepareImagesForAnalysis(allImages, analyzeContext, {
+        storageKeyPrefix: storageKey,
+        onProgress: (msg) => toast.loading(msg, { id: "analyze-upload" }),
       });
-      
-      // 云函数通过 _serialized 字符串返回完整结果，防止 CloudBase 传输层丢弃空值属性
-      const payload = (rawPayload && typeof rawPayload._serialized === "string")
-        ? JSON.parse(rawPayload._serialized)
-        : rawPayload;
-      
-      console.log(`[AI] 云函数返回数据:`, JSON.stringify(payload).slice(0, 1000));
-      console.log(`[AI] 云函数返回 keys:`, Object.keys(payload));
-      
-      // 防御性处理：确保所有字段都有安全默认值
+      toast.dismiss("analyze-upload");
+
+      let videoUrl: string | undefined;
+      let nextVideoFileID = videoFileID;
+
+      if (videoFile) {
+        const uploadKey = reservedIds?.screenshotId || `draft-${Date.now()}`;
+        toast.loading("正在上传录屏…", { id: "video-upload" });
+        const uploaded = await uploadVideoForAnalysis(uploadKey, videoFile);
+        toast.dismiss("video-upload");
+        videoUrl = uploaded.videoUrl;
+        nextVideoFileID = uploaded.fileID;
+        setVideoFileID(uploaded.fileID);
+      } else if (videoFileID) {
+        const { getImageTempUrl } = await import("@/lib/db");
+        videoUrl = (await getImageTempUrl(videoFileID)) ?? undefined;
+        if (!videoUrl) throw new Error("录屏临时链接失效，请重新上传录屏");
+      }
+
+      const rawPayload = await callCloudFunction<Record<string, unknown>>("ai-analyze-pattern", {
+        ...(compressedImages.length > 0
+          ? { imageDataUrls: compressedImages, imageDataUrl: compressedImages[0] }
+          : {}),
+        ...(videoUrl ? { videoUrl, videoFps: VIDEO_ANALYZE_FPS } : {}),
+        ...analyzeContext,
+      });
+
+      const payload = parseAnalyzeCloudResult(rawPayload);
       const sanitized = sanitizePayload(payload);
       const nextProduct = (sanitized.product as string) || analysis.product;
       setAnalysis({ ...sanitized, product: nextProduct } as any);
@@ -355,6 +378,8 @@ export default function CapturePage() {
         buildEvidenceFingerprint({
           imageDataUrl,
           extraImages,
+          videoFileID: nextVideoFileID,
+          videoName,
           rawNote,
           product: nextProduct,
           sourceUrl,
@@ -363,6 +388,7 @@ export default function CapturePage() {
       );
       toast.success("模式提炼完成，请校对后保存");
     } catch (e) {
+      toast.dismiss("analyze-upload");
       setAnalysisStatus("failed");
       setDrawerDismissed(false);
       setError(e instanceof Error ? e.message : "AI 分析失败");
@@ -379,11 +405,23 @@ export default function CapturePage() {
     const ids = useCaptureDraftStore.getState().reservedIds;
     if (!ids) return;
     const now = new Date().toISOString();
+    let poster = imageDataUrl;
+    if (!poster && videoFile) {
+      poster = await captureVideoPoster(videoFile);
+    }
+    const state = useCaptureDraftStore.getState();
     await saveRecord({
       id: createBrowserId(),
       screenshotId: ids.screenshotId,
-      imageDataUrl,
+      imageDataUrl: poster,
       ...(extraImages.length > 0 ? { extraImages } : {}),
+      ...(state.videoFileID
+        ? {
+            videoFileID: state.videoFileID,
+            videoName: state.videoName || undefined,
+            videoMime: state.videoMime || undefined,
+          }
+        : {}),
       rawNote,
       sourceUrl: sourceUrl || undefined,
       taskContext: taskContext || undefined,
@@ -468,35 +506,28 @@ export default function CapturePage() {
     <div className="capture-workbench flex-1">
       <PageHeader
         title="采集"
-        description="粘贴截图与研究备注，提炼 AI 产品设计模式。"
+        description="粘贴截图或上传录屏与研究备注，提炼 AI 产品设计模式。"
       />
 
       <div className="capture-columns">
         <div className="capture-evidence-column">
           <div className="capture-evidence-body">
-            <MultiImageEvidenceSlot
-              primaryUrl={imageDataUrl}
-              extraUrls={extraImages}
-              onAddClick={() => fileInputRef.current?.click()}
+            <EvidenceMediaSlot
+              imageUrls={imageDataUrl ? [imageDataUrl, ...extraImages] : extraImages}
+              videoUrl={videoPreviewUrl || undefined}
+              onFileSelect={handleEvidenceFile}
               onRemoveImage={removeImageAt}
-              onPreview={openPreview}
+              onRemoveVideo={clearVideo}
+              onPreviewImage={openPreview}
+              onPlayVideo={() => setVideoLightboxOpen(true)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                const f = Array.from(e.dataTransfer.files).find((x) =>
-                  x.type.startsWith("image/"),
-                );
-                if (f) void handleImageFile(f);
-              }}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void handleImageFile(f);
+                const files = Array.from(e.dataTransfer.files);
+                const video = files.find((x) => isVideoMime(x.type) || /\.(mp4|webm|mov)$/i.test(x.name));
+                const image = files.find((x) => x.type.startsWith("image/"));
+                if (video) void handleVideoFile(video);
+                else if (image) void handleImageFile(image);
               }}
             />
 
@@ -628,9 +659,17 @@ export default function CapturePage() {
 
       {previewOpen && previewUrls.length > 0 ? (
         <ImageLightbox
-          src={previewUrls[previewIndex]}
-          alt={`截图 ${previewIndex + 1}/${previewUrls.length}`}
+          images={previewUrls}
+          index={previewIndex}
+          onIndexChange={setPreviewIndex}
           onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
+
+      {videoLightboxOpen && videoPreviewUrl ? (
+        <VideoLightbox
+          src={videoPreviewUrl}
+          onClose={() => setVideoLightboxOpen(false)}
         />
       ) : null}
     </div>

@@ -79,7 +79,7 @@ function FailedPanel({
   return (
     <div className="workspace-panel workspace-panel--danger">
       <h3 className="workspace-panel-title text-[var(--danger)]">提炼失败</h3>
-      <p className="workspace-panel-subtitle">截图与研究备注已保留</p>
+      <p className="workspace-panel-subtitle">证据与研究备注已保留</p>
       <p className="mt-2 text-[11px] leading-5 text-[var(--text-muted)]">
         AI 未能从当前证据中提炼出有效模式。你可以重试提炼，或手动填写校对表单。
       </p>
@@ -180,7 +180,7 @@ export function getSaveBlockers(params: {
   analysis: PatternAnalysisResult;
 }): string[] {
   const missing: string[] = [];
-  if (!params.hasEvidence) missing.push("截图证据");
+  if (!params.hasEvidence) missing.push("证据（截图或录屏）");
   if (!params.hasRawNote) missing.push("研究备注");
   if (!params.analysis.patternName.trim()) missing.push("模式名称");
   if (!params.analysis.productCategory) missing.push("产品类型");

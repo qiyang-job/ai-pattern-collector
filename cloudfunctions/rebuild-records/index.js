@@ -8,7 +8,7 @@ const REGION = "ap-shanghai";
 const PREFIX = "screenshots/";
 
 const DEFAULT_BASE_URL = process.env.AI_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1";
-const DEFAULT_MODEL = process.env.AI_MODEL || "qwen-vl-max";
+const DEFAULT_MODEL = process.env.AI_MODEL || "qwen3.7-plus";
 
 // ── 固定枚举 ──────────────────────────────────────────
 const PRODUCT_CATEGORIES = ["AI Chat", "AI Search", "AI Agent", "AI Workspace", "Coding Agent"];

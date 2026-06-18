@@ -61,16 +61,13 @@ async function authed<T>(fn: () => Promise<T>): Promise<T> {
 // ─── 截图上传云存 ────────────────────────────────────
 
 /** 将 base64 dataURL 上传到 CloudBase 云存，返回 fileID；失败时返回 undefined */
-async function uploadImageIfNeeded(
-  id: string,
+async function uploadDataUrlToStorage(
+  storageKey: string,
   imageDataUrl: string,
-  existingFileID?: string,
 ): Promise<string | undefined> {
-  if (existingFileID) return existingFileID; // 已上传过，跳过
   if (!imageDataUrl || !imageDataUrl.startsWith("data:image/")) return undefined;
 
   try {
-    // 解析 mime 和纯 base64 数据
     const [header, base64] = imageDataUrl.split(",");
     const mime = header.match(/data:(.*?);/)?.[1] ?? "image/png";
     const ext = mime === "image/jpeg" ? "jpg" : mime === "image/webp" ? "webp" : "png";
@@ -78,16 +75,56 @@ async function uploadImageIfNeeded(
     const bytes = new Uint8Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
     const blob = new Blob([bytes], { type: mime });
-    const file = new File([blob], `${id}.${ext}`, { type: mime });
+    const file = new File([blob], `${storageKey}.${ext}`, { type: mime });
 
-    const cloudPath = `screenshots/${id}.${ext}`;
-    const result = await getApp().uploadFile({ cloudPath, filePath: file as unknown as string });
-
+    const cloudPath = `screenshots/${storageKey}.${ext}`;
+    const result = await getApp().uploadFile({
+      cloudPath,
+      // Web SDK 浏览器端传入 File 对象（类型声明为 string）
+      filePath: file as unknown as string,
+    });
+    if (!result?.fileID) return undefined;
     return result.fileID;
   } catch (e) {
-    console.warn("[cloudbase] 图片上传失败，将保留 base64", e);
+    console.warn("[cloudbase] 图片上传失败", storageKey, e);
     return undefined;
   }
+}
+
+/** 将 base64 dataURL 上传到 CloudBase 云存，返回 fileID；失败时返回 undefined */
+async function uploadImageIfNeeded(
+  id: string,
+  imageDataUrl: string,
+  existingFileID?: string,
+): Promise<string | undefined> {
+  if (existingFileID) return existingFileID; // 已上传过，跳过
+  return uploadDataUrlToStorage(id, imageDataUrl);
+}
+
+/** 上传截图并返回可供模型访问的临时 HTTPS URL；失败返回 null（不抛错） */
+export async function tryUploadDataUrlForAnalysis(
+  storageKey: string,
+  imageDataUrl: string,
+): Promise<string | null> {
+  try {
+    return await uploadDataUrlForAnalysis(storageKey, imageDataUrl);
+  } catch (e) {
+    console.warn("[cloudbase] 分析用截图上传跳过，将使用压缩直传", storageKey, e);
+    return null;
+  }
+}
+
+/** 上传截图并返回可供模型访问的临时 HTTPS URL（用于 AI 分析入参瘦身） */
+export async function uploadDataUrlForAnalysis(
+  storageKey: string,
+  imageDataUrl: string,
+): Promise<string> {
+  await ensureAuth();
+  const fileID = await uploadDataUrlToStorage(storageKey, imageDataUrl);
+  if (!fileID) throw new Error("截图上传云存储失败");
+  const url = await getImageTempUrl(fileID);
+  if (!url) throw new Error("截图临时链接获取失败");
+  return url;
 }
 
 /** 根据 fileID 获取临时访问 URL */
@@ -282,6 +319,13 @@ export async function deleteRecord(id: string): Promise<void> {
       if (rec.imageFileID) {
         try {
           await getApp().deleteFile({ fileList: [rec.imageFileID] });
+        } catch {
+          /* 删除失败不阻断 */
+        }
+      }
+      if (rec.videoFileID) {
+        try {
+          await getApp().deleteFile({ fileList: [rec.videoFileID] });
         } catch {
           /* 删除失败不阻断 */
         }

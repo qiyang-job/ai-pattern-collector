@@ -1,5 +1,6 @@
 const DEFAULT_BASE_URL = process.env.AI_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1";
-const DEFAULT_MODEL = process.env.AI_MODEL || "qwen-vl-max";
+const DEFAULT_MODEL =
+  process.env.AI_MODEL_INSIGHTS || process.env.AI_MODEL || "qwen3.7-max";
 
 const SYSTEM_PROMPT = `你是一个资深 AI 产品体验设计研究员和设计模式库负责人。
 你的任务是基于一组已经结构化的 Pattern Records，生成研究洞察。

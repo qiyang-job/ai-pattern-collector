@@ -50,12 +50,16 @@ const secondaryStatesField = z.preprocess(
 
 export type ImportMode = "merge" | "replace";
 
-export const PatternRecordSchema = z.object({
-  id: z.string().min(1),
-  screenshotId: z.string().min(1),
-  imageDataUrl: z.string().min(1),
-  extraImages: z.array(z.string().min(1)).optional(),
-  rawNote: z.string(),
+export const PatternRecordSchema = z
+  .object({
+    id: z.string().min(1),
+    screenshotId: z.string().min(1),
+    imageDataUrl: z.string().default(""),
+    extraImages: z.array(z.string().min(1)).optional(),
+    videoFileID: z.string().optional(),
+    videoName: z.string().optional(),
+    videoMime: z.string().optional(),
+    rawNote: z.string(),
   sourceUrl: z.string().optional(),
   taskContext: z.string().optional(),
   patternId: z.string().min(1),
@@ -78,9 +82,12 @@ export const PatternRecordSchema = z.object({
   screenshotStateReason: z.string().optional().default(""),
   patternCategory: patternCategoryField,
   lensScore: LensScoreSchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .refine((r) => r.imageDataUrl.length > 0 || Boolean(r.videoFileID), {
+    message: "每条记录需包含截图或录屏证据",
+  });
 
 const BackupBundleSchema = z.object({
   version: z.literal(1),

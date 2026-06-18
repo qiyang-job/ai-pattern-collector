@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Play, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
 import { MAX_SCREENSHOTS } from "@/lib/capture-draft-store";
+import { VIDEO_ACCEPT } from "@/lib/evidence-media";
+
+const MAX_VIDEO = 1;
 
 export type AnalysisUiStatus = "idle" | "analyzing" | "analyzed" | "failed";
 export type EvidenceUiStatus = "empty" | "ready" | "analyzing" | "analyzed";
@@ -223,15 +227,21 @@ export function EvidenceSlot({
         onDrop={onDrop}
       >
         {imageDataUrl ? (
-          <button
-            type="button"
-            className="flex h-full w-full items-center justify-center hover:bg-[var(--panel-muted)]"
-            onClick={onPreviewClick}
-            title="点击放大预览"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageDataUrl} alt="截图证据" className="max-h-full w-full object-contain" />
-          </button>
+          <div className="flex items-center justify-center p-2">
+            <button
+              type="button"
+              className="evidence-thumb-square relative overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] hover:border-[var(--accent-muted)]"
+              onClick={onPreviewClick}
+              title="点击放大预览"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageDataUrl}
+                alt="截图证据"
+                className="evidence-thumb-img object-cover"
+              />
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -255,144 +265,182 @@ export function EvidenceSlot({
 }
 
 /**
- * 多截图证据槽 — 支持最多 5 张截图的采集、预览和删除
+ * 统一证据槽 — 截图与录屏同一正方形网格，录屏带播放按钮
  */
-export function MultiImageEvidenceSlot({
-  primaryUrl,
-  extraUrls,
-  onAddClick,
+export function EvidenceMediaSlot({
+  imageUrls,
+  videoUrl,
+  onFileSelect,
   onRemoveImage,
-  onPreview,
+  onRemoveVideo,
+  onPreviewImage,
+  onPlayVideo,
   onDragOver,
   onDrop,
+  maxImages = MAX_SCREENSHOTS,
 }: {
-  /** 主图 data URL */
-  primaryUrl: string;
-  /** 额外截图 data URL 数组 */
-  extraUrls: string[];
-  onAddClick: () => void;
+  imageUrls: string[];
+  videoUrl?: string;
+  onFileSelect: (file: File) => void;
   onRemoveImage?: (index: number) => void;
-  onPreview: (url: string, index: number) => void;
+  onRemoveVideo?: () => void;
+  onPreviewImage: (url: string, index: number) => void;
+  onPlayVideo?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
+  maxImages?: number;
 }) {
-  const allImages = primaryUrl ? [primaryUrl, ...extraUrls] : [...extraUrls];
-  const total = allImages.length;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageCount = imageUrls.length;
+  const hasVideo = Boolean(videoUrl);
+  const itemCount = imageCount + (hasVideo ? 1 : 0);
+  const canAddImage = imageCount < maxImages;
+  const canAddVideo = !hasVideo;
+  const canAdd = canAddImage || canAddVideo;
+
+  const accept =
+    canAddImage && canAddVideo
+      ? `image/*,${VIDEO_ACCEPT}`
+      : canAddVideo
+        ? VIDEO_ACCEPT
+        : "image/*";
+
+  function openPicker() {
+    fileInputRef.current?.click();
+  }
 
   return (
-    <div className="evidence-slot">
-      {/* 头部：计数 */}
+    <div className={cn("evidence-slot", itemCount > 0 && "evidence-slot--media-grid")}>
       <div className="flex items-center gap-2 px-2 py-1.5">
-        <span className="text-[10px] font-medium text-[var(--text-muted)]">截图证据</span>
-        <span className="mono text-[10px] text-[var(--text-weak)]">
-          {total}/{MAX_SCREENSHOTS}
-        </span>
+        <span className="text-[10px] font-medium text-[var(--text-muted)]">证据</span>
+        <span className="mono text-[10px] text-[var(--text-weak)]">{itemCount}</span>
+        {canAddImage ? (
+          <span className="ml-auto mono text-[10px] text-[var(--text-weak)]">Cmd+V 粘贴截图</span>
+        ) : null}
       </div>
 
-      {/* 图片区域：主图/空槽位 + 缩略图条 */}
       <div
-        className="evidence-slot-preview relative bg-[var(--panel)] min-h-[140px]"
+        className={cn(
+          "evidence-slot-preview relative bg-[var(--panel)]",
+          itemCount > 0 && "evidence-slot-preview--grid",
+        )}
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
-        {total > 0 ? (
-          <div className="flex flex-col h-full">
-            {/* 主图预览区（可点击放大） */}
-            <button
-              type="button"
-              className="relative flex h-[120px] w-full items-center justify-center hover:bg-[var(--panel-muted)] border-b border-[var(--border)]"
-              onClick={() => primaryUrl && onPreview(primaryUrl, 0)}
-              title="点击放大预览"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={primaryUrl || extraUrls[0]} alt="截图证据" className="max-h-full max-w-full object-contain" />
-              {total === 1 && onRemoveImage ? (
-                <span
-                  className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--danger)] text-[11px] text-white cursor-pointer hover:bg-red-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveImage(0);
-                  }}
-                  role="button"
-                  aria-label="删除此截图"
-                >
-                  ×
-                </span>
-              ) : null}
-            </button>
+        {itemCount > 0 ? (
+          <div className="evidence-thumb-grid flex flex-wrap items-start gap-1.5 p-2">
+            {imageUrls.map((url, i) => (
+              <button
+                key={`img-${i}`}
+                type="button"
+                className="evidence-thumb-square relative overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] hover:border-[var(--accent-muted)]"
+                onClick={() => onPreviewImage(url, i)}
+                title={`截图 ${i + 1}（点击预览）`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`截图 ${i + 1}`} className="evidence-thumb-img object-cover" />
+                {onRemoveImage ? (
+                  <RemoveBadge
+                    label="删除此截图"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveImage(i);
+                    }}
+                  />
+                ) : null}
+              </button>
+            ))}
 
-            {/* 缩略图条 */}
-            {total > 1 && (
-              <div className="flex items-center gap-1 p-1.5 overflow-x-auto">
-                {allImages.map((url, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={cn(
-                      "relative shrink-0 rounded-[var(--radius-sm)] overflow-hidden border",
-                      i === 0 ? "w-14 h-14 border-[var(--accent)]" : "w-11 h-11 border-[var(--border)] hover:border-[var(--accent-muted)]",
-                    )}
-                    onClick={() => onPreview(url, i)}
-                    title={`截图 ${i + 1}（点击删除）`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={`截图 ${i + 1}`} className="h-full w-full object-cover" />
-                    {onRemoveImage ? (
-                      <span
-                        className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] text-white cursor-pointer hover:bg-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveImage(i);
-                        }}
-                        role="button"
-                        aria-label="删除此截图"
-                      >
-                        ×
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
-                {/* 添加更多按钮 */}
-                {total < MAX_SCREENSHOTS && (
-                  <button
-                    type="button"
-                    className="shrink-0 flex w-11 h-11 items-center justify-center rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] text-[var(--text-weak)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-                    onClick={onAddClick}
-                    title={`添加截图 (${total}/${MAX_SCREENSHOTS})`}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                  </button>
-                )}
-              </div>
-            )}
-            {total === 1 && total < MAX_SCREENSHOTS && (
-              <div className="flex items-center justify-center p-1.5">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 rounded-[var(--radius-sm)] px-2 py-1 text-[10px] text-[var(--text-weak)] hover:text-[var(--accent)] border border-dashed border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                  onClick={onAddClick}
-                  title={`添加更多截图 (${total}/${MAX_SCREENSHOTS})`}
-                >
-                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                  添加截图 ({total}/{MAX_SCREENSHOTS})
-                </button>
-              </div>
-            )}
+            {hasVideo && videoUrl ? (
+              <button
+                type="button"
+                className="evidence-thumb-square relative overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] hover:border-[var(--accent-muted)] bg-black"
+                onClick={() => onPlayVideo?.()}
+                title="点击播放录屏"
+              >
+                <video
+                  src={videoUrl}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="evidence-thumb-img object-cover pointer-events-none"
+                />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/35">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-black shadow-sm">
+                    <Play className="h-4 w-4 fill-current" strokeWidth={0} />
+                  </span>
+                </span>
+                {onRemoveVideo ? (
+                  <RemoveBadge
+                    label="删除录屏"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveVideo();
+                    }}
+                  />
+                ) : null}
+              </button>
+            ) : null}
+
+            {canAdd ? (
+              <button
+                type="button"
+                className="evidence-thumb-square flex items-center justify-center rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] text-[var(--text-weak)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                onClick={openPicker}
+                title="添加截图或录屏"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            ) : null}
           </div>
         ) : (
-          /* 空状态：粘贴/上传入口 */
           <button
             type="button"
-            className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-[11px] text-[var(--text-weak)] hover:bg-[var(--panel-muted)]"
-            onClick={onAddClick}
+            className="flex h-full w-full flex-col items-center justify-center gap-0.5 px-3 py-6 text-[11px] text-[var(--text-weak)] hover:bg-[var(--panel-muted)]"
+            onClick={openPicker}
           >
             <span className="mono text-[12px] font-medium text-[var(--text-muted)]">Cmd + V</span>
-            <span className="text-[var(--text-muted)]">粘贴截图</span>
-            <span className="mt-0.5 text-[10px]">支持最多 {MAX_SCREENSHOTS} 张</span>
+            <span className="text-[var(--text-muted)]">粘贴截图或上传录屏</span>
+            <span className="mt-0.5 text-center text-[10px] leading-4">
+              截图最多 {maxImages} 张 · 录屏 {MAX_VIDEO} 个 · MP4/WebM/MOV
+            </span>
           </button>
         )}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+          e.target.value = "";
+        }}
+      />
     </div>
+  );
+}
+
+function RemoveBadge({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <span
+      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] text-white cursor-pointer hover:bg-red-700"
+      onClick={onClick}
+      role="button"
+      aria-label={label}
+    >
+      ×
+    </span>
   );
 }
 
@@ -585,13 +633,13 @@ export function CoreBandLabel() {
   );
 }
 
-export function ImageLightbox({
+export function VideoLightbox({
   src,
-  alt,
+  title = "录屏预览",
   onClose,
 }: {
   src: string;
-  alt: string;
+  title?: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -608,14 +656,105 @@ export function ImageLightbox({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="截图预览"
+      aria-label={title}
     >
       <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="max-h-[85vh] max-w-[90vw] object-contain" />
+        <video
+          src={src}
+          controls
+          autoPlay
+          playsInline
+          className="max-h-[85vh] max-w-[90vw] rounded-[var(--radius-sm)] bg-black"
+        />
         <button type="button" className="image-lightbox-close" onClick={onClose}>
           关闭
         </button>
+      </div>
+    </div>
+  );
+}
+
+export function ImageLightbox({
+  images,
+  index,
+  onIndexChange,
+  onClose,
+  altPrefix = "截图",
+}: {
+  images: string[];
+  index: number;
+  onIndexChange: (index: number) => void;
+  onClose: () => void;
+  altPrefix?: string;
+}) {
+  const hasMultiple = images.length > 1;
+  const hasPrev = index > 0;
+  const hasNext = index < images.length - 1;
+  const src = images[index] ?? images[0];
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev) onIndexChange(index - 1);
+      if (e.key === "ArrowRight" && hasNext) onIndexChange(index + 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [hasNext, hasPrev, index, onClose, onIndexChange]);
+
+  if (!src) return null;
+
+  return (
+    <div
+      className="image-lightbox"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="截图预览"
+    >
+      <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="image-lightbox-close" onClick={onClose}>
+          关闭
+        </button>
+
+        <div className="image-lightbox-stage">
+          {hasMultiple ? (
+            <button
+              type="button"
+              className="image-lightbox-nav"
+              onClick={() => onIndexChange(index - 1)}
+              disabled={!hasPrev}
+              aria-label="上一张"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          ) : null}
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={`${altPrefix} ${index + 1}/${images.length}`}
+            className="max-h-[85vh] max-w-[min(90vw,72rem)] object-contain"
+          />
+
+          {hasMultiple ? (
+            <button
+              type="button"
+              className="image-lightbox-nav"
+              onClick={() => onIndexChange(index + 1)}
+              disabled={!hasNext}
+              aria-label="下一张"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          ) : null}
+        </div>
+
+        {hasMultiple ? (
+          <div className="image-lightbox-counter">
+            {index + 1} / {images.length}
+          </div>
+        ) : null}
       </div>
     </div>
   );

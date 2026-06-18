@@ -89,6 +89,9 @@ export function normalizeRecord(raw: unknown): PatternRecord {
       ? r.extraImages.filter((url): url is string => typeof url === "string" && url.length > 0)
       : undefined,
     imageFileID: typeof r.imageFileID === "string" ? r.imageFileID : undefined,
+    videoFileID: typeof r.videoFileID === "string" ? r.videoFileID : undefined,
+    videoName: typeof r.videoName === "string" ? r.videoName : undefined,
+    videoMime: typeof r.videoMime === "string" ? r.videoMime : undefined,
     rawNote: str(r.rawNote),
     sourceUrl: typeof r.sourceUrl === "string" ? r.sourceUrl : undefined,
     taskContext: typeof r.taskContext === "string" ? r.taskContext : undefined,

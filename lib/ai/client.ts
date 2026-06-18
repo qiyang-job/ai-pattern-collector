@@ -1,5 +1,8 @@
-const DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-const DEFAULT_MODEL = "qwen-vl-max";
+import {
+  DEFAULT_AI_BASE_URL,
+  DEFAULT_INSIGHTS_MODEL,
+  DEFAULT_VISION_MODEL,
+} from "@/lib/ai/models";
 
 type MessageContent =
   | string
@@ -27,13 +30,40 @@ type ChatCompletionResponse = {
 export function getAiConfig() {
   return {
     apiKey: process.env.AI_API_KEY ?? "",
-    baseUrl: process.env.AI_BASE_URL || DEFAULT_BASE_URL,
-    model: process.env.AI_MODEL || DEFAULT_MODEL,
+    baseUrl: process.env.AI_BASE_URL || DEFAULT_AI_BASE_URL,
+    model: process.env.AI_MODEL || DEFAULT_VISION_MODEL,
+  };
+}
+
+export function getInsightsAiConfig() {
+  return {
+    apiKey: process.env.AI_API_KEY ?? "",
+    baseUrl: process.env.AI_BASE_URL || DEFAULT_AI_BASE_URL,
+    model:
+      process.env.AI_MODEL_INSIGHTS ||
+      process.env.AI_MODEL ||
+      DEFAULT_INSIGHTS_MODEL,
   };
 }
 
 export async function createJsonChatCompletion(messages: ChatMessage[]) {
   const { apiKey, baseUrl, model } = getAiConfig();
+  return createJsonChatCompletionWithConfig(messages, { apiKey, baseUrl, model });
+}
+
+export async function createInsightsJsonChatCompletion(messages: ChatMessage[]) {
+  const { apiKey, baseUrl, model } = getInsightsAiConfig();
+  return createJsonChatCompletionWithConfig(messages, { apiKey, baseUrl, model });
+}
+
+async function createJsonChatCompletionWithConfig(
+  messages: ChatMessage[],
+  {
+    apiKey,
+    baseUrl,
+    model,
+  }: { apiKey: string; baseUrl: string; model: string },
+) {
 
   if (!apiKey) {
     throw new Error("AI_API_KEY 未配置。请在 .env.local 中填写服务端 API Key。");

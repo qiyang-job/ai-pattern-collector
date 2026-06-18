@@ -35,19 +35,26 @@ The app calls AI only from server-side API routes. `AI_API_KEY` is never read by
 ```env
 AI_API_KEY=
 AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-AI_MODEL=qwen-vl-max
+AI_MODEL=qwen3.7-plus
+# AI_MODEL_INSIGHTS=qwen3.7-max
 ```
 
 Defaults:
 
-- `AI_BASE_URL`: `https://api.openai.com/v1`
-- `AI_MODEL`: `qwen-vl-max`
+- `AI_BASE_URL`: `https://dashscope.aliyuncs.com/compatible-mode/v1`
+- `AI_MODEL`: `qwen3.7-plus` — 截图 / 录屏证据分析（百炼图像与视频理解旗舰）
+- `AI_MODEL_INSIGHTS`: `qwen3.7-max` — 纯文本洞察生成（可选）
 
-Recommended Chinese OpenAI-compatible vision models:
+Recommended DashScope models (quality-first):
 
-- `qwen-vl-max` for higher-quality screenshot analysis.
-- `qwen-vl-plus` for lower-cost MVP testing.
-- `glm-4v-plus` as an alternative provider option.
+- `qwen3.7-plus` for screenshot and video evidence analysis (current default).
+- `qwen3-vl-plus` as a dedicated vision alternative if `qwen3.7-plus` is unavailable on your account.
+- `qwen3.7-max` for insights and other text-only tasks.
+
+Legacy / lower-cost options:
+
+- `qwen-vl-max` — previous default (Qwen2.5-VL).
+- `qwen-vl-plus` — lower-cost vision testing.
 
 OpenAI users can set:
 

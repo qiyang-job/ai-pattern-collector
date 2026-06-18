@@ -693,7 +693,43 @@ nextjs-portal [data-nextjs-dev-tools-button],
 }
 
 .evidence-slot-preview {
-  height: clamp(96px, 15vh, 132px);
+  min-height: clamp(96px, 15vh, 132px);
+}
+
+.evidence-thumb-square {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+}
+
+.evidence-slot-preview--grid {
+  min-height: auto;
+  height: auto;
+  overflow: visible;
+}
+
+.evidence-slot--media-grid {
+  overflow: visible;
+  flex: 0 0 auto;
+  min-height: auto;
+}
+
+.evidence-thumb-grid {
+  overflow: visible;
+}
+
+@media (min-width: 1024px) {
+  .capture-evidence-body > .evidence-slot--media-grid {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .capture-evidence-body > .evidence-slot--media-grid .evidence-slot-preview {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -704,12 +740,18 @@ nextjs-portal [data-nextjs-dev-tools-button],
   }
 }
 
-.evidence-slot-preview img {
+.evidence-slot-preview img.evidence-thumb-img {
+  max-height: none;
+  height: 100%;
+  width: 100%;
+}
+
+.evidence-slot-preview:not(.evidence-slot-preview--grid) img {
   max-height: 124px;
 }
 
 @media (min-width: 1024px) {
-  .capture-evidence-body > .evidence-slot .evidence-slot-preview img {
+  .capture-evidence-body > .evidence-slot .evidence-slot-preview:not(.evidence-slot-preview--grid) img {
     max-height: none;
     height: 100%;
   }
@@ -1431,6 +1473,48 @@ nextjs-portal [data-nextjs-dev-tools-button],
   background: transparent;
   color: #fff;
   font-size: 12px;
+  cursor: pointer;
+}
+
+.image-lightbox-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-lightbox-nav {
+  flex-shrink: 0;
+  display: flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.image-lightbox-nav:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.image-lightbox-nav:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.image-lightbox-counter {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
 }
 
 /* Capture pipeline */

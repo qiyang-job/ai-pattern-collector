@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy:hosting": "npm run build && tcb hosting deploy ./out --env-id patterncollector-d6e3o08821ba3ee --yes",
+    "deploy:fn": "node scripts/deploy-cloud-functions.mjs",
+    "deploy": "npm run deploy:hosting && npm run deploy:fn"
   },
   "keywords": [],
   "author": "",

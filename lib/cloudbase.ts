@@ -18,6 +18,8 @@ export function getApp() {
       env: ENV_ID,
       region: REGION,
       accessKey: ACCESS_KEY,
+      // 多图 AI 分析常超过默认 15s，需与云函数超时（180s）对齐
+      timeout: 200_000,
       // detectSessionInUrl 让 OAuth/邮件回调态可被识别
       auth: { detectSessionInUrl: true },
     });
@@ -43,53 +45,115 @@ export function getDb() {
  * @param data 传入参数
  * @returns 云函数返回结果
  */
-export async function callCloudFunction<T = unknown>(name: string, data: Record<string, unknown>): Promise<T> {
+export async function callCloudFunction<T = unknown>(
+  name: string,
+  data: Record<string, unknown>,
+  options?: { timeoutMs?: number },
+): Promise<T> {
   const app = getApp();
+  const timeoutMs = options?.timeoutMs ?? (name.startsWith("ai-") ? 200_000 : undefined);
   console.log(`[CloudBase] 调用云函数: ${name}`, { dataKeys: Object.keys(data), dataSize: JSON.stringify(data).length });
   
   try {
-    const res = await app.callFunction({ name, data });
+    const res = await app.callFunction(
+      { name, data },
+      undefined,
+      timeoutMs ? { timeout: timeoutMs } : undefined,
+    );
     
     // 打印完整响应结构（不含大数据）
     const rawResult = res?.result;
     const logSafeResult = (() => {
-      if (!rawResult) return null;
+      if (rawResult == null) return null;
       const s = JSON.stringify(rawResult);
       return s.length > 2000 ? s.slice(0, 2000) + `...(total ${s.length} chars)` : s;
     })();
     console.log(`[CloudBase] 云函数 ${name} 原始 res.result:`, logSafeResult);
-    
-    // CloudBase Web SDK 的 callFunction 返回格式：
-    // 成功时：res.result 直接是云函数 exports.main 的返回值
-    // 失败时：res.result 可能包含 { code, error }
-    let result: any = rawResult;
-    
+
+    /** 从 SDK 响应中解析业务错误（部分版本在 result 为 null 时把 RetMsg 放在其它字段） */
+    const parseEmbeddedError = (payload: unknown): string | null => {
+      if (payload == null) return null;
+      if (typeof payload === "string") {
+        try {
+          return parseEmbeddedError(JSON.parse(payload));
+        } catch {
+          return null;
+        }
+      }
+      if (typeof payload !== "object") return null;
+      const o = payload as Record<string, unknown>;
+      if (typeof o.error === "string" && o.error) return o.error;
+      if (o.code !== undefined && o.code !== null && o.code !== 0 && typeof o.error === "string") {
+        return o.error;
+      }
+      return null;
+    };
+
+    let result: unknown = rawResult;
+
+    if (rawResult == null || rawResult === undefined) {
+      const resAny = res as unknown as Record<string, unknown>;
+      const embedded =
+        parseEmbeddedError(resAny?.response) ??
+        parseEmbeddedError(resAny?.data) ??
+        (typeof resAny?.errMsg === "string"
+          ? parseEmbeddedError(resAny.errMsg)
+          : null);
+      if (embedded) {
+        throw new Error(embedded);
+      }
+      throw new Error(
+        "云函数返回为空。若刚部署过，请确认云函数已配置 AI_API_KEY（运行 npm run deploy:fn）",
+      );
+    }
+
     // 如果结果是字符串（某些情况下 RetMsg 可能未解析），尝试解析
     if (typeof result === "string") {
-      try { result = JSON.parse(result); } catch { /* keep as-is */ }
+      try {
+        result = JSON.parse(result) as unknown;
+      } catch {
+        /* keep as-is */
+      }
     }
-    
-    // 检查 SDK 层错误
-    if (result?.code !== undefined && result?.code !== null && result?.code !== 0) {
-      throw new Error(result?.error || `云函数错误(code=${result?.code})`);
+
+    const resultObj =
+      result && typeof result === "object"
+        ? (result as Record<string, unknown>)
+        : null;
+
+    // 检查 SDK 层 / 业务错误（code !== 0）
+    if (
+      resultObj &&
+      resultObj.code !== undefined &&
+      resultObj.code !== null &&
+      resultObj.code !== 0
+    ) {
+      throw new Error(
+        typeof resultObj.error === "string"
+          ? resultObj.error
+          : `云函数错误(code=${String(resultObj.code)})`,
+      );
     }
-    // 业务错误
-    if (result?.error && !("code" in result)) {
-      throw new Error(String(result.error));
+    // 仅有 error 字段
+    if (resultObj?.error && !("code" in resultObj)) {
+      throw new Error(String(resultObj.error));
     }
-    
+
     // 移除内部字段，保留业务数据
-    const { error: _err, code: _code, requestId: _reqId, ...rest } = result || {};
+    const { error: _err, code: _code, requestId: _reqId, ...rest } = resultObj ?? {};
     
     console.log(`[CloudBase] 云函数 ${name} 提取的业务数据 keys:`, Object.keys(rest));
     
     // 如果 rest 为空但有原始数据，可能是字段名不匹配，直接返回全部
-    if (Object.keys(rest).length === 0 && result && typeof result === "object") {
+    if (Object.keys(rest).length === 0 && resultObj) {
+      if (Object.keys(resultObj).length === 0) {
+        throw new Error("云函数返回空对象，请减少证据体积后重试");
+      }
       console.warn(`[CloudBase] 提取后为空，直接返回原始数据`);
-      return result;
+      return resultObj as T;
     }
-    
-    return rest;
+
+    return rest as T;
   } catch (err: unknown) {
     if (err instanceof Error) {
       console.error(`[CloudBase] 云函数 ${name} 调用失败:`, err.message);

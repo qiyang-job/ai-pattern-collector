@@ -108,9 +108,13 @@ export type PatternRecord = {
   id: string;
   screenshotId: string;
   imageDataUrl: string;
-  /** 额外截图（0-4张，与主图合计最多5张） */
+  /** 额外截图（0-8张，与主图合计最多9张） */
   extraImages?: string[];
   imageFileID?: string;
+  /** 录屏证据（云存储 fileID） */
+  videoFileID?: string;
+  videoName?: string;
+  videoMime?: string;
   rawNote: string;
   sourceUrl?: string;
   taskContext?: string;
@@ -146,6 +150,9 @@ export type PatternAnalysisResult = Omit<
   | "id"
   | "screenshotId"
   | "imageDataUrl"
+  | "videoFileID"
+  | "videoName"
+  | "videoMime"
   | "rawNote"
   | "sourceUrl"
   | "taskContext"
