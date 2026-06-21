@@ -25,24 +25,24 @@ const navGroups = [
   {
     kicker: "采集 Capture",
     hint: "输入",
-    items: [{ href: "/capture", label: "采集", en: "Capture", icon: FileSearch }],
+    items: [{ href: "/capture", label: "采集", icon: FileSearch }],
   },
   {
     kicker: "分析视图 Analyze",
     hint: "同一批记录的四个透镜",
     items: [
-      { href: "/records", label: "记录", en: "Records", icon: Archive },
-      { href: "/matrix", label: "矩阵", en: "Matrix", icon: Grid3X3 },
-      { href: "/journey", label: "旅程", en: "Journey", icon: BarChart3 },
-      { href: "/library", label: "模式库", en: "Library", icon: Boxes },
+      { href: "/records", label: "记录", icon: Archive },
+      { href: "/matrix", label: "矩阵", icon: Grid3X3 },
+      { href: "/journey", label: "旅程", icon: BarChart3 },
+      { href: "/library", label: "模式库", icon: Boxes },
     ],
   },
   {
     kicker: "报告产出 Output",
     hint: "产出",
     items: [
-      { href: "/insights", label: "洞察", en: "Insights", icon: Lightbulb },
-      { href: "/export", label: "导出", en: "Export", icon: Download },
+      { href: "/insights", label: "洞察", icon: Lightbulb },
+      { href: "/export", label: "导出", icon: Download },
     ],
   },
 ];
@@ -97,13 +97,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </div>
-          <div className="mono mt-3 flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-[var(--text-weak)]">
-            Screenshot
-            <span className="text-[var(--accent)]">→</span>
-            Pattern
-            <span className="text-[var(--accent)]">→</span>
-            Insight
-          </div>
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
@@ -140,9 +133,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13px] font-medium leading-4">{item.label}</span>
-                    </span>
-                    <span className="mono text-[9px] uppercase tracking-tight text-[var(--text-weak)]">
-                      {item.en}
                     </span>
                   </Link>
                 );

@@ -12,7 +12,7 @@ import {
 import { useRecordsStore } from "@/lib/records-store";
 import { averageLensForRecords } from "@/lib/stats";
 import type { JourneyStage, PatternRecord } from "@/lib/types";
-import { cn, journeyCode, journeyName } from "@/lib/utils";
+import { cn, journeyCode, journeyDisplay, journeyName } from "@/lib/utils";
 import {
   EvidenceThumbnail,
   PageBody,
@@ -47,13 +47,15 @@ export default function JourneyPage() {
     <PageFrame>
       <PageHeader
         title="旅程"
-        description="用户流程研究地图 — 从 J-01 Entry 到 J-09 Handoff。"
+        description={`用户流程研究地图 — 从 ${journeyDisplay(JOURNEY_STAGES[0])} 到 ${journeyDisplay(JOURNEY_STAGES[JOURNEY_STAGES.length - 1])}。`}
       />
       <PageBody className="page-section-gap">
         <div className="stage-rail">
           <div className="capture-column-header">
             <CoreBandLabel />
-            <span className="capture-column-header-subtitle ml-2 inline">J-03 → J-07 高亮显示</span>
+            <span className="capture-column-header-subtitle ml-2 inline">
+              {journeyDisplay(CORE_JOURNEY_STAGES[0])} → {journeyDisplay(CORE_JOURNEY_STAGES[CORE_JOURNEY_STAGES.length - 1])} 高亮显示
+            </span>
           </div>
           <div className="flex w-full">
             {JOURNEY_STAGES.map((stage) => {

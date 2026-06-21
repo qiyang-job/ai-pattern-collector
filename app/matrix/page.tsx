@@ -11,7 +11,7 @@ import {
 } from "@/lib/constants";
 import { useRecordsStore } from "@/lib/records-store";
 import { computeMatrixCoverage, getMatrixCellRecords } from "@/lib/stats";
-import { average, cn, journeyCode, journeyName } from "@/lib/utils";
+import { average, cn, journeyCode, journeyDisplay, journeyName } from "@/lib/utils";
 import { PageBody, PageFrame, PageHeader, Panel, StatMetric, TypedIdBadge } from "@/components/ui";
 
 function recordsHref(params: Record<string, string>) {
@@ -47,7 +47,9 @@ export default function MatrixPage() {
             <div>
               <div className="text-[12px] font-semibold text-[var(--text)]">覆盖判断</div>
               <p className="mt-1 text-[11px] text-[var(--text-muted)]">
-                横向比较产品类型，纵向观察 J-03 到 J-07 的 AI 核心交互阶段是否形成模式密度。点击单元格或合计可下钻到对应记录。
+                横向比较产品类型，纵向观察 {journeyDisplay(CORE_JOURNEY_STAGES[0])} 到{" "}
+                {journeyDisplay(CORE_JOURNEY_STAGES[CORE_JOURNEY_STAGES.length - 1])}{" "}
+                的 AI 核心交互阶段是否形成模式密度。点击单元格或合计可下钻到对应记录。
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-[10px] text-[var(--text-muted)]">

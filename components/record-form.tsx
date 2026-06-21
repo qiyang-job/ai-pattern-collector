@@ -189,7 +189,7 @@ export function RecordForm({
                 {selectField(
                   "journeyStage",
                   "旅程阶段",
-                  "Journey Stage",
+                  "用户路径",
                   JOURNEY_STAGES,
                   TAXONOMY_FIELD_HINTS.journeyStage,
                   JOURNEY_STAGE_LABELS,
@@ -383,7 +383,7 @@ export function RecordForm({
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2">
               {selectField("productCategory", "产品类型", "Product Category", PRODUCT_CATEGORIES, TAXONOMY_FIELD_HINTS.productCategory, PRODUCT_CATEGORY_LABELS)}
-              {selectField("journeyStage", "旅程阶段", "Journey Stage", JOURNEY_STAGES, TAXONOMY_FIELD_HINTS.journeyStage, JOURNEY_STAGE_LABELS)}
+              {selectField("journeyStage", "旅程阶段", "用户路径", JOURNEY_STAGES, TAXONOMY_FIELD_HINTS.journeyStage, JOURNEY_STAGE_LABELS)}
               {selectField("screenshotState", "截图状态", "Screenshot State", SCREENSHOT_STATES, TAXONOMY_FIELD_HINTS.screenshotState, SCREENSHOT_STATE_LABELS)}
             </div>
             {secondaryStatesField}

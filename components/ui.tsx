@@ -18,7 +18,7 @@ export function PageHeader({
   actions,
 }: {
   title: string;
-  description?: string;
+  description?: ReactNode;
   stats?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -30,15 +30,21 @@ export function PageHeader({
             {title}
           </h1>
           {description ? (
-            <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-[var(--text-muted)]">
+            <div className="mt-1.5 max-w-2xl text-[12px] leading-5 text-[var(--text-muted)]">
               {description}
-            </p>
+            </div>
           ) : null}
         </div>
         {stats || actions ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-            {stats}
-            {actions}
+          <div
+            className={cn(
+              "page-header-toolbar",
+              !actions && "page-header-toolbar--stats-only",
+              !stats && "page-header-toolbar--actions-only",
+            )}
+          >
+            {stats ? <div className="page-header-stats">{stats}</div> : null}
+            {actions ? <div className="page-header-actions">{actions}</div> : null}
           </div>
         ) : null}
       </div>
@@ -339,13 +345,21 @@ export function StatMetric({
   value: string | number;
   compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <div className="stat-metric flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--panel-muted)] px-3 py-1.5">
+        <span className="whitespace-nowrap text-[10px] uppercase tracking-[0.06em] text-[var(--text-weak)]">
+          {label}
+        </span>
+        <span className="ml-auto tabular-nums mono text-[15px] font-medium leading-none text-[var(--text)]">
+          {value}
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "stat-metric rounded-[var(--radius-md)] bg-[var(--panel-muted)]",
-        compact ? "px-3 py-2" : "px-4 py-3",
-      )}
-    >
+    <div className="stat-metric rounded-[var(--radius-md)] bg-[var(--panel-muted)] px-4 py-3">
       <div className="tabular-nums mono text-[18px] font-medium leading-none text-[var(--text)]">
         {value}
       </div>

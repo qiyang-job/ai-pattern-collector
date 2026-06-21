@@ -129,7 +129,7 @@ function ComposerInlineField({
       </label>
       <input
         id={fieldId}
-        className="composer-inline-field-input focus-ring"
+        className="composer-inline-field-input"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -611,25 +611,27 @@ export default function CapturePage() {
             aria-label={drawerTitle}
             aria-hidden={!drawerEntered}
           >
-            <header className="capture-drawer-header page-gutter-x">
-              <div className="min-w-0">
-                <div className="mono text-[9px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
-                  Pattern Review
+            {drawerPhase !== "extracting" ? (
+              <header className="capture-drawer-header page-gutter-x">
+                <div className="min-w-0">
+                  <div className="mono text-[9px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
+                    Pattern Review
+                  </div>
+                  <h2 className="capture-drawer-title display-serif">{drawerTitle}</h2>
                 </div>
-                <h2 className="capture-drawer-title display-serif">{drawerTitle}</h2>
-              </div>
-              {drawerPhase === "review" ? (
-                <button
-                  type="button"
-                  className="evidence-recap-edit focus-ring"
-                  onClick={closeDrawer}
-                  aria-label="收起"
-                  title="收起"
-                >
-                  <PanelRightClose className="h-3.5 w-3.5" />
-                </button>
-              ) : null}
-            </header>
+                {drawerPhase === "review" ? (
+                  <button
+                    type="button"
+                    className="evidence-recap-edit focus-ring"
+                    onClick={closeDrawer}
+                    aria-label="收起"
+                    title="收起"
+                  >
+                    <PanelRightClose className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </header>
+            ) : null}
             <PatternExtractionWorkspace
               phase={drawerPhase}
               hasProduct={hasProduct}

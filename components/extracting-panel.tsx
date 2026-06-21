@@ -22,10 +22,8 @@ function getExtractingItemStatus(key: ExtractingItemKey, hasProduct: boolean): "
 
 export function ExtractingPanel({
   hasProduct,
-  title = "正在提炼模式…",
 }: {
   hasProduct: boolean;
-  title?: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -41,9 +39,7 @@ export function ExtractingPanel({
 
   return (
     <div className="workspace-panel workspace-panel--extracting">
-      <h3 className="workspace-panel-title">{title}</h3>
-
-      <div className="extracting-carousel mt-3">
+      <div className="extracting-carousel">
         <div className="extracting-carousel-viewport" aria-live="polite" aria-atomic="true">
           <div
             key={activeItem.key}

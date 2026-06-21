@@ -16,18 +16,18 @@ import {
   PageHeader,
   Panel,
   PanelHeader,
-  StatMetric,
   TypedIdBadge,
 } from "@/components/ui";
 import { DistributionRow, ReportSkeletonSection } from "@/components/research-ui";
 import {
   CORE_JOURNEY_STAGES,
+  JOURNEY_STAGES,
   PATTERN_CATEGORY_LABELS,
   PRODUCT_CATEGORY_LABELS,
   SCREENSHOT_STATE_LABELS,
   labelOf,
 } from "@/lib/constants";
-import { journeyCode, journeyName } from "@/lib/utils";
+import { journeyCode, journeyDisplay, journeyName } from "@/lib/utils";
 
 const INSIGHT_KEYS: Array<{ key: keyof InsightsResult; title: string; num: string }> = [
   { key: "researchScope", title: "研究范围", num: "01" },
@@ -108,32 +108,35 @@ export default function InsightsPage() {
     <PageFrame>
       <PageHeader
         title="洞察"
-        description="研究报告生成器 — 本地统计 + AI 叙事。"
-        stats={
-          hasRecords ? (
-            <>
-              <StatMetric label="记录数" value={records.length} compact />
-              <StatMetric label="产品数" value={stats.coveredProducts} compact />
-              <StatMetric label="平均 Lens" value={stats.averageLensScore.toFixed(1)} compact />
-            </>
-          ) : undefined
-        }
-        actions={
-          <Button onClick={generateInsights} disabled={isGenerating || !hasRecords}>
-            {isGenerating ? "生成中…" : "AI 生成洞察"}
-          </Button>
+        description={
+          <>
+            研究报告生成器 — 本地统计 + AI 叙事。
+            {hasRecords ? (
+              <span className="mt-1 block mono text-[11px] tabular-nums text-[var(--text-weak)]">
+                {records.length} 条记录 · {stats.coveredProducts} 个产品 · 平均 Lens{" "}
+                {stats.averageLensScore.toFixed(1)}
+              </span>
+            ) : null}
+          </>
         }
       />
       <PageBody className="page-section-gap">
         <Panel className="insight-readiness">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>
+                {hasRecords ? (
+                  <Button size="sm" onClick={generateInsights} disabled={isGenerating}>
+                    {isGenerating ? "生成中…" : "AI 生成洞察"}
+                  </Button>
+                ) : null}
+              </div>
               <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--text-muted)]">
                 Insights 的可信度来自记录密度。先看样本规模，再判断报告适合用于初步观察还是稳定设计建议。
               </p>
             </div>
-            <ul className="grid min-w-[280px] flex-1 gap-1 text-[11px] text-[var(--text-muted)] sm:grid-cols-3">
+            <ul className="grid min-w-[240px] shrink-0 gap-1 text-[11px] text-[var(--text-muted)] sm:grid-cols-3">
               <li><strong className="text-[var(--text)]">5+</strong> 基础洞察</li>
               <li><strong className="text-[var(--text)]">15+</strong> 跨产品对比</li>
               <li><strong className="text-[var(--text)]">30+</strong> 稳定建议</li>
@@ -151,7 +154,10 @@ export default function InsightsPage() {
         {hasRecords ? (
           <div className="grid gap-[var(--section-gap)] lg:grid-cols-2">
             <Panel>
-              <PanelHeader title="旅程覆盖" meta={`J-01 → J-09 · ${records.length} 条`} />
+              <PanelHeader
+                title="旅程覆盖"
+                meta={`${journeyDisplay(JOURNEY_STAGES[0])} → ${journeyDisplay(JOURNEY_STAGES[JOURNEY_STAGES.length - 1])} · ${records.length} 条`}
+              />
               <div className="dist-list">
                 {(() => {
                   const max = Math.max(1, ...stats.journeyCounts.map((i) => i.count));

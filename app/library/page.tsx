@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { PATTERN_CATEGORIES, PATTERN_CATEGORY_DESCRIPTIONS, PATTERN_CATEGORY_LABELS, labelOf } from "@/lib/constants";
+import { PATTERN_CATEGORY_COLORS } from "@/lib/design-tokens";
 import { useRecordsStore } from "@/lib/records-store";
-import type { PatternRecord } from "@/lib/types";
+import type { PatternCategory, PatternRecord } from "@/lib/types";
 import { journeyCode } from "@/lib/utils";
 import {
   EvidenceThumbnail,
@@ -12,7 +12,6 @@ import {
   PageFrame,
   PageHeader,
   Panel,
-  PanelHeader,
   ReuseTag,
   StatMetric,
   TypedIdBadge,
@@ -22,6 +21,10 @@ import { RecordDrawer } from "@/components/record-drawer";
 
 function categorySlug(category: string) {
   return `lib-${category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+}
+
+function patternCategoryCode(index: number) {
+  return `P-${String(index + 1).padStart(2, "0")}`;
 }
 
 export default function LibraryPage() {
@@ -40,54 +43,52 @@ export default function LibraryPage() {
         stats={<StatMetric label="模式总数" value={records.length} compact />}
       />
       <PageBody className="page-section-gap">
-        <Panel>
-          <PanelHeader title="模式分类概览" meta="点击跳转" />
-          <div className="library-overview">
-            {PATTERN_CATEGORIES.map((category) => {
+        <div className="library-category-rail">
+          <div className="capture-column-header capture-column-header--compact">
+            <span className="capture-column-header-title">分类导航</span>
+          </div>
+          <div className="library-category-rail-track">
+            {PATTERN_CATEGORIES.map((category, index) => {
               const count = records.filter((r) => r.patternCategory === category).length;
+              const colors = PATTERN_CATEGORY_COLORS[category as PatternCategory];
               return (
                 <button
                   key={category}
                   type="button"
-                  className="library-overview-chip"
+                  className="library-category-rail-btn"
                   data-empty={count === 0}
+                  style={
+                    {
+                      "--cat-accent": colors.text,
+                      "--cat-accent-bg": colors.bg,
+                    } as React.CSSProperties
+                  }
+                  title={labelOf(category, PATTERN_CATEGORY_LABELS)}
                   onClick={() =>
                     document
                       .getElementById(categorySlug(category))
                       ?.scrollIntoView({ behavior: "smooth", block: "start" })
                   }
                 >
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-medium text-[var(--text)]">
-                      {labelOf(category, PATTERN_CATEGORY_LABELS)}
-                    </span>
-                    <span className="mt-0.5 block text-[10px] text-[var(--text-weak)]">
-                      {count > 0 ? `${count} 条模式` : "待采样"}
-                    </span>
+                  <span className="library-category-rail-code mono">{patternCategoryCode(index)}</span>
+                  <span className="library-category-rail-name">
+                    {labelOf(category, PATTERN_CATEGORY_LABELS)}
                   </span>
-                  <span className="library-overview-chip-count">{count}</span>
+                  <span className="library-category-rail-count mono tabular-nums">
+                    {count > 0 ? count : "—"}
+                  </span>
                 </button>
               );
             })}
           </div>
-        </Panel>
+        </div>
 
         {PATTERN_CATEGORIES.map((category) => {
           const items = records.filter((r) => r.patternCategory === category);
           return (
             <Panel key={category} id={categorySlug(category)} noPadding className="scroll-mt-4 overflow-hidden">
               <div className="capture-column-header library-category-header">
-                <div className="library-category-header-row">
-                  <h2 className="capture-column-header-title">{labelOf(category, PATTERN_CATEGORY_LABELS)}</h2>
-                  {items.length > 0 ? (
-                    <Link
-                      href={`/records?patternCategory=${encodeURIComponent(category)}`}
-                      className="library-category-header-link"
-                    >
-                      在记录中查看 →
-                    </Link>
-                  ) : null}
-                </div>
+                <h2 className="capture-column-header-title">{labelOf(category, PATTERN_CATEGORY_LABELS)}</h2>
                 <p className="library-category-header-meta">{PATTERN_CATEGORY_DESCRIPTIONS[category]}</p>
               </div>
 

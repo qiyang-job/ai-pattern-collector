@@ -429,10 +429,7 @@ function RecordDrawerContent({
             )}
           >
             {isAnalyzing ? (
-              <ExtractingPanel
-                hasProduct={Boolean(draft.product.trim())}
-                title="正在重新提取…"
-              />
+              <ExtractingPanel hasProduct={Boolean(draft.product.trim())} />
             ) : (
               <div className="workspace-review">
                 <RecordPreview

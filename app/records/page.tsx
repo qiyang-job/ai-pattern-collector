@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGE_LABELS,
@@ -37,8 +38,6 @@ import {
   ReuseTag,
   StatMetric,
   TypedIdBadge,
-  inputClass,
-  selectClass,
 } from "@/components/ui";
 import { SlotEmpty } from "@/components/research-ui";
 import { RecordDrawer } from "@/components/record-drawer";
@@ -129,62 +128,63 @@ function RecordsView() {
       <PageBody className="page-section-gap">
         <ErrorBanner message={error} />
 
-        <Panel className="filter-panel">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <div className="text-[11px] font-semibold text-[var(--text-muted)]">查询与筛选</div>
-            <button
-              type="button"
-              className="text-[11px] text-[var(--text-weak)] hover:text-[var(--accent)]"
-              onClick={() => {
-                setQuery("");
-                setFilters({
-                  productCategory: "",
-                  journeyStage: "",
-                  screenshotState: "",
-                  patternCategory: "",
-                  reuseLevel: "",
-                });
-              }}
-            >
-              清空条件
-            </button>
-          </div>
-          <div className="filter-grid">
-            <input
-              className={inputClass}
-              placeholder="搜索模式、产品、标签或设计判断…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} optionLabels={PRODUCT_CATEGORY_LABELS} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
-            <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} optionLabels={JOURNEY_STAGE_LABELS} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
-            <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} optionLabels={SCREENSHOT_STATE_LABELS} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
-            <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
-            <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
-          </div>
-          {activeChips.length > 0 ? (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2.5">
-              <span className="mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-weak)]">
-                生效条件
-              </span>
-              {activeChips.map((chip) => (
-                <span key={chip.key} className="filter-chip">
-                  {chip.label}
-                  <button type="button" aria-label="移除筛选" onClick={chip.clear}>
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </Panel>
-
         {isLoading && records.length === 0 ? (
           <LoadingState label="正在读取本地数据…" />
         ) : null}
 
-        <Panel noPadding className="table-scroll">
-          <table className="data-table">
+        <Panel noPadding>
+          <div className="records-toolbar">
+            <div className="records-toolbar-main">
+              <div className="records-search-wrap">
+                <Search className="records-search-icon" strokeWidth={1.75} aria-hidden />
+                <input
+                  className="records-search"
+                  placeholder="搜索模式、产品、标签…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <div className="records-filter-row">
+                <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} optionLabels={PRODUCT_CATEGORY_LABELS} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
+                <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} optionLabels={JOURNEY_STAGE_LABELS} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
+                <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} optionLabels={SCREENSHOT_STATE_LABELS} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
+                <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
+                <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
+              </div>
+              {activeChips.length > 0 ? (
+                <button
+                  type="button"
+                  className="records-toolbar-clear"
+                  onClick={() => {
+                    setQuery("");
+                    setFilters({
+                      productCategory: "",
+                      journeyStage: "",
+                      screenshotState: "",
+                      patternCategory: "",
+                      reuseLevel: "",
+                    });
+                  }}
+                >
+                  清空
+                </button>
+              ) : null}
+            </div>
+            {activeChips.length > 0 ? (
+              <div className="records-toolbar-chips">
+                {activeChips.map((chip) => (
+                  <span key={chip.key} className="filter-chip">
+                    {chip.label}
+                    <button type="button" aria-label="移除筛选" onClick={chip.clear}>
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="table-scroll">
+            <table className="data-table">
             <thead>
               <tr>
                 <th>证据</th>
@@ -263,6 +263,7 @@ function RecordsView() {
               )}
             </tbody>
           </table>
+          </div>
         </Panel>
       </PageBody>
       <RecordDrawer record={selected} onClose={() => setSelected(null)} />
@@ -284,7 +285,11 @@ function FilterSelect<T extends string>({
   onChange: (v: string) => void;
 }) {
   return (
-    <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select
+      className={cn("records-filter-select", value && "records-filter-select--active")}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
       <option value="">{placeholder}</option>
       {options.map((o) => (
         <option key={o} value={o}>{optionLabels ? labelOf(o, optionLabels) : o}</option>

@@ -311,14 +311,6 @@ export function EvidenceMediaSlot({
 
   return (
     <div className={cn("evidence-slot", itemCount > 0 && "evidence-slot--media-grid")}>
-      <div className="flex items-center gap-2 px-2 py-1.5">
-        <span className="text-[10px] font-medium text-[var(--text-muted)]">证据</span>
-        <span className="mono text-[10px] text-[var(--text-weak)]">{itemCount}</span>
-        {canAddImage ? (
-          <span className="ml-auto mono text-[10px] text-[var(--text-weak)]">Cmd+V 粘贴截图</span>
-        ) : null}
-      </div>
-
       <div
         className={cn(
           "evidence-slot-preview relative bg-[var(--panel)]",

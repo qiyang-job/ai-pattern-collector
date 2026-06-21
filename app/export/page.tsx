@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getLatestInsights, importInsights } from "@/lib/db";
-import { PATTERN_CATEGORIES, PATTERN_CATEGORY_LABELS, labelOf } from "@/lib/constants";
+import {
+  CORE_JOURNEY_STAGES,
+  JOURNEY_STAGE_LABELS,
+  PATTERN_CATEGORIES,
+  PATTERN_CATEGORY_LABELS,
+  PRODUCT_CATEGORY_LABELS,
+  SCREENSHOT_STATE_LABELS,
+  labelOf,
+} from "@/lib/constants";
 import {
   recordsToBackupJson,
   recordsToCsv,
@@ -18,19 +26,23 @@ import {
   type ImportPayload,
 } from "@/lib/import";
 import { useRecordsStore } from "@/lib/records-store";
-import type { InsightsResult, PatternCategory } from "@/lib/types";
-import { downloadTextFile } from "@/lib/utils";
+import { computeRecordStats } from "@/lib/stats";
+import type { InsightsResult, PatternCategory, PatternRecord } from "@/lib/types";
+import { downloadTextFile, journeyCode, journeyName } from "@/lib/utils";
 import {
   Button,
+  CategoryTag,
   PageBody,
   PageFrame,
   PageHeader,
   Panel,
   PanelHeader,
+  ReuseTag,
   SegmentedControl,
+  TypedIdBadge,
   selectClass,
 } from "@/components/ui";
-import { SlotEmpty } from "@/components/research-ui";
+import { DistributionRow, ReportSkeletonSection, SlotEmpty } from "@/components/research-ui";
 
 type ExportFormat = "json" | "csv" | "markdown";
 type ExportScope = "all" | "high-reuse" | "category";
@@ -69,54 +81,34 @@ export default function ExportPage() {
   const hasData = records.length > 0;
   const importSummary = importPreview ? summarizeImportPayload(importPreview) : null;
 
-  const preview = useMemo(() => {
-    if (!hasData) {
-      return `# AI 产品设计模式研究报告
-
-## 1. 研究范围
-（等待采集记录）
-
-## 2. 模式摘要
-…
-
-请至少保存一条模式记录以启用导出预览。`;
-    }
-    if (format === "json") {
-      const json =
-        scope === "all"
-          ? recordsToBackupJson(exportRecords, latestInsights)
-          : recordsToJson(exportRecords);
-      return json.slice(0, 1800) + "\n…";
-    }
-    if (format === "csv") return recordsToCsv(exportRecords).slice(0, 1800) + "\n…";
-    return recordsToMarkdownReport(exportRecords, latestInsights).slice(0, 2500) + "\n…";
-  }, [exportRecords, format, latestInsights, hasData, scope]);
-
   const date = new Date().toISOString().slice(0, 10);
+
+  function getExportContent() {
+    if (format === "json") {
+      return scope === "all"
+        ? recordsToBackupJson(exportRecords, latestInsights)
+        : recordsToJson(exportRecords);
+    }
+    if (format === "csv") return recordsToCsv(exportRecords);
+    return recordsToMarkdownReport(exportRecords, latestInsights);
+  }
 
   function download() {
     if (!exportRecords.length) return;
     if (format === "json") {
-      const content =
-        scope === "all"
-          ? recordsToBackupJson(exportRecords, latestInsights)
-          : recordsToJson(exportRecords);
       const filename = scope === "all" ? `patterns-backup-${date}.json` : `patterns-${date}.json`;
-      downloadTextFile(filename, content, "application/json");
+      downloadTextFile(filename, getExportContent(), "application/json");
     } else if (format === "csv") {
-      downloadTextFile(`patterns-${date}.csv`, recordsToCsv(exportRecords), "text/csv");
+      downloadTextFile(`patterns-${date}.csv`, getExportContent(), "text/csv");
     } else {
-      downloadTextFile(
-        `report-${date}.md`,
-        recordsToMarkdownReport(exportRecords, latestInsights),
-        "text/markdown",
-      );
+      downloadTextFile(`report-${date}.md`, getExportContent(), "text/markdown");
     }
     toast.success(scope === "all" && format === "json" ? "完整备份已下载。" : "已下载。");
   }
 
   async function copyPreview() {
-    await navigator.clipboard.writeText(preview.replace(/\n…$/, ""));
+    if (!hasData || !exportRecords.length) return;
+    await navigator.clipboard.writeText(getExportContent());
     toast.success("已复制。");
   }
 
@@ -339,11 +331,323 @@ export default function ExportPage() {
           </div>
 
         <Panel className="export-preview-panel">
-          <PanelHeader title="报告预览" meta={hasData ? "已截断" : "骨架"} />
-          <pre className="code-preview max-h-96">{preview}</pre>
+          <PanelHeader
+            title="导出预览"
+            meta={
+              !hasData
+                ? "骨架"
+                : format === "markdown"
+                  ? `${exportRecords.length} 条 · 报告结构`
+                  : `${exportRecords.length} 条 · ${format.toUpperCase()}`
+            }
+          />
+          <ExportPreviewList
+            format={format}
+            scope={scope}
+            records={exportRecords}
+            insights={latestInsights}
+            hasData={hasData}
+          />
         </Panel>
         </div>
       </PageBody>
     </PageFrame>
+  );
+}
+
+const PREVIEW_RECORD_LIMIT = 12;
+
+const EXPORT_INSIGHT_KEYS: Array<{ key: keyof InsightsResult; title: string; num: string }> = [
+  { key: "researchScope", title: "研究范围", num: "01" },
+  { key: "productCoverage", title: "产品覆盖", num: "02" },
+  { key: "journeyCoverage", title: "旅程覆盖", num: "03" },
+  { key: "highValuePatterns", title: "高价值模式", num: "04" },
+  { key: "recommendations", title: "设计建议", num: "05" },
+];
+
+function ExportPreviewList({
+  format,
+  scope,
+  records,
+  insights,
+  hasData,
+}: {
+  format: ExportFormat;
+  scope: ExportScope;
+  records: PatternRecord[];
+  insights: InsightsResult | null;
+  hasData: boolean;
+}) {
+  const stats = useMemo(() => computeRecordStats(records), [records]);
+  const previewRecords = records.slice(0, PREVIEW_RECORD_LIMIT);
+  const remaining = Math.max(0, records.length - previewRecords.length);
+
+  if (!hasData) {
+    return (
+      <div className="export-preview-list">
+        <ExportPreviewSection title="研究范围">
+          <SlotEmpty>等待采集记录以生成导出预览。</SlotEmpty>
+        </ExportPreviewSection>
+        <ExportPreviewSection title="分布概览">
+          <div className="export-preview-skeleton">
+            {["产品覆盖", "旅程覆盖", "模式分类", "高价值模式"].map((label) => (
+              <div key={label} className="export-preview-skeleton-row">
+                <span>{label}</span>
+                <span className="export-preview-skeleton-bar" />
+                <span>—</span>
+              </div>
+            ))}
+          </div>
+        </ExportPreviewSection>
+        <ExportPreviewSection title="模式记录">
+          <SlotEmpty>保存后将在此列出范围内的模式记录。</SlotEmpty>
+        </ExportPreviewSection>
+      </div>
+    );
+  }
+
+  if (format !== "markdown") {
+    const scopeLabel =
+      scope === "all" ? "全部记录" : scope === "high-reuse" ? "高复用" : "按分类筛选";
+    const fields =
+      format === "csv"
+        ? [
+            "patternId",
+            "screenshotId",
+            "product",
+            "productCategory",
+            "journeyStage",
+            "patternName",
+            "patternCategory",
+            "reuseLevel",
+            "designJudgment",
+            "tags",
+            "createdAt",
+          ]
+        : scope === "all"
+          ? ["version", "exportedAt", "records[]", "insights"]
+          : ["patternId", "patternName", "product", "journeyStage", "patternCategory", "lensScore", "…"];
+
+    return (
+      <div className="export-preview-list">
+        <ExportPreviewSection title="导出清单">
+          <ul className="export-meta-list">
+            <li>
+              <span>格式</span>
+              <span className="mono">{format.toUpperCase()}</span>
+            </li>
+            <li>
+              <span>范围</span>
+              <span>{scopeLabel}</span>
+            </li>
+            <li>
+              <span>记录数</span>
+              <span className="mono tabular-nums">{records.length}</span>
+            </li>
+            {format === "json" && scope === "all" ? (
+              <li>
+                <span>Insights</span>
+                <span>{insights ? "含最新报告" : "无"}</span>
+              </li>
+            ) : null}
+          </ul>
+        </ExportPreviewSection>
+        <ExportPreviewSection title="字段结构">
+          <ul className="export-field-list">
+            {fields.map((field) => (
+              <li key={field} className="mono">
+                {field}
+              </li>
+            ))}
+          </ul>
+        </ExportPreviewSection>
+        <ExportPreviewSection title="记录列表" meta={`前 ${previewRecords.length} 条`}>
+          <RecordManifestList records={previewRecords} remaining={remaining} />
+        </ExportPreviewSection>
+      </div>
+    );
+  }
+
+  const journeyMax = Math.max(1, ...stats.journeyCounts.map((item) => item.count));
+  const productMax = Math.max(1, ...stats.productCategoryCounts.map((item) => item.count));
+  const patternMax = Math.max(1, ...stats.patternCategoryCounts.map((item) => item.count));
+
+  return (
+    <div className="export-preview-list">
+      <ExportPreviewSection title="研究范围">
+        <ul className="export-meta-list">
+          <li>
+            <span>模式记录</span>
+            <span className="mono tabular-nums">{stats.totalPatterns}</span>
+          </li>
+          <li>
+            <span>覆盖产品</span>
+            <span className="mono tabular-nums">{stats.coveredProducts}</span>
+          </li>
+          <li>
+            <span>平均 Lens</span>
+            <span className="mono tabular-nums">{stats.averageLensScore.toFixed(1)}</span>
+          </li>
+          <li>
+            <span>高复用模式</span>
+            <span className="mono tabular-nums">{stats.highReusePatterns.length}</span>
+          </li>
+        </ul>
+        {stats.products.length > 0 ? (
+          <p className="export-preview-note">{stats.products.join(" · ")}</p>
+        ) : null}
+      </ExportPreviewSection>
+
+      <div className="export-preview-grid">
+        <ExportPreviewSection title="产品覆盖">
+          <div className="dist-list">
+            {stats.productCategoryCounts.map((item) => (
+              <DistributionRow
+                key={item.category}
+                label={labelOf(item.category, PRODUCT_CATEGORY_LABELS)}
+                count={item.count}
+                max={productMax}
+              />
+            ))}
+          </div>
+        </ExportPreviewSection>
+
+        <ExportPreviewSection title="旅程覆盖">
+          <div className="dist-list">
+            {stats.journeyCounts.map((item) => {
+              const isCore = CORE_JOURNEY_STAGES.some((stage) => stage === item.stage);
+              return (
+                <DistributionRow
+                  key={item.stage}
+                  label={
+                    <span className="flex items-center gap-2">
+                      <span className="mono text-[10px] text-[var(--text-weak)]">
+                        {journeyCode(item.stage)}
+                      </span>
+                      {journeyName(item.stage)}
+                    </span>
+                  }
+                  count={item.count}
+                  max={journeyMax}
+                  accent={isCore}
+                  core={isCore}
+                />
+              );
+            })}
+          </div>
+        </ExportPreviewSection>
+
+        <ExportPreviewSection title="模式分类">
+          <div className="dist-list">
+            {stats.patternCategoryCounts.map((item) => (
+              <DistributionRow
+                key={item.category}
+                label={labelOf(item.category, PATTERN_CATEGORY_LABELS)}
+                count={item.count}
+                max={patternMax}
+              />
+            ))}
+          </div>
+        </ExportPreviewSection>
+
+        <ExportPreviewSection title="高价值模式">
+          {stats.highReusePatterns.length > 0 ? (
+            <RecordManifestList
+              records={stats.highReusePatterns.slice(0, PREVIEW_RECORD_LIMIT)}
+              remaining={Math.max(0, stats.highReusePatterns.length - PREVIEW_RECORD_LIMIT)}
+              compact
+            />
+          ) : (
+            <p className="export-preview-note">当前范围内暂无高复用模式。</p>
+          )}
+        </ExportPreviewSection>
+      </div>
+
+      {insights ? (
+        <ExportPreviewSection title="Insights 摘要">
+          <div className="export-insight-list">
+            {EXPORT_INSIGHT_KEYS.map(({ key, title, num }) =>
+              insights[key] ? (
+                <ReportSkeletonSection key={key} num={num} title={title} content={insights[key]} />
+              ) : null,
+            )}
+          </div>
+        </ExportPreviewSection>
+      ) : null}
+
+      <ExportPreviewSection title="模式记录" meta={`前 ${previewRecords.length} 条`}>
+        <RecordManifestList records={previewRecords} remaining={remaining} />
+      </ExportPreviewSection>
+    </div>
+  );
+}
+
+function ExportPreviewSection({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="export-preview-section">
+      <div className="export-preview-section-head">
+        <h3 className="export-preview-section-title">{title}</h3>
+        {meta ? <span className="mono text-[10px] text-[var(--text-weak)]">{meta}</span> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function RecordManifestList({
+  records,
+  remaining,
+  compact,
+}: {
+  records: PatternRecord[];
+  remaining: number;
+  compact?: boolean;
+}) {
+  if (records.length === 0) {
+    return <p className="export-preview-note">当前范围内没有记录。</p>;
+  }
+
+  return (
+    <>
+      <ul className="export-record-list">
+        {records.map((record) => (
+          <li key={record.id} className={compact ? "export-record-row export-record-row--compact" : "export-record-row"}>
+            <TypedIdBadge kind="pattern">{record.patternId}</TypedIdBadge>
+            <div className="export-record-row-main">
+              <div className="export-record-row-name">{record.patternName || "未命名模式"}</div>
+              {!compact ? (
+                <div className="export-record-row-meta">
+                  <span>{record.product || "—"}</span>
+                  <span>{journeyCode(record.journeyStage)} {labelOf(record.journeyStage, JOURNEY_STAGE_LABELS)}</span>
+                  <span>{labelOf(record.screenshotState, SCREENSHOT_STATE_LABELS)}</span>
+                </div>
+              ) : null}
+            </div>
+            {!compact ? (
+              <>
+                <CategoryTag
+                  label={labelOf(record.productCategory, PRODUCT_CATEGORY_LABELS)}
+                  category={record.productCategory}
+                />
+                <ReuseTag level={record.reuseLevel} />
+              </>
+            ) : (
+              <span className="text-[11px] text-[var(--text-weak)]">{record.product || "—"}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {remaining > 0 ? (
+        <p className="export-preview-more mono">… 还有 {remaining} 条未展示</p>
+      ) : null}
+    </>
   );
 }

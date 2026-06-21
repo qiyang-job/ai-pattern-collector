@@ -34,6 +34,14 @@ export function journeyName(stage: string) {
   return labelOf(stage, JOURNEY_STAGE_LABELS);
 }
 
+/** UI display: J-01 入口 */
+export function journeyDisplay(stage: string | null | undefined) {
+  if (typeof stage !== "string") return "—";
+  const code = journeyCode(stage);
+  const name = journeyName(stage);
+  return name && name !== stage ? `${code} ${name}` : code;
+}
+
 export function downloadTextFile(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
