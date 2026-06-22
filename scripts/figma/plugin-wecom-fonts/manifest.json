@@ -1,0 +1,7 @@
+{
+  "name": "WeCom 导入字型样式",
+  "id": "wecom-import-font-styles-v3",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"]
+}

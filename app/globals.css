@@ -37,8 +37,8 @@
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
   --capture-drawer-duration: 280ms;
   --capture-drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif;
+  --font-sans: "PingFang SC", "PingFang HK", -apple-system, BlinkMacSystemFont,
+    "Microsoft YaHei", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 

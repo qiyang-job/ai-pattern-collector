@@ -1,0 +1,7 @@
+{
+  "name": "WeCom 绑定设计变量",
+  "id": "wecom-bind-tokens-v5",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"]
+}

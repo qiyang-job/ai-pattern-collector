@@ -1,0 +1,2568 @@
+{
+  "desktop": [
+    {
+      "display": "标文 Label",
+      "slug": "label",
+      "size": 9.0,
+      "lineHeightPx": 11.7,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标文强化 Label Strong",
+      "slug": "label_strong",
+      "size": 9.0,
+      "lineHeightPx": 11.7,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文超小号 Caption Extra Small",
+      "slug": "caption_extra_small",
+      "size": 10.0,
+      "lineHeightPx": 12.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化超小号 Caption Strong Extra Small",
+      "slug": "caption_strong_extra_small",
+      "size": 10.0,
+      "lineHeightPx": 12.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文小号 Caption Small",
+      "slug": "caption_small",
+      "size": 11.0,
+      "lineHeightPx": 14.3,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化小号 Caption Strong Small",
+      "slug": "caption_strong_small",
+      "size": 11.0,
+      "lineHeightPx": 14.3,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 Caption",
+      "slug": "caption",
+      "size": 12.0,
+      "lineHeightPx": 15.6,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 Caption Strong",
+      "slug": "caption_strong",
+      "size": 12.0,
+      "lineHeightPx": 15.6,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文小号 Body Small",
+      "slug": "body_small",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化小号 Body Strong Small",
+      "slug": "body_strong_small",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 Body",
+      "slug": "body",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 Body Strong",
+      "slug": "body_strong",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文中号 Body Medium",
+      "slug": "body_medium",
+      "size": 15.0,
+      "lineHeightPx": 21.75,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化中号 Body Strong Medium",
+      "slug": "body_strong_medium",
+      "size": 15.0,
+      "lineHeightPx": 21.75,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文大号 Body Large",
+      "slug": "body_large",
+      "size": 16.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化大号 Body Strong Large",
+      "slug": "body_strong_large",
+      "size": 16.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文特大号 Body Extra Large",
+      "slug": "body_extra_large",
+      "size": 18.0,
+      "lineHeightPx": 24.3,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化特大号 Body Strong Extra Large",
+      "slug": "body_strong_extra_large",
+      "size": 18.0,
+      "lineHeightPx": 24.3,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "副标题 Subtitle",
+      "slug": "subtitle",
+      "size": 20.0,
+      "lineHeightPx": 28.0,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题小号 Title Small",
+      "slug": "title_small",
+      "size": 24.0,
+      "lineHeightPx": 32.4,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题 Title",
+      "slug": "title",
+      "size": 28.0,
+      "lineHeightPx": 36.4,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题大号 Title Large",
+      "slug": "title_large",
+      "size": 40.0,
+      "lineHeightPx": 52.0,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "附文 文章 Caption Small Article",
+      "slug": "caption_small_article",
+      "size": 11.0,
+      "lineHeightPx": 15.95,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 文章 Caption Strong Small Article",
+      "slug": "caption_strong_small_article",
+      "size": 11.0,
+      "lineHeightPx": 15.95,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 文章 Caption Article",
+      "slug": "caption_article",
+      "size": 12.0,
+      "lineHeightPx": 18.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 文章 Caption Strong Article",
+      "slug": "caption_strong_article",
+      "size": 12.0,
+      "lineHeightPx": 18.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文小号 文章 Body Small Article",
+      "slug": "body_small_article",
+      "size": 13.0,
+      "lineHeightPx": 20.15,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化小号 文章 Body Strong Small Article",
+      "slug": "body_strong_small_article",
+      "size": 13.0,
+      "lineHeightPx": 20.15,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 文章 Body Article",
+      "slug": "body_article",
+      "size": 14.0,
+      "lineHeightPx": 23.8,
+      "lineHeightRatio": 1.7,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 文章 Body Strong Article",
+      "slug": "body_strong_article",
+      "size": 14.0,
+      "lineHeightPx": 23.8,
+      "lineHeightRatio": 1.7,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文中号 文章 Body Medium Article",
+      "slug": "body_medium_article",
+      "size": 15.0,
+      "lineHeightPx": 25.5,
+      "lineHeightRatio": 1.7,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化中号 文章 Body Strong Medium Article",
+      "slug": "body_strong_medium_article",
+      "size": 15.0,
+      "lineHeightPx": 25.5,
+      "lineHeightRatio": 1.7,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文大号 文章 Body Large Article",
+      "slug": "body_large_article",
+      "size": 16.0,
+      "lineHeightPx": 28.0,
+      "lineHeightRatio": 1.75,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化大号 文章 Body Strong Large Article",
+      "slug": "body_strong_large_article",
+      "size": 16.0,
+      "lineHeightPx": 28.0,
+      "lineHeightRatio": 1.75,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文特大号 文章 Body Extra Large Article",
+      "slug": "body_extra_large_article",
+      "size": 18.0,
+      "lineHeightPx": 29.7,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化特大号 文章 Body Strong Extra Large Article",
+      "slug": "body_strong_extra_large_article",
+      "size": 18.0,
+      "lineHeightPx": 29.7,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "副标题 文章 Subtitle Article",
+      "slug": "subtitle_article",
+      "size": 20.0,
+      "lineHeightPx": 28.0,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "附文小号 短文 Caption Small Prose",
+      "slug": "caption_small_prose",
+      "size": 11.0,
+      "lineHeightPx": 15.95,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化小号 短文 Caption Strong Small Prose",
+      "slug": "caption_strong_small_prose",
+      "size": 11.0,
+      "lineHeightPx": 15.95,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 短文 Caption Prose",
+      "slug": "caption_prose",
+      "size": 12.0,
+      "lineHeightPx": 18.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 短文 Caption Strong Prose",
+      "slug": "caption_strong_prose",
+      "size": 12.0,
+      "lineHeightPx": 18.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文小号 短文 Body Small Prose",
+      "slug": "body_small_prose",
+      "size": 13.0,
+      "lineHeightPx": 20.15,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化小号 短文 Body Strong Small Prose",
+      "slug": "body_strong_small_prose",
+      "size": 13.0,
+      "lineHeightPx": 20.15,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 短文 Body Prose",
+      "slug": "body_prose",
+      "size": 14.0,
+      "lineHeightPx": 21.7,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 短文 Body Strong Prose",
+      "slug": "body_strong_prose",
+      "size": 14.0,
+      "lineHeightPx": 21.7,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文中号 短文 Body Medium Prose",
+      "slug": "body_medium_prose",
+      "size": 15.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化中号 短文 Body Strong Medium Prose",
+      "slug": "body_strong_medium_prose",
+      "size": 15.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文大号 短文 Body Large Prose",
+      "slug": "body_large_prose",
+      "size": 16.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化大号 短文 Body Strong Large Prose",
+      "slug": "body_strong_large_prose",
+      "size": 16.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文特大号 短文 Body Extra Large Prose",
+      "slug": "body_extra_large_prose",
+      "size": 18.0,
+      "lineHeightPx": 27.9,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化特大号 短文 Body Strong Extra Large Prose",
+      "slug": "body_strong_extra_large_prose",
+      "size": 18.0,
+      "lineHeightPx": 27.9,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "副标题 短文 Subtitle Prose",
+      "slug": "subtitle_prose",
+      "size": 20.0,
+      "lineHeightPx": 30.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "正文 消息气泡 Body Message Bubble",
+      "slug": "body_message_bubble",
+      "size": 14.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 消息气泡 Body Strong Message Bubble",
+      "slug": "body_strong_message_bubble",
+      "size": 14.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Desktop Win",
+          "family": "Microsoft YaHei",
+          "style": "Bold",
+          "weight": 700
+        },
+        {
+          "platform": "Desktop Mac",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    }
+  ],
+  "mobile": [
+    {
+      "display": "附文 4 级 Caption 4",
+      "slug": "caption_4",
+      "size": 9.0,
+      "lineHeightPx": 9.9,
+      "lineHeightRatio": 1.1,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 4 级 Caption Strong  4",
+      "slug": "caption_strong_4",
+      "size": 9.0,
+      "lineHeightPx": 9.9,
+      "lineHeightRatio": 1.1,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 3 级 Caption 3",
+      "slug": "caption_3",
+      "size": 10.0,
+      "lineHeightPx": 12.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 3 级 Caption Strong  3",
+      "slug": "caption_strong_3",
+      "size": 10.0,
+      "lineHeightPx": 12.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 2 级 Caption 2",
+      "slug": "caption_2",
+      "size": 11.0,
+      "lineHeightPx": 14.3,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 2 级 Caption Strong 2",
+      "slug": "caption_strong_2",
+      "size": 11.0,
+      "lineHeightPx": 14.3,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "附文 1 级 Caption 1",
+      "slug": "caption_1",
+      "size": 12.0,
+      "lineHeightPx": 15.6,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "附文强化 1 级 Caption Strong 1",
+      "slug": "caption_strong_1",
+      "size": 12.0,
+      "lineHeightPx": 15.6,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "脚注 2 级 Footnote 2",
+      "slug": "footnote_2",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 2 级 Footnote Strong 2",
+      "slug": "footnote_strong_2",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "脚注 1 级 Footnote 1",
+      "slug": "footnote_1",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 1 级 Footnote Strong 1",
+      "slug": "footnote_strong_1",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "脚注特强化 1 级 Footnote Extra Strong 1",
+      "slug": "footnote_extra_strong_1",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 700
+        }
+      ]
+    },
+    {
+      "display": "副正文 Sub Body",
+      "slug": "sub_body",
+      "size": 15.0,
+      "lineHeightPx": 20.25,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容副标题 Subhead",
+      "slug": "subhead",
+      "size": 15.0,
+      "lineHeightPx": 20.25,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "标注 Callout",
+      "slug": "callout",
+      "size": 16.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标注强化 Callout Strong",
+      "slug": "callout_strong",
+      "size": 16.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 Body",
+      "slug": "body",
+      "size": 17.0,
+      "lineHeightPx": 22.1,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强调 Body Strong",
+      "slug": "body_strong",
+      "size": 17.0,
+      "lineHeightPx": 22.1,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "内容标题 Headline",
+      "slug": "headline",
+      "size": 17.0,
+      "lineHeightPx": 22.1,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 4 级 Title Weak 4",
+      "slug": "title_weak_4",
+      "size": 18.0,
+      "lineHeightPx": 24.3,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 4 级 Title 4",
+      "slug": "title_4",
+      "size": 18.0,
+      "lineHeightPx": 24.3,
+      "lineHeightRatio": 1.35,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 3 级 Title Weak 3",
+      "slug": "title_weak_3",
+      "size": 20.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 3 级 Title 3",
+      "slug": "title_3",
+      "size": 20.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 2 级 Title Weak 2",
+      "slug": "title_weak_2",
+      "size": 22.0,
+      "lineHeightPx": 27.5,
+      "lineHeightRatio": 1.25,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 2 级 Title 2",
+      "slug": "title_2",
+      "size": 22.0,
+      "lineHeightPx": 27.5,
+      "lineHeightRatio": 1.25,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题 1 级 Title 1",
+      "slug": "title_1",
+      "size": 24.0,
+      "lineHeightPx": 30.0,
+      "lineHeightRatio": 1.25,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题大号 Title Large",
+      "slug": "title_large",
+      "size": 28.0,
+      "lineHeightPx": 33.6,
+      "lineHeightRatio": 1.2,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题特大号 Title Extra Large",
+      "slug": "title_extra_large",
+      "size": 34.0,
+      "lineHeightPx": 44.2,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "脚注 2 级 文章 Footnote 2 Article",
+      "slug": "footnote_2_article",
+      "size": 13.0,
+      "lineHeightPx": 19.5,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 2 级 文章 Footnote Strong 2 Article",
+      "slug": "footnote_strong_2_article",
+      "size": 13.0,
+      "lineHeightPx": 19.5,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "脚注 1 级 文章 Footnote 1 Article",
+      "slug": "footnote_1_article",
+      "size": 14.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 1 级 文章 Footnote Strong 1 Article",
+      "slug": "footnote_strong_1_article",
+      "size": 14.0,
+      "lineHeightPx": 22.4,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "副正文 文章 Sub Body Article",
+      "slug": "sub_body_article",
+      "size": 15.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容副标题 文章 Subhead Article",
+      "slug": "subhead_article",
+      "size": 15.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "标注 文章 Callout Article",
+      "slug": "callout_article",
+      "size": 16.0,
+      "lineHeightPx": 25.6,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标注强化 文章 Callout Strong Article",
+      "slug": "callout_strong_article",
+      "size": 16.0,
+      "lineHeightPx": 25.6,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 文章 Body Article",
+      "slug": "body_article",
+      "size": 17.0,
+      "lineHeightPx": 28.05,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 文章 Body Article",
+      "slug": "body_strong_article",
+      "size": 17.0,
+      "lineHeightPx": 28.05,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容标题 文章 Headline Article",
+      "slug": "headline_article",
+      "size": 17.0,
+      "lineHeightPx": 28.05,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 4 级 文章 Title Weak 4 Article",
+      "slug": "title_weak_4_article",
+      "size": 18.0,
+      "lineHeightPx": 29.7,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 4 级 文章 Title 4 Article",
+      "slug": "title_4_article",
+      "size": 18.0,
+      "lineHeightPx": 29.7,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 3 级 文章 Title Weak 3 Article",
+      "slug": "title_weak_3_article",
+      "size": 20.0,
+      "lineHeightPx": 32.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 3 级 文章 Title 3 Article",
+      "slug": "title_3_article",
+      "size": 20.0,
+      "lineHeightPx": 32.0,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 2 级 文章 Title Weak 2 Article",
+      "slug": "title_weak_2_article",
+      "size": 22.0,
+      "lineHeightPx": 36.3,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 2 级 文章 Title 2 Article",
+      "slug": "title_2_article",
+      "size": 22.0,
+      "lineHeightPx": 36.3,
+      "lineHeightRatio": 1.65,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "脚注 2 级 短文 Footnote 2 Prose",
+      "slug": "footnote_2_prose",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 2 级 短文 Footnote Strong 2 Prose",
+      "slug": "footnote_strong_2_prose",
+      "size": 13.0,
+      "lineHeightPx": 18.2,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "脚注 1 级 短文 Footnote 1 Prose",
+      "slug": "footnote_1_prose",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "脚注强化 1 级 短文 Footnote Strong 1 Prose",
+      "slug": "footnote_strong_1_prose",
+      "size": 14.0,
+      "lineHeightPx": 19.6,
+      "lineHeightRatio": 1.4,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "副正文 短文 Sub Body Prose",
+      "slug": "sub_body_prose",
+      "size": 15.0,
+      "lineHeightPx": 21.75,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容副标题 短文 Subhead Prose",
+      "slug": "subhead_prose",
+      "size": 15.0,
+      "lineHeightPx": 21.75,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "标注 短文 Callout Prose",
+      "slug": "callout_prose",
+      "size": 16.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标注强化 短文 Callout Strong Prose",
+      "slug": "callout_strong_prose",
+      "size": 16.0,
+      "lineHeightPx": 24.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 短文 Body Prose",
+      "slug": "body_prose",
+      "size": 17.0,
+      "lineHeightPx": 25.5,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "正文强化 短文 Body Prose",
+      "slug": "body_strong_prose",
+      "size": 17.0,
+      "lineHeightPx": 25.5,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容标题 短文 Headline Prose",
+      "slug": "headline_prose",
+      "size": 17.0,
+      "lineHeightPx": 25.5,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 4 级 短文 Title Weak 4 Prose",
+      "slug": "title_weak_4_prose",
+      "size": 18.0,
+      "lineHeightPx": 27.9,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 4 级 短文 Title 4 Prose",
+      "slug": "title_4_prose",
+      "size": 18.0,
+      "lineHeightPx": 27.9,
+      "lineHeightRatio": 1.55,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 3 级 短文 Title Weak 3 Prose",
+      "slug": "title_weak_3_prose",
+      "size": 20.0,
+      "lineHeightPx": 30.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 3 级 短文 Title 3 Prose",
+      "slug": "title_3_prose",
+      "size": 20.0,
+      "lineHeightPx": 30.0,
+      "lineHeightRatio": 1.5,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "标题弱化 2 级 短文 Title Weak 2 Prose",
+      "slug": "title_weak_2_prose",
+      "size": 22.0,
+      "lineHeightPx": 31.9,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标题 2 级 短文 Title 2 Prose",
+      "slug": "title_2_prose",
+      "size": 22.0,
+      "lineHeightPx": 31.9,
+      "lineHeightRatio": 1.45,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    },
+    {
+      "display": "脚注 1 级 工作台应用项 Footnote 1 Workspace App Item",
+      "slug": "footnote_1_workspace_app_item",
+      "size": 14.0,
+      "lineHeightPx": 16.1,
+      "lineHeightRatio": 1.15,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标注 消息气泡 Callout Message Bubble",
+      "slug": "callout_message_bubble",
+      "size": 16.0,
+      "lineHeightPx": 25.6,
+      "lineHeightRatio": 1.6,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "标注强化 消息气泡 Callout Strong Message Bubble",
+      "slug": "callout_strong_message_bubble",
+      "size": 16.0,
+      "lineHeightPx": 20.8,
+      "lineHeightRatio": 1.3,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Medium",
+          "weight": 500
+        }
+      ]
+    },
+    {
+      "display": "正文 消息气泡 Body Message Bubble",
+      "slug": "body_message_bubble",
+      "size": 17.0,
+      "lineHeightPx": 21.25,
+      "lineHeightRatio": 1.25,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Regular",
+          "weight": 400
+        }
+      ]
+    },
+    {
+      "display": "内容标题 消息气泡 Headline Message Bubble",
+      "slug": "headline_message_bubble",
+      "size": 17.0,
+      "lineHeightPx": 21.25,
+      "lineHeightRatio": 1.25,
+      "platforms": [
+        {
+          "platform": "Mobile iOS",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        },
+        {
+          "platform": "Mobile Android",
+          "family": "PingFang SC",
+          "style": "Semibold",
+          "weight": 600
+        }
+      ]
+    }
+  ]
+}
