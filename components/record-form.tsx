@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import type { PatternAnalysisResult, LensScoreValue, ScreenshotState } from "@/lib/types";
 import {
+  COMPONENT_FAMILIES,
+  COMPONENT_FAMILY_LABELS,
   JOURNEY_STAGES,
   JOURNEY_STAGE_LABELS,
   LENS_DIMENSIONS,
@@ -18,6 +20,7 @@ import {
   SCREENSHOT_STATE_LABELS,
   TAXONOMY_FIELD_HINTS,
   labelOf,
+  suggestedComponentFamily,
 } from "@/lib/constants";
 import {
   DualLabel,
@@ -41,6 +44,13 @@ type RecordFormProps = {
 };
 
 const ALL_MODULES: RecordFormModule[] = ["A", "B", "C", "D", "E"];
+
+const COMPONENT_FAMILY_OPTIONS = ["", ...COMPONENT_FAMILIES] as const;
+
+const COMPONENT_FAMILY_OPTION_LABELS: Record<string, string> = {
+  "": "待映射 Unmapped",
+  ...COMPONENT_FAMILY_LABELS,
+};
 
 export function RecordForm({
   value,
@@ -146,6 +156,22 @@ export function RecordForm({
     </div>
   );
 
+  const componentFamilyHint = (() => {
+    const suggested = suggestedComponentFamily(value.journeyStage);
+    const base = TAXONOMY_FIELD_HINTS.componentFamily;
+    if (!suggested) return base;
+    return `${base} 当前 Journey 常见组件：${COMPONENT_FAMILY_LABELS[suggested]}。`;
+  })();
+
+  const componentFamilyField = selectField(
+    "componentFamily",
+    "组件家族",
+    "Component Family",
+    COMPONENT_FAMILY_OPTIONS,
+    componentFamilyHint,
+    COMPONENT_FAMILY_OPTION_LABELS,
+  );
+
   const stateReasonField = (
     <div>
       <Field label={<DualLabel zh="界面状态理由" en="State Reason" />} compact>
@@ -239,6 +265,7 @@ export function RecordForm({
                     onChange={(e) => update("patternName", e.target.value)}
                   />
                 </Field>
+                {componentFamilyField}
               </div>
               <Field label={<DualLabel zh="标签" en="Tags" />} hint="逗号分隔" compact>
                 <input
@@ -413,6 +440,7 @@ export function RecordForm({
                 onChange={(e) => update("patternName", e.target.value)}
               />
             </Field>
+            {componentFamilyField}
             <Field label={<DualLabel zh="产品" en="Product" />} compact>
               <input
                 className={inputClass}

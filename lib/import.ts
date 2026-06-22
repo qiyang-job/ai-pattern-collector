@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { GenerateInsightsResponseSchema, LensScoreSchema } from "@/lib/ai/schemas";
 import {
+  COMPONENT_FAMILIES,
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
   PATTERN_CATEGORY_MIGRATION_MAP,
@@ -12,6 +13,7 @@ import {
   migrateEnum,
 } from "@/lib/constants";
 import type {
+  ComponentFamily,
   InsightsResult,
   PatternRecord,
   ProductCategory,
@@ -37,6 +39,16 @@ const patternCategoryField = z.preprocess(
       "Intent Input Patterns",
     ) as PatternCategory,
   z.enum(PATTERN_CATEGORIES),
+);
+const componentFamilyField = z.preprocess(
+  (v) => {
+    if (v === null || v === undefined || v === "") return "" as const;
+    if (typeof v === "string" && (COMPONENT_FAMILIES as readonly string[]).includes(v)) {
+      return v as ComponentFamily;
+    }
+    return "" as const;
+  },
+  z.union([z.literal(""), z.enum(COMPONENT_FAMILIES)]),
 );
 const secondaryStatesField = z.preprocess(
   (v) =>
@@ -64,6 +76,7 @@ export const PatternRecordSchema = z
   taskContext: z.string().optional(),
   patternId: z.string().min(1),
   patternName: z.string(),
+  componentFamily: componentFamilyField.optional().default(""),
   userProblem: z.string(),
   aiCapability: z.string(),
   uiAnatomy: z.string(),

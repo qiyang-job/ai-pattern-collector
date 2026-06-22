@@ -224,6 +224,7 @@ function RecordDrawerContent({
       : [],
     screenshotStateReason: draft.screenshotStateReason ?? "",
     patternName: draft.patternName,
+    componentFamily: draft.componentFamily ?? "",
     patternCategory: draft.patternCategory,
     userProblem: draft.userProblem,
     aiCapability: draft.aiCapability,
@@ -592,6 +593,7 @@ function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> 
 
   return {
     patternName: safeStr(raw.patternName),
+    componentFamily: safeStr(raw.componentFamily),
     patternCategory: safeStr(raw.patternCategory),
     product: safeStr(raw.product),
     productCategory: safeStr(raw.productCategory),

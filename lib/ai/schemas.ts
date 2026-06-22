@@ -40,6 +40,7 @@ export const AnalyzePatternResponseSchema = z.object({
   secondaryScreenshotStates: z.array(z.enum(SCREENSHOT_STATES)),
   screenshotStateReason: z.string(),
   patternName: z.string(),
+  componentFamily: z.string().optional().default(""),
   patternCategory: z.enum(PATTERN_CATEGORIES),
   userProblem: z.string(),
   aiCapability: z.string(),

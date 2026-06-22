@@ -91,6 +91,24 @@ export type PatternCategory =
  */
 export type ReuseLevel = "High" | "Medium" | "Low";
 
+/**
+ * Component Family — Figma 组件家族（Layer-2 复合组件）
+ *
+ * 回答：这条 Pattern 记录应对应哪一类可复用 UI 组件？
+ * 与 Pattern Name / Pattern Category 不同：Pattern 是设计判断，Component Family 是 UI 规格键。
+ * 空字符串表示尚未完成 Pattern → Component 转义。
+ */
+export type ComponentFamily =
+  | "Entry Launcher"
+  | "Intent Composer"
+  | "Context Tray"
+  | "Plan Review"
+  | "Agent Activity"
+  | "Progress Summary"
+  | "Verification Panel"
+  | "Refinement Bar"
+  | "Handoff Card";
+
 export type LensScoreValue = 0 | 1 | 2 | 3;
 
 export type LensScore = {
@@ -120,6 +138,8 @@ export type PatternRecord = {
   taskContext?: string;
   patternId: string;
   patternName: string;
+  /** Pattern → Component 桥接：对应 Figma 组件家族；空 = 待转义映射 */
+  componentFamily: ComponentFamily | "";
   userProblem: string;
   aiCapability: string;
   uiAnatomy: string;

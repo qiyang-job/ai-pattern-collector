@@ -1,4 +1,5 @@
 import {
+  COMPONENT_FAMILIES,
   EMPTY_LENS_SCORE,
   JOURNEY_STAGES,
   PATTERN_CATEGORIES,
@@ -11,6 +12,7 @@ import {
   migrateEnum,
 } from "@/lib/constants";
 import type {
+  ComponentFamily,
   LensScore,
   LensScoreValue,
   PatternRecord,
@@ -97,6 +99,11 @@ export function normalizeRecord(raw: unknown): PatternRecord {
     taskContext: typeof r.taskContext === "string" ? r.taskContext : undefined,
     patternId: str(r.patternId),
     patternName: str(r.patternName),
+    componentFamily: oneOf(
+      [...COMPONENT_FAMILIES, ""] as const,
+      r.componentFamily,
+      "",
+    ) as ComponentFamily | "",
     userProblem: str(r.userProblem),
     aiCapability: str(r.aiCapability),
     uiAnatomy: str(r.uiAnatomy),

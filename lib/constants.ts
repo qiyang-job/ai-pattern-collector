@@ -1,4 +1,5 @@
 import type {
+  ComponentFamily,
   JourneyStage,
   LensScore,
   LensScoreValue,
@@ -81,6 +82,52 @@ export const REUSE_LEVELS = [
   "Medium",
   "Low",
 ] as const satisfies readonly ReuseLevel[];
+
+/** Layer-2 复合组件家族（与 Figma / docs/ai-component-journey-best-practices.md 对齐） */
+export const COMPONENT_FAMILIES = [
+  "Entry Launcher",
+  "Intent Composer",
+  "Context Tray",
+  "Plan Review",
+  "Agent Activity",
+  "Progress Summary",
+  "Verification Panel",
+  "Refinement Bar",
+  "Handoff Card",
+] as const satisfies readonly ComponentFamily[];
+
+export const COMPONENT_FAMILY_LABELS: Record<ComponentFamily, string> = {
+  "Entry Launcher": "入口启动器 Entry Launcher",
+  "Intent Composer": "意图编辑器 Intent Composer",
+  "Context Tray": "上下文托盘 Context Tray",
+  "Plan Review": "计划审阅 Plan Review",
+  "Agent Activity": "代理活动 Agent Activity",
+  "Progress Summary": "进度摘要 Progress Summary",
+  "Verification Panel": "验证面板 Verification Panel",
+  "Refinement Bar": "精修栏 Refinement Bar",
+  "Handoff Card": "交接卡片 Handoff Card",
+};
+
+/** 各 Journey 阶段最常见的组件家族（转义提示，非强制 1:1） */
+export const JOURNEY_PRIMARY_COMPONENT_FAMILY: Partial<
+  Record<JourneyStage, ComponentFamily>
+> = {
+  "J-01 Entry": "Entry Launcher",
+  "J-02 Intent Capture": "Intent Composer",
+  "J-03 Context Building": "Context Tray",
+  "J-04 Planning": "Plan Review",
+  "J-05 Execution": "Agent Activity",
+  "J-06 Feedback": "Progress Summary",
+  "J-07 Verification": "Verification Panel",
+  "J-08 Refinement": "Refinement Bar",
+  "J-09 Handoff": "Handoff Card",
+};
+
+export function suggestedComponentFamily(
+  journeyStage: JourneyStage,
+): ComponentFamily | "" {
+  return JOURNEY_PRIMARY_COMPONENT_FAMILY[journeyStage] ?? "";
+}
 
 export const LENS_SCORE_VALUES = [0, 1, 2, 3] as const satisfies readonly LensScoreValue[];
 
@@ -287,6 +334,7 @@ export const EMPTY_ANALYSIS: PatternAnalysisResult = {
   secondaryScreenshotStates: [],
   screenshotStateReason: "",
   patternName: "",
+  componentFamily: "",
   patternCategory: "Intent Input Patterns",
   userProblem: "",
   aiCapability: "",
@@ -366,6 +414,8 @@ export const TAXONOMY_FIELD_HINTS = {
   secondaryScreenshotStates: "次要界面状态：同一截图同时呈现的其他状态（可多选/留空）。",
   patternCategory: "模式分类：提炼出的模式解决哪一类设计问题。",
   reuseLevel: "复用价值：该模式是否值得复用到其他 AI 产品。",
+  componentFamily:
+    "组件家族：Pattern 转义后的 Figma 复合组件键；与模式名称不同，用于组件规格与 Library 聚合。",
 } as const;
 
 // ─────────────────────────────────────────────────────────────
