@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getLatestInsights, saveLatestInsights } from "@/lib/db";
+import { isNotAuthenticatedError } from "@/lib/cloudbase";
+import { markSessionExpired } from "@/lib/auth-store";
 import { useRecordsStore } from "@/lib/records-store";
 import { computeRecordStats } from "@/lib/stats";
 import type { InsightsResult, RecordSummary } from "@/lib/types";
@@ -53,14 +55,18 @@ export default function InsightsPage() {
 
   useEffect(() => {
     loadRecords();
-    getLatestInsights().then((v) => {
-      if (!v) return;
-      try {
-        setInsights(JSON.parse(v));
-      } catch {
-        setInsights(null);
-      }
-    });
+    getLatestInsights()
+      .then((v) => {
+        if (!v) return;
+        try {
+          setInsights(JSON.parse(v));
+        } catch {
+          setInsights(null);
+        }
+      })
+      .catch((err) => {
+        if (isNotAuthenticatedError(err)) markSessionExpired();
+      });
   }, [loadRecords]);
 
   async function generateInsights() {

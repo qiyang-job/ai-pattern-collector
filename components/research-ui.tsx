@@ -1,13 +1,28 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
 import { MAX_SCREENSHOTS } from "@/lib/capture-draft-store";
 import { VIDEO_ACCEPT } from "@/lib/evidence-media";
 
 const MAX_VIDEO = 1;
+
+/** 证据数量 → 网格规格（均分容器，不滚动） */
+function evidenceMediaGrid(itemCount: number): {
+  cols: number;
+  rows: number;
+  lastItemFullWidth: boolean;
+} {
+  if (itemCount <= 1) return { cols: 1, rows: 1, lastItemFullWidth: false };
+  if (itemCount === 2) return { cols: 2, rows: 1, lastItemFullWidth: false };
+  if (itemCount === 3) return { cols: 2, rows: 2, lastItemFullWidth: true };
+  if (itemCount === 4) return { cols: 2, rows: 2, lastItemFullWidth: false };
+  if (itemCount <= 6) return { cols: 3, rows: 2, lastItemFullWidth: false };
+  if (itemCount <= 9) return { cols: 3, rows: 3, lastItemFullWidth: false };
+  return { cols: 5, rows: 2, lastItemFullWidth: false };
+}
 
 export type AnalysisUiStatus = "idle" | "analyzing" | "analyzed" | "failed";
 export type EvidenceUiStatus = "empty" | "ready" | "analyzing" | "analyzed";
@@ -265,7 +280,7 @@ export function EvidenceSlot({
 }
 
 /**
- * 统一证据槽 — 截图与录屏同一正方形网格，录屏带播放按钮
+ * 统一证据槽 — 截图与录屏撑满容器，完整显示（contain）
  */
 export function EvidenceMediaSlot({
   imageUrls,
@@ -297,6 +312,7 @@ export function EvidenceMediaSlot({
   const canAddImage = imageCount < maxImages;
   const canAddVideo = !hasVideo;
   const canAdd = canAddImage || canAddVideo;
+  const grid = evidenceMediaGrid(itemCount);
 
   const accept =
     canAddImage && canAddVideo
@@ -310,27 +326,40 @@ export function EvidenceMediaSlot({
   }
 
   return (
-    <div className={cn("evidence-slot", itemCount > 0 && "evidence-slot--media-grid")}>
-      <div
-        className={cn(
-          "evidence-slot-preview relative bg-[var(--panel)]",
-          itemCount > 0 && "evidence-slot-preview--grid",
-        )}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-      >
-        {itemCount > 0 ? (
-          <div className="evidence-thumb-grid flex flex-wrap items-start gap-1.5 p-2">
+    <div
+      className={cn(
+        "evidence-slot",
+        itemCount > 0 && "evidence-slot--filled",
+        itemCount === 0 && "evidence-slot--empty",
+      )}
+      {...(itemCount === 0 ? { onDragOver, onDrop } : {})}
+    >
+      {itemCount > 0 ? (
+        <div
+          className="evidence-slot-preview evidence-slot-preview--fill relative bg-[var(--panel)]"
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
+          <div
+            className="evidence-media-stage"
+            data-last-span={grid.lastItemFullWidth ? "true" : undefined}
+            style={
+              {
+                "--evidence-cols": grid.cols,
+                "--evidence-rows": grid.rows,
+              } as React.CSSProperties
+            }
+          >
             {imageUrls.map((url, i) => (
               <button
                 key={`img-${i}`}
                 type="button"
-                className="evidence-thumb-square relative overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] hover:border-[var(--accent-muted)]"
+                className="evidence-media-item"
                 onClick={() => onPreviewImage(url, i)}
                 title={`截图 ${i + 1}（点击预览）`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`截图 ${i + 1}`} className="evidence-thumb-img object-cover" />
+                <img src={url} alt={`截图 ${i + 1}`} className="evidence-media-fit" />
                 {onRemoveImage ? (
                   <RemoveBadge
                     label="删除此截图"
@@ -346,7 +375,7 @@ export function EvidenceMediaSlot({
             {hasVideo && videoUrl ? (
               <button
                 type="button"
-                className="evidence-thumb-square relative overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] hover:border-[var(--accent-muted)] bg-black"
+                className="evidence-media-item evidence-media-item--video"
                 onClick={() => onPlayVideo?.()}
                 title="点击播放录屏"
               >
@@ -355,11 +384,11 @@ export function EvidenceMediaSlot({
                   muted
                   playsInline
                   preload="metadata"
-                  className="evidence-thumb-img object-cover pointer-events-none"
+                  className="evidence-media-fit pointer-events-none"
                 />
-                <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/35">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-black shadow-sm">
-                    <Play className="h-4 w-4 fill-current" strokeWidth={0} />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-black shadow-sm">
+                    <Play className="h-5 w-5 fill-current" strokeWidth={0} />
                   </span>
                 </span>
                 {onRemoveVideo ? (
@@ -373,34 +402,34 @@ export function EvidenceMediaSlot({
                 ) : null}
               </button>
             ) : null}
-
-            {canAdd ? (
-              <button
-                type="button"
-                className="evidence-thumb-square flex items-center justify-center rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] text-[var(--text-weak)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-                onClick={openPicker}
-                title="添加截图或录屏"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            ) : null}
           </div>
-        ) : (
-          <button
-            type="button"
-            className="flex h-full w-full flex-col items-center justify-center gap-0.5 px-3 py-6 text-[11px] text-[var(--text-weak)] hover:bg-[var(--panel-muted)]"
-            onClick={openPicker}
-          >
-            <span className="mono text-[12px] font-medium text-[var(--text-muted)]">Cmd + V</span>
-            <span className="text-[var(--text-muted)]">粘贴截图或上传录屏</span>
-            <span className="mt-0.5 text-center text-[10px] leading-4">
-              截图最多 {maxImages} 张 · 录屏 {MAX_VIDEO} 个 · MP4/WebM/MOV
-            </span>
-          </button>
-        )}
-      </div>
+
+          {canAdd ? (
+            <button
+              type="button"
+              className="evidence-media-add-btn"
+              onClick={openPicker}
+              title="添加截图或录屏"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="evidence-slot-empty-trigger flex h-full w-full flex-col items-center justify-center gap-0.5 px-3 py-6 text-[11px] text-[var(--text-weak)]"
+          onClick={openPicker}
+        >
+          <span className="mono text-[12px] font-medium text-[var(--text-muted)]">Cmd + V</span>
+          <span className="text-[var(--text-muted)]">粘贴截图或上传录屏</span>
+          <span className="mt-0.5 text-center text-[10px] leading-4">
+            截图最多 {maxImages} 张 · 录屏 {MAX_VIDEO} 个 · MP4/WebM/MOV
+          </span>
+        </button>
+      )}
 
       <input
         ref={fileInputRef}
@@ -426,12 +455,13 @@ function RemoveBadge({
 }) {
   return (
     <span
-      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] text-white cursor-pointer hover:bg-red-700"
+      className="absolute top-1.5 right-1.5 z-[3] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-[#c4cad4] text-[#3a4049] shadow-none outline-none transition-[background,transform] duration-150 hover:scale-[1.04] hover:bg-[#a8b0bc] active:scale-[0.98] active:bg-[#96a0ae]"
       onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
       role="button"
       aria-label={label}
     >
-      ×
+      <X size={10} strokeWidth={2} className="pointer-events-none shrink-0" aria-hidden />
     </span>
   );
 }

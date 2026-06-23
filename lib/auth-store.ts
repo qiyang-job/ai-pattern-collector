@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import {
   callCloudFunction,
+  clearAnonymousSessionIfNeeded,
   getAuthState,
   onAuthChange,
   sendEmailCode,
@@ -24,6 +25,11 @@ type AuthState = {
 
 let _watching = false;
 
+/** 会话失效时重置为 guest，触发 AppShell 展示 LoginGate */
+export function markSessionExpired() {
+  useAuthStore.setState({ status: "guest", userId: null, email: null });
+}
+
 /** 登录后把历史数据（匿名身份创建）归属到当前账号，幂等（localStorage 去重） */
 async function claimOwnership(uid: string | null) {
   if (!uid || typeof window === "undefined") return;
@@ -44,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   async init() {
     try {
+      await clearAnonymousSessionIfNeeded();
       const state = await getAuthState();
       set({
         status: state.loggedIn ? "authed" : "guest",

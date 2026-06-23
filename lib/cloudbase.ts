@@ -167,6 +167,10 @@ export async function callCloudFunction<T = unknown>(
 /** 未登录时抛出的标记错误 */
 export const NOT_AUTHENTICATED = "NOT_AUTHENTICATED";
 
+export function isNotAuthenticatedError(error: unknown): boolean {
+  return error instanceof Error && error.message === NOT_AUTHENTICATED;
+}
+
 /** 当前会话信息 */
 export interface AuthState {
   loggedIn: boolean;
@@ -174,19 +178,38 @@ export interface AuthState {
   email: string | null;
 }
 
-/** 读取当前真实登录态（排除匿名会话） */
+/** 读取当前真实登录态（排除匿名会话与无效 session） */
 export async function getAuthState(): Promise<AuthState> {
-  const auth = getAuth();
-  const { data } = await auth.getSession();
-  const session = data?.session;
-  if (!session || session.user?.is_anonymous) {
+  try {
+    const auth = getAuth();
+    const { data } = await auth.getSession();
+    const session = data?.session;
+    const user = session?.user;
+    // accessKey 初始化可能产生匿名 session；须具备 user.id 且非匿名
+    if (!session || !user?.id || user.is_anonymous) {
+      return { loggedIn: false, userId: null, email: null };
+    }
+    return {
+      loggedIn: true,
+      userId: user.id,
+      email: user.email ?? null,
+    };
+  } catch {
     return { loggedIn: false, userId: null, email: null };
   }
-  return {
-    loggedIn: true,
-    userId: session.user?.id ?? null,
-    email: session.user?.email ?? null,
-  };
+}
+
+/** 清除 accessKey 自动创建的匿名 session，避免与邮箱登录态混淆 */
+export async function clearAnonymousSessionIfNeeded(): Promise<void> {
+  try {
+    const auth = getAuth();
+    const { data } = await auth.getSession();
+    if (data?.session?.user?.is_anonymous) {
+      await auth.signOut();
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 /**

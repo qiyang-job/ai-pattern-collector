@@ -1036,6 +1036,137 @@ nextjs-portal [data-nextjs-dev-tools-button],
   min-height: clamp(96px, 15vh, 132px);
 }
 
+/* 空证据槽：单层虚线容器，浅底 + hover 变亮 */
+.evidence-slot.evidence-slot--empty {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: clamp(140px, 24vh, 220px);
+  padding: 0;
+  border: 1px dashed var(--text-weak);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--panel-muted) 50%, var(--bg));
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.evidence-slot.evidence-slot--empty:hover,
+.evidence-slot.evidence-slot--empty:focus-within {
+  border-color: var(--text-muted);
+  background: color-mix(in srgb, var(--panel-raised) 72%, var(--panel-muted));
+}
+
+.evidence-slot-empty-trigger {
+  flex: 1;
+  width: 100%;
+  min-height: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: color 0.15s ease;
+}
+
+.evidence-slot--empty:hover .evidence-slot-empty-trigger,
+.evidence-slot--empty:focus-within .evidence-slot-empty-trigger {
+  color: var(--text-muted);
+}
+
+/* 有证据：撑满容器，完整显示（contain） */
+.evidence-slot.evidence-slot--filled {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: clamp(140px, 24vh, 220px);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.evidence-slot-preview--fill {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.evidence-media-stage {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  gap: 4px;
+  padding: 4px;
+  overflow: hidden;
+  grid-template-columns: repeat(var(--evidence-cols, 1), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--evidence-rows, 1), minmax(0, 1fr));
+}
+
+.evidence-media-stage[data-last-span="true"] .evidence-media-item:last-child {
+  grid-column: 1 / -1;
+}
+
+.evidence-media-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-muted) 80%, var(--panel));
+  padding: 0;
+  cursor: pointer;
+}
+
+.evidence-media-item:hover {
+  outline: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--panel-raised) 55%, var(--panel-muted));
+}
+
+.evidence-media-item--video {
+  background: #000;
+}
+
+.evidence-media-fit {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.evidence-media-add-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--text-weak);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.evidence-media-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--panel-raised) 92%, transparent);
+}
+
 .evidence-thumb-square {
   width: 4.5rem;
   height: 4.5rem;
@@ -1048,27 +1179,15 @@ nextjs-portal [data-nextjs-dev-tools-button],
   overflow: visible;
 }
 
-.evidence-slot--media-grid {
-  overflow: visible;
-  flex: 0 0 auto;
-  min-height: auto;
-}
-
-.evidence-thumb-grid {
-  overflow: visible;
-}
-
 @media (min-width: 1024px) {
-  .capture-evidence-body > .evidence-slot--media-grid {
-    flex: 0 0 auto;
-    min-height: auto;
-    overflow: visible;
+  .capture-evidence-body > .evidence-slot--filled {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
-  .capture-evidence-body > .evidence-slot--media-grid .evidence-slot-preview {
-    flex: 0 0 auto;
-    min-height: auto;
-    height: auto;
+  .capture-evidence-body > .evidence-slot--filled .evidence-slot-preview--fill {
+    flex: 1;
+    min-height: 0;
   }
 }
 
@@ -1078,6 +1197,11 @@ nextjs-portal [data-nextjs-dev-tools-button],
     min-height: 0;
     height: auto;
   }
+
+  .capture-evidence-body > .evidence-slot--empty {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 }
 
 .evidence-slot-preview img.evidence-thumb-img {
@@ -1086,12 +1210,12 @@ nextjs-portal [data-nextjs-dev-tools-button],
   width: 100%;
 }
 
-.evidence-slot-preview:not(.evidence-slot-preview--grid) img {
+.evidence-slot-preview:not(.evidence-slot-preview--grid):not(.evidence-slot-preview--fill) img {
   max-height: 124px;
 }
 
 @media (min-width: 1024px) {
-  .capture-evidence-body > .evidence-slot .evidence-slot-preview:not(.evidence-slot-preview--grid) img {
+  .capture-evidence-body > .evidence-slot .evidence-slot-preview:not(.evidence-slot-preview--grid):not(.evidence-slot-preview--fill) img {
     max-height: none;
     height: 100%;
   }
@@ -1976,6 +2100,13 @@ nextjs-portal [data-nextjs-dev-tools-button],
   border: none;
   background: var(--panel-muted);
   border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.composer-evidence-card-input::placeholder {
+  font-size: 13px;
+  color: var(--text-weak);
 }
 
 .composer-evidence-card-footer {
@@ -2047,13 +2178,14 @@ nextjs-portal [data-nextjs-dev-tools-button],
   border: none;
   background: var(--panel-muted);
   padding: 0 10px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   color: var(--text);
   border-radius: var(--radius-sm);
 }
 
 .composer-inline-field-input::placeholder {
+  font-size: 13px;
   color: var(--text-weak);
 }
 
@@ -2084,7 +2216,7 @@ nextjs-portal [data-nextjs-dev-tools-button],
   }
 
   .composer-inline-field-input {
-    font-size: 11px;
+    font-size: 13px;
   }
 }
 

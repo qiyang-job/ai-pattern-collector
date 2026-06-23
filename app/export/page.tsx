@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getLatestInsights, importInsights } from "@/lib/db";
+import { isNotAuthenticatedError } from "@/lib/cloudbase";
+import { markSessionExpired } from "@/lib/auth-store";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGE_LABELS,
@@ -62,14 +64,18 @@ export default function ExportPage() {
 
   useEffect(() => {
     loadRecords();
-    getLatestInsights().then((v) => {
-      if (!v) return;
-      try {
-        setLatestInsights(JSON.parse(v));
-      } catch {
-        setLatestInsights(null);
-      }
-    });
+    getLatestInsights()
+      .then((v) => {
+        if (!v) return;
+        try {
+          setLatestInsights(JSON.parse(v));
+        } catch {
+          setLatestInsights(null);
+        }
+      })
+      .catch((err) => {
+        if (isNotAuthenticatedError(err)) markSessionExpired();
+      });
   }, [loadRecords]);
 
   const exportRecords = useMemo(() => {

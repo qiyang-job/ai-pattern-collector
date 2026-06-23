@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { EMPTY_ANALYSIS } from "@/lib/constants";
+import { isNotAuthenticatedError } from "@/lib/cloudbase";
+import { markSessionExpired } from "@/lib/auth-store";
 import { reserveNextRecordIds } from "@/lib/db";
 import type { PatternAnalysisResult } from "@/lib/types";
 
@@ -109,6 +111,7 @@ export const useCaptureDraftStore = create<CaptureDraftState>((set, get) => ({
     try {
       set({ reservedIds: await reserveNextRecordIds(), error: "" });
     } catch (error) {
+      if (isNotAuthenticatedError(error)) markSessionExpired();
       set({
         error: error instanceof Error ? error.message : "编号生成失败",
       });

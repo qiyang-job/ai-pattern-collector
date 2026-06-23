@@ -1,6 +1,8 @@
 "use client";
 
 import { create } from "zustand";
+import { markSessionExpired } from "@/lib/auth-store";
+import { isNotAuthenticatedError } from "@/lib/cloudbase";
 import {
   deleteRecord as deleteRecordFromDb,
   importRecords as importRecordsToDb,
@@ -10,6 +12,14 @@ import {
 } from "@/lib/db";
 import type { ImportMode } from "@/lib/import";
 import type { PatternRecord } from "@/lib/types";
+
+function dbErrorMessage(error: unknown): string {
+  if (isNotAuthenticatedError(error)) {
+    markSessionExpired();
+    return "登录已过期，请重新登录";
+  }
+  return error instanceof Error ? error.message : "数据库操作失败";
+}
 
 type RecordsState = {
   records: PatternRecord[];
@@ -35,13 +45,17 @@ export const useRecordsStore = create<RecordsState>((set, get) => ({
       set({ records, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "数据库读取失败",
+        error: dbErrorMessage(error),
         isLoading: false,
       });
     }
   },
   async saveRecord(record) {
-    await saveRecordToDb(record);
+    try {
+      await saveRecordToDb(record);
+    } catch (error) {
+      throw new Error(dbErrorMessage(error));
+    }
     const current = get().records;
     const exists = current.some((item) => item.id === record.id);
     set({
@@ -52,12 +66,20 @@ export const useRecordsStore = create<RecordsState>((set, get) => ({
     await get().loadRecords();
   },
   async deleteRecord(id) {
-    await deleteRecordFromDb(id);
-    set({ records: get().records.filter((record) => record.id !== id) });
+    try {
+      await deleteRecordFromDb(id);
+      set({ records: get().records.filter((record) => record.id !== id) });
+    } catch (error) {
+      throw new Error(dbErrorMessage(error));
+    }
   },
   async importRecords(records, mode) {
-    const result = await importRecordsToDb(records, mode);
-    await get().loadRecords();
-    return result;
+    try {
+      const result = await importRecordsToDb(records, mode);
+      await get().loadRecords();
+      return result;
+    } catch (error) {
+      throw new Error(dbErrorMessage(error));
+    }
   },
 }));

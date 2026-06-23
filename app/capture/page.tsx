@@ -33,7 +33,8 @@ import {
   VIDEO_ANALYZE_FPS,
 } from "@/lib/evidence-media";
 import { cn } from "@/lib/utils";
-import { callCloudFunction, ensureAuth } from "@/lib/cloudbase";
+import { callCloudFunction, ensureAuth, isNotAuthenticatedError } from "@/lib/cloudbase";
+import { markSessionExpired } from "@/lib/auth-store";
 import { prepareImagesForAnalysis, parseAnalyzeCloudResult } from "@/lib/prepare-evidence-for-analyze";
 
 const RESEARCH_NOTE_PLACEHOLDER =
@@ -390,9 +391,16 @@ export default function CapturePage() {
       toast.success("模式提炼完成，请校对后保存");
     } catch (e) {
       toast.dismiss("analyze-upload");
+      if (isNotAuthenticatedError(e)) markSessionExpired();
       setAnalysisStatus("failed");
       setDrawerDismissed(false);
-      setError(e instanceof Error ? e.message : "AI 分析失败");
+      setError(
+        isNotAuthenticatedError(e)
+          ? "登录已过期，请重新登录后再提炼"
+          : e instanceof Error
+            ? e.message
+            : "AI 分析失败",
+      );
     } finally {
       setIsAnalyzing(false);
     }
