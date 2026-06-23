@@ -244,7 +244,9 @@ function RecordDrawerContent({
       let next: PatternRecord = { ...draft, updatedAt: new Date().toISOString() };
       if (pendingVideoFile) {
         toast.loading("正在上传录屏…", { id: "drawer-video-upload" });
-        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile);
+        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile, (msg) => {
+          toast.loading(msg, { id: "drawer-video-upload" });
+        });
         toast.dismiss("drawer-video-upload");
         if (!next.imageDataUrl) {
           next.imageDataUrl = await captureVideoPoster(pendingVideoFile);
@@ -316,7 +318,9 @@ function RecordDrawerContent({
 
       if (pendingVideoFile) {
         toast.loading("正在上传录屏…", { id: "drawer-reanalyze-video" });
-        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile);
+        const uploaded = await uploadVideoForAnalysis(draft.screenshotId, pendingVideoFile, (msg) => {
+          toast.loading(msg, { id: "drawer-reanalyze-video" });
+        });
         toast.dismiss("drawer-reanalyze-video");
         videoUrl = uploaded.videoUrl;
         nextVideoFileID = uploaded.fileID;

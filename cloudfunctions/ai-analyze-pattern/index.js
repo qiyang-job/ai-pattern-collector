@@ -302,11 +302,11 @@ exports.main = async (event) => {
 
     const payloadSize = JSON.stringify(event).length;
     if (payloadSize > MAX_PAYLOAD_BYTES) {
-      return { error: `证据太大(${(payloadSize / 1024 / 1024).toFixed(1)}MB)，请裁剪后重试`, code: 413 };
+      return { error: `证据太大(${(payloadSize / 1024 / 1024).toFixed(1)}MB)，请裁剪后重试` };
     }
 
     const apiKey = process.env.AI_API_KEY;
-    if (!apiKey) return { error: "AI API 未配置", code: 503 };
+    if (!apiKey) return { error: "AI API 未配置，请运行 npm run deploy:fn 注入密钥" };
 
     console.log(
       `[ai-analyze] payload: ${(payloadSize / 1024).toFixed(0)}KB, images=${imageDataUrls.length}, video=${Boolean(videoUrl)}`,
@@ -338,16 +338,16 @@ exports.main = async (event) => {
     if (!res.ok) {
       const errMsg = payload.error?.message || `AI API error: ${res.status}`;
       console.error(`[ai-analyze] AI API error:`, res.status, errMsg);
-      return { error: errMsg, code: 502 };
+      return { error: errMsg };
     }
 
     const content = payload.choices?.[0]?.message?.content;
-    if (!content) return { error: "AI 返回内容为空", code: 502 };
+    if (!content) return { error: "AI 返回内容为空" };
 
     const parsed = parseJsonLoose(content);
     if (!parsed || typeof parsed !== "object") {
       console.error(`[ai-analyze] 无法解析 JSON:`, String(content).slice(0, 300));
-      return { error: "AI 返回不是有效 JSON，请重新分析", code: 422 };
+      return { error: "AI 返回不是有效 JSON，请重新分析" };
     }
 
     const result = normalizeResult(parsed);
@@ -358,6 +358,6 @@ exports.main = async (event) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[ai-analyze] exception:`, msg);
-    return { error: msg, code: 500 };
+    return { error: msg };
   }
 };

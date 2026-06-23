@@ -349,7 +349,9 @@ export default function CapturePage() {
       if (videoFile) {
         const uploadKey = reservedIds?.screenshotId || `draft-${Date.now()}`;
         toast.loading("正在上传录屏…", { id: "video-upload" });
-        const uploaded = await uploadVideoForAnalysis(uploadKey, videoFile);
+        const uploaded = await uploadVideoForAnalysis(uploadKey, videoFile, (msg) => {
+          toast.loading(msg, { id: "video-upload" });
+        });
         toast.dismiss("video-upload");
         videoUrl = uploaded.videoUrl;
         nextVideoFileID = uploaded.fileID;
@@ -391,6 +393,7 @@ export default function CapturePage() {
       toast.success("模式提炼完成，请校对后保存");
     } catch (e) {
       toast.dismiss("analyze-upload");
+      toast.dismiss("video-upload");
       if (isNotAuthenticatedError(e)) markSessionExpired();
       setAnalysisStatus("failed");
       setDrawerDismissed(false);

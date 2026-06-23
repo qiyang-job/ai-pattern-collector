@@ -23,6 +23,14 @@
       "envVariables": {
         "AI_MODEL_INSIGHTS": "qwen3.7-max"
       }
+    },
+    {
+      "name": "upload-evidence",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 120,
+      "memorySize": 512,
+      "installDependency": true
     }
   ]
 }

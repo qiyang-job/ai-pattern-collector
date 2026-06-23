@@ -51,7 +51,9 @@ export async function callCloudFunction<T = unknown>(
   options?: { timeoutMs?: number },
 ): Promise<T> {
   const app = getApp();
-  const timeoutMs = options?.timeoutMs ?? (name.startsWith("ai-") ? 200_000 : undefined);
+  const timeoutMs =
+    options?.timeoutMs ??
+    (name.startsWith("ai-") ? 200_000 : name === "upload-evidence" ? 120_000 : undefined);
   console.log(`[CloudBase] 调用云函数: ${name}`, { dataKeys: Object.keys(data), dataSize: JSON.stringify(data).length });
   
   try {
@@ -94,16 +96,19 @@ export async function callCloudFunction<T = unknown>(
     if (rawResult == null || rawResult === undefined) {
       const resAny = res as unknown as Record<string, unknown>;
       const embedded =
+        parseEmbeddedError(resAny?.result) ??
         parseEmbeddedError(resAny?.response) ??
         parseEmbeddedError(resAny?.data) ??
         (typeof resAny?.errMsg === "string"
           ? parseEmbeddedError(resAny.errMsg)
           : null);
       if (embedded) {
-        throw new Error(embedded);
+        throw new Error(formatCloudFunctionError(name, embedded));
       }
       throw new Error(
-        "云函数返回为空。若刚部署过，请确认云函数已配置 AI_API_KEY（运行 npm run deploy:fn）",
+        name.startsWith("ai-")
+          ? `云函数 ${name} 返回为空，可能是分析超时。若刚部署过，请确认 .env.local 中的 AI_API_KEY 有效后运行 npm run deploy:fn`
+          : `云函数 ${name} 返回为空，可能是上传超时或函数异常，请稍后重试`,
       );
     }
 
@@ -129,14 +134,17 @@ export async function callCloudFunction<T = unknown>(
       resultObj.code !== 0
     ) {
       throw new Error(
-        typeof resultObj.error === "string"
-          ? resultObj.error
-          : `云函数错误(code=${String(resultObj.code)})`,
+        formatCloudFunctionError(
+          name,
+          typeof resultObj.error === "string"
+            ? resultObj.error
+            : `云函数错误(code=${String(resultObj.code)})`,
+        ),
       );
     }
     // 仅有 error 字段
     if (resultObj?.error && !("code" in resultObj)) {
-      throw new Error(String(resultObj.error));
+      throw new Error(formatCloudFunctionError(name, String(resultObj.error)));
     }
 
     // 移除内部字段，保留业务数据
@@ -169,6 +177,13 @@ export const NOT_AUTHENTICATED = "NOT_AUTHENTICATED";
 
 export function isNotAuthenticatedError(error: unknown): boolean {
   return error instanceof Error && error.message === NOT_AUTHENTICATED;
+}
+
+function formatCloudFunctionError(fnName: string, message: string): string {
+  if (/api key|apikey|AI API 未配置/i.test(message)) {
+    return `AI 密钥无效或未配置：请检查 .env.local 中的 AI_API_KEY（阿里云百炼 DashScope），然后运行 npm run deploy:fn`;
+  }
+  return message;
 }
 
 /** 当前会话信息 */

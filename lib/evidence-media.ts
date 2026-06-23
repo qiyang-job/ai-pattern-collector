@@ -1,4 +1,10 @@
 import { ensureAuth, getApp } from "@/lib/cloudbase";
+import {
+  formatCloudbaseStorageError,
+  getCloudFileTempUrlViaFunction,
+  sanitizeStorageKey,
+  uploadBlobToCloud,
+} from "@/lib/cloudbase-storage";
 
 export const MAX_VIDEO_BYTES = 80 * 1024 * 1024; // 80MB，留余量给云函数/API
 export const VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
@@ -14,29 +20,41 @@ export function formatVideoMeta(file: File): string {
 }
 
 /** 上传录屏到 CloudBase 云存储，返回 fileID */
-export async function uploadVideoFile(recordKey: string, file: File): Promise<string> {
-  await ensureAuth();
+export async function uploadVideoFile(
+  recordKey: string,
+  file: File,
+  onProgress?: (message: string) => void,
+): Promise<string> {
+  const uploaded = await uploadVideoBlob(recordKey, file, onProgress);
+  return uploaded.fileID;
+}
+
+async function uploadVideoBlob(
+  recordKey: string,
+  file: File,
+  onProgress?: (message: string) => void,
+) {
+  const safeKey = sanitizeStorageKey(recordKey);
   const ext =
     file.name.match(/\.(\w+)$/)?.[1]?.toLowerCase() ||
     (file.type === "video/webm" ? "webm" : file.type === "video/quicktime" ? "mov" : "mp4");
-  const cloudPath = `videos/${recordKey}.${ext}`;
-  const result = await getApp().uploadFile({
-    cloudPath,
-    filePath: file as unknown as string,
-  });
-  if (!result.fileID) throw new Error("录屏上传失败");
-  return result.fileID;
+  const cloudPath = `screenshots/${safeKey}-video.${ext}`;
+  return uploadBlobToCloud(cloudPath, file, `${safeKey}-video.${ext}`, { onProgress });
 }
 
 /** 上传录屏并获取可供模型访问的临时 HTTPS URL */
 export async function uploadVideoForAnalysis(
   recordKey: string,
   file: File,
+  onProgress?: (message: string) => void,
 ): Promise<{ fileID: string; videoUrl: string }> {
-  const fileID = await uploadVideoFile(recordKey, file);
-  const videoUrl = await getCloudFileTempUrl(fileID);
+  const uploaded = await uploadVideoBlob(recordKey, file, onProgress);
+  const videoUrl =
+    uploaded.tempFileURL ??
+    (await getCloudFileTempUrl(uploaded.fileID)) ??
+    (await getCloudFileTempUrlViaFunction(uploaded.fileID));
   if (!videoUrl) throw new Error("录屏临时链接获取失败，请重试");
-  return { fileID, videoUrl };
+  return { fileID: uploaded.fileID, videoUrl };
 }
 
 async function getCloudFileTempUrl(fileID: string): Promise<string | null> {
@@ -46,7 +64,8 @@ async function getCloudFileTempUrl(fileID: string): Promise<string | null> {
       fileList: [{ fileID, maxAge: 3600 }],
     });
     return res.fileList?.[0]?.tempFileURL ?? res.fileList?.[0]?.download_url ?? null;
-  } catch {
+  } catch (error) {
+    console.warn("[cloudbase] 获取临时链接失败", formatCloudbaseStorageError(error, "临时链接获取"));
     return null;
   }
 }
