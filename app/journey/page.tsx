@@ -46,8 +46,9 @@ export default function JourneyPage() {
   return (
     <PageFrame>
       <PageHeader
+        eyebrow="分析视图 · 路径"
         title="旅程"
-        description={`用户流程研究地图 — 从 ${journeyDisplay(JOURNEY_STAGES[0])} 到 ${journeyDisplay(JOURNEY_STAGES[JOURNEY_STAGES.length - 1])}。`}
+        description="沿 J-01 到 J-09 比较模式密度，识别关键阶段的成熟度与研究空白。"
       />
       <PageBody className="page-section-gap">
         <div className="stage-rail">
@@ -135,7 +136,19 @@ export default function JourneyPage() {
               </thead>
               <tbody>
                 {stageRecords.map((r) => (
-                  <tr key={r.id} data-clickable="true" onClick={() => setSelected(r)}>
+                  <tr
+                    key={r.id}
+                    data-clickable="true"
+                    tabIndex={0}
+                    aria-label={`打开模式记录：${r.patternName}`}
+                    onClick={() => setSelected(r)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelected(r);
+                      }
+                    }}
+                  >
                     <td>
                       <div className="flex items-center gap-2">
                         <EvidenceThumbnail src={r.imageDataUrl} alt={r.screenshotId} />

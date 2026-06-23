@@ -31,7 +31,7 @@ import {
   inputClass,
   selectClass,
 } from "@/components/ui";
-import { FormModule } from "@/components/research-ui";
+import { FormDisclosure, FormModule } from "@/components/research-ui";
 
 export type RecordFormModule = "A" | "B" | "C" | "D" | "E";
 
@@ -189,14 +189,26 @@ export function RecordForm({
   if (guided) {
     return (
       <div className="capture-review-form">
-        {show("A") ? (
+        <div className="review-priority-note">
+          <span>先确认保存摘要</span>
+          <span>其余分析可展开校对，也可保存后继续补充</span>
+        </div>
+
+        {show("B") ? (
           <FormModule
-            letter="A"
-            title="分类归位"
-            description="决定这条记录会进入矩阵和旅程的哪个位置。"
+            letter="B"
+            title="模式摘要"
+            description="确认名称与产品，让记录在列表中一眼可识别。"
           >
             <div className="capture-form-stack">
-              <div className="capture-form-grid">
+              <div className="capture-form-grid capture-form-grid--essential">
+                <Field label={<DualLabel zh="模式名称" en="Pattern Name" />} compact>
+                  <input
+                    className={inputClass}
+                    value={value.patternName}
+                    onChange={(e) => update("patternName", e.target.value)}
+                  />
+                </Field>
                 <Field label={<DualLabel zh="产品" en="Product" />} compact>
                   <input
                     className={inputClass}
@@ -204,6 +216,19 @@ export function RecordForm({
                     onChange={(e) => update("product", e.target.value)}
                   />
                 </Field>
+              </div>
+            </div>
+          </FormModule>
+        ) : null}
+
+        {show("A") ? (
+          <FormModule
+            letter="A"
+            title="归档位置"
+            description="三个必填分类决定记录进入哪些分析视图。"
+          >
+            <div className="capture-form-stack">
+              <div className="capture-form-grid capture-form-grid--taxonomy">
                 {selectField(
                   "productCategory",
                   "产品类型",
@@ -221,69 +246,64 @@ export function RecordForm({
                   JOURNEY_STAGE_LABELS,
                 )}
                 {selectField(
-                  "screenshotState",
-                  "截图状态",
-                  "Screenshot State",
-                  SCREENSHOT_STATES,
-                  TAXONOMY_FIELD_HINTS.screenshotState,
-                  SCREENSHOT_STATE_LABELS,
+                  "patternCategory",
+                  "模式分类",
+                  "Pattern Category",
+                  PATTERN_CATEGORIES,
+                  undefined,
+                  PATTERN_CATEGORY_LABELS,
                 )}
               </div>
-              {secondaryStatesField}
-              {stateReasonField}
-              {selectField(
-                "patternCategory",
-                "模式分类",
-                "Pattern Category",
-                PATTERN_CATEGORIES,
-                TAXONOMY_FIELD_HINTS.patternCategory,
-                PATTERN_CATEGORY_LABELS,
-              )}
             </div>
           </FormModule>
         ) : null}
 
-        {show("B") ? (
-          <FormModule
-            letter="B"
-            title="模式标识"
-            description="把这张截图抽象成一个可复用、可检索的模式。"
-          >
+        {show("A") || show("B") ? (
+          <FormDisclosure title="分类与检索详情" description="截图状态、判定理由和标签，不阻塞保存">
             <div className="capture-form-stack">
-              <div className="capture-form-grid">
-                {patternId ? (
-                  <Field label={<DualLabel zh="模式编号" en="Pattern ID" />} compact>
-                    <div className="flex h-9 items-center">
-                      <TypedIdBadge kind="pattern">{patternId}</TypedIdBadge>
-                    </div>
+              {show("A") ? (
+                <>
+                  {selectField(
+                    "screenshotState",
+                    "截图状态",
+                    "Screenshot State",
+                    SCREENSHOT_STATES,
+                    TAXONOMY_FIELD_HINTS.screenshotState,
+                    SCREENSHOT_STATE_LABELS,
+                  )}
+                  {secondaryStatesField}
+                  {stateReasonField}
+                </>
+              ) : null}
+              {show("B") ? (
+                <>
+                  {componentFamilyField}
+                  <Field label={<DualLabel zh="标签" en="Tags" />} hint="逗号分隔" compact>
+                    <input
+                      className={inputClass}
+                      value={value.tags.join(", ")}
+                      onChange={(e) =>
+                        update(
+                          "tags",
+                          e.target.value.split(",").map((t) => t.trim()).filter(Boolean),
+                        )
+                      }
+                    />
                   </Field>
-                ) : null}
-                <Field label={<DualLabel zh="模式名称" en="Pattern Name" />} compact>
-                  <input
-                    className={inputClass}
-                    value={value.patternName}
-                    onChange={(e) => update("patternName", e.target.value)}
-                  />
-                </Field>
-                {componentFamilyField}
-              </div>
-              <Field label={<DualLabel zh="标签" en="Tags" />} hint="逗号分隔" compact>
-                <input
-                  className={inputClass}
-                  value={value.tags.join(", ")}
-                  onChange={(e) =>
-                    update(
-                      "tags",
-                      e.target.value.split(",").map((t) => t.trim()).filter(Boolean),
-                    )
-                  }
-                />
-              </Field>
+                </>
+              ) : null}
+              {patternId ? (
+                <div className="review-assigned-id">
+                  <span>保存编号</span>
+                  <TypedIdBadge kind="pattern">{patternId}</TypedIdBadge>
+                </div>
+              ) : null}
             </div>
-          </FormModule>
+          </FormDisclosure>
         ) : null}
 
         {show("C") ? (
+          <FormDisclosure title="体验诊断" description="用户问题、AI 能力、界面结构与交互规则">
           <FormModule
             letter="C"
             title="体验诊断"
@@ -316,9 +336,11 @@ export function RecordForm({
               )}
             </div>
           </FormModule>
+          </FormDisclosure>
         ) : null}
 
         {show("D") ? (
+          <FormDisclosure title="信任与恢复" description="系统反馈、信任机制、失败处理与设计判断">
           <FormModule
             letter="D"
             title="信任与恢复"
@@ -351,9 +373,11 @@ export function RecordForm({
               )}
             </div>
           </FormModule>
+          </FormDisclosure>
         ) : null}
 
         {show("E") ? (
+          <FormDisclosure title="Lens 与复用价值" description="统一评分维度，便于跨记录比较">
           <FormModule
             letter="E"
             title="分析镜头与复用"
@@ -398,6 +422,7 @@ export function RecordForm({
               {selectField("reuseLevel", "复用等级", "Reuse Level", REUSE_LEVELS, undefined, REUSE_LEVEL_LABELS)}
             </div>
           </FormModule>
+          </FormDisclosure>
         ) : null}
       </div>
     );

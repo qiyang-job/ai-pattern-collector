@@ -14,11 +14,13 @@ import { cn } from "@/lib/utils";
 export function PageHeader({
   title,
   description,
+  eyebrow,
   stats,
   actions,
 }: {
   title: string;
   description?: ReactNode;
+  eyebrow?: string;
   stats?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -26,6 +28,9 @@ export function PageHeader({
     <header className="page-header page-gutter-x">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1">
+          {eyebrow ? (
+            <div className="page-eyebrow">{eyebrow}</div>
+          ) : null}
           <h1 className="display-serif text-[clamp(20px,2vw,26px)] leading-none text-[var(--text)]">
             {title}
           </h1>
@@ -59,7 +64,7 @@ export function PageBody({
   children: ReactNode;
   className?: string;
 }) {
-  return <main className={cn("page-gutter flex-1", className)}>{children}</main>;
+  return <main id="main-content" className={cn("page-gutter flex-1", className)}>{children}</main>;
 }
 
 export function Panel({
@@ -183,6 +188,7 @@ export function Button({
         className,
       )}
       {...props}
+      type={props.type ?? "button"}
     >
       {children}
     </button>

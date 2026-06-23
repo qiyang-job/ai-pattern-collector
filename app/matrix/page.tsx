@@ -31,8 +31,9 @@ export default function MatrixPage() {
   return (
     <PageFrame>
       <PageHeader
+        eyebrow="分析视图 · 覆盖"
         title="矩阵"
-        description="产品类型 × 旅程阶段 — 方法论覆盖地图。"
+        description="用产品类型 × 旅程阶段定位研究密度；点击任一有数据的格子回到对应记录。"
         stats={
           <>
             <StatMetric label="模式数" value={records.length} compact />
@@ -112,10 +113,18 @@ export default function MatrixPage() {
                             filled && "cursor-pointer hover:bg-[var(--accent-muted)]",
                           )}
                           title={filled ? `在记录中查看该格 ${cell.length} 条记录` : undefined}
+                          tabIndex={filled ? 0 : undefined}
+                          role={filled ? "link" : undefined}
                           onClick={() =>
                             filled &&
                             router.push(recordsHref({ productCategory: cat, journeyStage: stage }))
                           }
+                          onKeyDown={(event) => {
+                            if (filled && (event.key === "Enter" || event.key === " ")) {
+                              event.preventDefault();
+                              router.push(recordsHref({ productCategory: cat, journeyStage: stage }));
+                            }
+                          }}
                         >
                           {filled ? (
                             <>
@@ -154,9 +163,17 @@ export default function MatrixPage() {
                         rowTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]",
                       )}
                       title={rowTotal > 0 ? `查看 ${journeyName(stage)} 阶段全部记录` : undefined}
+                      tabIndex={rowTotal > 0 ? 0 : undefined}
+                      role={rowTotal > 0 ? "link" : undefined}
                       onClick={() =>
                         rowTotal > 0 && router.push(recordsHref({ journeyStage: stage }))
                       }
+                      onKeyDown={(event) => {
+                        if (rowTotal > 0 && (event.key === "Enter" || event.key === " ")) {
+                          event.preventDefault();
+                          router.push(recordsHref({ journeyStage: stage }));
+                        }
+                      }}
                     >
                       <span className="tabular-nums mono text-[13px]">{rowTotal}</span>
                     </td>
@@ -174,9 +191,17 @@ export default function MatrixPage() {
                       key={cat}
                       className={cn(colTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]")}
                       title={colTotal > 0 ? `查看 ${labelOf(cat, PRODUCT_CATEGORY_LABELS)} 全部记录` : undefined}
+                      tabIndex={colTotal > 0 ? 0 : undefined}
+                      role={colTotal > 0 ? "link" : undefined}
                       onClick={() =>
                         colTotal > 0 && router.push(recordsHref({ productCategory: cat }))
                       }
+                      onKeyDown={(event) => {
+                        if (colTotal > 0 && (event.key === "Enter" || event.key === " ")) {
+                          event.preventDefault();
+                          router.push(recordsHref({ productCategory: cat }));
+                        }
+                      }}
                     >
                       {colTotal}
                     </td>

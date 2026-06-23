@@ -181,8 +181,9 @@ export default function ExportPage() {
   return (
     <PageFrame>
       <PageHeader
+        eyebrow="研究交付"
         title="导出"
-        description="导出控制台 — 备份 · 导入 · JSON · CSV · Markdown 研究报告。"
+        description="在不改变记录结构的前提下备份、迁移或交付研究数据与报告。"
       />
       <PageBody>
         <div className="export-workbench">

@@ -52,6 +52,13 @@ export function RecordPreview({
         <PreviewRow label="分类" value={labelOf(analysis.patternCategory, PATTERN_CATEGORY_LABELS) || "—"} />
         <PreviewRow label="复用" value={labelOf(analysis.reuseLevel, REUSE_LEVEL_LABELS) || "—"} />
       </dl>
+
+      {analysis.userProblem || analysis.designJudgment ? (
+        <div className="record-preview-finding">
+          <span>核心判断</span>
+          <p>{analysis.userProblem || analysis.designJudgment}</p>
+        </div>
+      ) : null}
     </div>
   );
 }

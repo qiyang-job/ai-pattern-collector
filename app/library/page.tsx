@@ -38,8 +38,9 @@ export default function LibraryPage() {
   return (
     <PageFrame className="library-page">
       <PageHeader
+        eyebrow="分析视图 · 复用"
         title="模式库"
-        description="模式图谱 — 八大设计模式分类。"
+        description="按八类设计模式组织研究资产，从类别概览进入具体证据与复用判断。"
         stats={<StatMetric label="模式总数" value={records.length} compact />}
       />
       <PageBody className="page-section-gap">
@@ -115,7 +116,19 @@ export default function LibraryPage() {
                   </thead>
                   <tbody>
                     {items.map((r) => (
-                      <tr key={r.id} data-clickable="true" onClick={() => setSelected(r)}>
+                      <tr
+                        key={r.id}
+                        data-clickable="true"
+                        tabIndex={0}
+                        aria-label={`打开模式记录：${r.patternName}`}
+                        onClick={() => setSelected(r)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelected(r);
+                          }
+                        }}
+                      >
                         <td className="library-cell-evidence">
                           <div className="flex items-center gap-1.5">
                             <EvidenceThumbnail src={r.imageDataUrl} alt={r.screenshotId} size="xs" className="shrink-0" />

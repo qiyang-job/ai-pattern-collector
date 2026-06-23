@@ -16,6 +16,7 @@ import {
   PageHeader,
   Panel,
   PanelHeader,
+  StatMetric,
   TypedIdBadge,
 } from "@/components/ui";
 import { DistributionRow, ReportSkeletonSection } from "@/components/research-ui";
@@ -107,31 +108,59 @@ export default function InsightsPage() {
   return (
     <PageFrame>
       <PageHeader
+        eyebrow="模式 → 洞察"
         title="洞察"
-        description={
-          <>
-            研究报告生成器 — 本地统计 + AI 叙事。
-            {hasRecords ? (
-              <span className="mt-1 block mono text-[11px] tabular-nums text-[var(--text-weak)]">
-                {records.length} 条记录 · {stats.coveredProducts} 个产品 · 平均 Lens{" "}
-                {stats.averageLensScore.toFixed(1)}
-              </span>
-            ) : null}
-          </>
+        description="先阅读研究结论与设计机会，再回到覆盖数据判断证据强度。"
+        stats={
+          hasRecords ? (
+            <>
+              <StatMetric label="记录数" value={records.length} compact />
+              <StatMetric label="产品数" value={stats.coveredProducts} compact />
+              <StatMetric label="平均 Lens" value={stats.averageLensScore.toFixed(1)} compact />
+            </>
+          ) : undefined
+        }
+        actions={
+          <Button onClick={generateInsights} disabled={isGenerating || !hasRecords}>
+            {isGenerating ? "生成中…" : "AI 生成洞察"}
+          </Button>
         }
       />
       <PageBody className="page-section-gap">
-        <Panel className="insight-readiness">
-          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>
-                {hasRecords ? (
-                  <Button size="sm" onClick={generateInsights} disabled={isGenerating}>
-                    {isGenerating ? "生成中…" : "AI 生成洞察"}
-                  </Button>
-                ) : null}
+        <ErrorBanner message={error} />
+
+        {insights ? (
+          <Panel className="insight-lead">
+            <div className="insight-lead-header">
+              <div>
+                <span className="insight-lead-kicker">最新研究结论</span>
+                <h2>从记录中提炼出的优先判断</h2>
               </div>
+              <span className="insight-confidence">
+                {records.length >= 30 ? "稳定建议" : records.length >= 15 ? "可跨产品比较" : "初步观察"}
+              </span>
+            </div>
+            <div className="insight-lead-grid">
+              <section>
+                <h3>高价值模式</h3>
+                <p>{insights.highValuePatterns}</p>
+              </section>
+              <section>
+                <h3>设计机会</h3>
+                <p>{insights.designOpportunities}</p>
+              </section>
+              <section>
+                <h3>下一步建议</h3>
+                <p>{insights.recommendations}</p>
+              </section>
+            </div>
+          </Panel>
+        ) : null}
+
+        <Panel className="insight-readiness">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold text-[var(--text-muted)]">证据强度</div>
               <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--text-muted)]">
                 Insights 的可信度来自记录密度。先看样本规模，再判断报告适合用于初步观察还是稳定设计建议。
               </p>
@@ -149,9 +178,15 @@ export default function InsightsPage() {
           ) : null}
         </Panel>
 
-        <ErrorBanner message={error} />
-
         {hasRecords ? (
+          <details className="insight-diagnostics" open={!insights || undefined}>
+            <summary className="insight-diagnostics-summary focus-ring">
+              <span>
+                <strong>覆盖诊断</strong>
+                <small>检查旅程、产品、界面状态与模式分类的样本分布</small>
+              </span>
+              <span className="insight-diagnostics-meta">{records.length} 条记录</span>
+            </summary>
           <div className="grid gap-[var(--section-gap)] lg:grid-cols-2">
             <Panel>
               <PanelHeader
@@ -241,21 +276,27 @@ export default function InsightsPage() {
               </div>
             </Panel>
           </div>
+          </details>
         ) : null}
 
         <Panel>
-          <PanelHeader title="研究报告" meta={insights ? "AI 生成" : "骨架"} />
-          <div className="insight-report">
-            {INSIGHT_KEYS.map(({ key, title, num }) => (
-              <ReportSkeletonSection
-                key={key}
-                num={num}
-                title={title}
-                content={insights?.[key]}
-                placeholder="等待采集记录"
-              />
-            ))}
-          </div>
+          <PanelHeader title="完整研究报告" meta={insights ? "AI 生成" : "等待生成"} />
+          <details className="insight-full-report" open={!insights || undefined}>
+            <summary className="insight-full-report-summary focus-ring">
+              {insights ? "展开 11 个报告章节" : "查看报告结构"}
+            </summary>
+            <div className="insight-report">
+              {INSIGHT_KEYS.map(({ key, title, num }) => (
+                <ReportSkeletonSection
+                  key={key}
+                  num={num}
+                  title={title}
+                  content={insights?.[key]}
+                  placeholder="等待采集记录"
+                />
+              ))}
+            </div>
+          </details>
         </Panel>
 
         {hasRecords && stats.highReusePatterns.length > 0 ? (

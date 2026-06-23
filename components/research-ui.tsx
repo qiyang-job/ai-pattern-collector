@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TypedIdBadge } from "@/components/ui";
 import { MAX_SCREENSHOTS } from "@/lib/capture-draft-store";
@@ -20,6 +20,75 @@ export type PipelineAnalysisStatus =
   | "Analyzed"
   | "Failed";
 export type PipelinePatternStatus = "Review required" | "Ready to save";
+
+const RESEARCH_STEPS = ["证据", "提炼", "校对", "入库"] as const;
+
+export function ResearchWorkflowProgress({
+  currentStep,
+  stale = false,
+}: {
+  currentStep: 1 | 2 | 3 | 4;
+  stale?: boolean;
+}) {
+  return (
+    <nav className="research-workflow" aria-label="研究记录进度">
+      <ol className="research-workflow-list">
+        {RESEARCH_STEPS.map((label, index) => {
+          const step = (index + 1) as 1 | 2 | 3 | 4;
+          const done = step < currentStep;
+          const active = step === currentStep;
+          return (
+            <li
+              key={label}
+              className={cn(
+                "research-workflow-step",
+                done && "is-done",
+                active && "is-active",
+                stale && step === 2 && "is-warning",
+              )}
+              aria-current={active ? "step" : undefined}
+            >
+              <span className="research-workflow-marker" aria-hidden="true">
+                {done ? <Check className="h-3 w-3" /> : step}
+              </span>
+              <span>
+                <span className="research-workflow-label">{label}</span>
+                {stale && step === 2 ? (
+                  <span className="research-workflow-note">需重新提炼</span>
+                ) : null}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+export function FormDisclosure({
+  title,
+  description,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details className="form-disclosure" open={defaultOpen || undefined}>
+      <summary className="form-disclosure-summary focus-ring">
+        <span className="min-w-0">
+          <span className="form-disclosure-title">{title}</span>
+          {description ? <span className="form-disclosure-description">{description}</span> : null}
+        </span>
+        <ChevronDown className="form-disclosure-icon h-4 w-4" aria-hidden="true" />
+      </summary>
+      <div className="form-disclosure-body">{children}</div>
+    </details>
+  );
+}
 
 export function CaptureWorkflowPipeline({
   screenshotId,

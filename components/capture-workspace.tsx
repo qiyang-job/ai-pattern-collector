@@ -115,6 +115,16 @@ function ReviewPanel({
   return (
     <>
       <div className="workspace-review">
+        <div className="workspace-review-intro">
+          <div>
+            <span className="workspace-review-kicker">人工校对</span>
+            <h3>先确认摘要，再按需展开分析</h3>
+          </div>
+          <span className={cn("workspace-readiness", canSave && "is-ready")}>
+            {canSave ? "可以保存" : `待补 ${saveBlockers.length} 项`}
+          </span>
+        </div>
+
         <RecordPreview
           patternId={patternId}
           screenshotId={screenshotId}
@@ -131,10 +141,10 @@ function ReviewPanel({
 
       <div className="workspace-save-footer">
         <div className="workspace-save-actions">
-          <Button variant={canSave ? "primary" : "secondary"} onClick={onSave} disabled={!canSave}>
+          <Button onClick={onSave} disabled={!canSave}>
             保存模式记录
           </Button>
-          <Button variant="secondary" onClick={onRetry}>
+          <Button variant="text" onClick={onRetry}>
             重新提取
           </Button>
         </div>
@@ -151,10 +161,14 @@ function ReviewPanel({
           </p>
 
           {saveBlockers.length > 0 ? (
-            <p className="mt-1 text-[10px] text-[var(--warning)]">
+            <p className="workspace-save-blockers mt-1 text-[10px] text-[var(--warning)]" role="status">
               保存前还需：{saveBlockers.join("、")}
             </p>
-          ) : null}
+          ) : (
+            <p className="workspace-save-ready mt-1 text-[10px] text-[var(--success)]" role="status">
+              必填项已完成，保存后可继续补充诊断详情。
+            </p>
+          )}
         </div>
       </div>
     </>

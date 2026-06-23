@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
 import {
   CORE_JOURNEY_STAGES,
   JOURNEY_STAGE_LABELS,
@@ -38,6 +37,7 @@ import {
   ReuseTag,
   StatMetric,
   TypedIdBadge,
+  inputClass,
 } from "@/components/ui";
 import { SlotEmpty } from "@/components/research-ui";
 import { RecordDrawer } from "@/components/record-drawer";
@@ -67,9 +67,6 @@ function RecordsView() {
     loadRecords();
   }, [loadRecords]);
 
-  const clearFilter = (key: keyof typeof filters) =>
-    setFilters((prev) => ({ ...prev, [key]: "" }));
-
   const activeChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
     if (query.trim()) {
@@ -90,7 +87,13 @@ function RecordsView() {
       ["reuseLevel", filters.reuseLevel],
     ];
     for (const [key, value] of map) {
-      if (value) chips.push({ key, label: labelOf(value, chipLabelMaps[key]), clear: () => clearFilter(key) });
+      if (value) {
+        chips.push({
+          key,
+          label: labelOf(value, chipLabelMaps[key]),
+          clear: () => setFilters((prev) => ({ ...prev, [key]: "" })),
+        });
+      }
     }
     return chips;
   }, [filters, query]);
@@ -99,7 +102,7 @@ function RecordsView() {
     const kw = query.trim().toLowerCase();
     return records.filter((r) => {
       const tags = Array.isArray(r.tags) ? r.tags : [];
-      const text = [r.patternName ?? "", r.product ?? "", r.rawNote ?? "", r.designJudgment ?? "", tags.join(" ")]
+      const text = [r.patternId, r.screenshotId, r.patternName ?? "", r.product ?? "", r.rawNote ?? "", r.designJudgment ?? "", tags.join(" ")]
         .join(" ")
         .toLowerCase();
       return (
@@ -116,8 +119,9 @@ function RecordsView() {
   return (
     <PageFrame>
       <PageHeader
+        eyebrow="模式资产"
         title="记录"
-        description="模式证据数据库。"
+        description="从证据进入模式详情；筛选结果同时承接矩阵、旅程和模式库的下钻路径。"
         stats={
           <>
             <StatMetric label="总计" value={records.length} compact />
@@ -128,74 +132,69 @@ function RecordsView() {
       <PageBody className="page-section-gap">
         <ErrorBanner message={error} />
 
+        <Panel className="filter-panel record-filter-panel">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="text-[11px] font-semibold text-[var(--text-muted)]">查询与筛选</div>
+            <button
+              type="button"
+              className="text-[11px] text-[var(--text-weak)] hover:text-[var(--accent)]"
+              onClick={() => {
+                setQuery("");
+                setFilters({
+                  productCategory: "",
+                  journeyStage: "",
+                  screenshotState: "",
+                  patternCategory: "",
+                  reuseLevel: "",
+                });
+              }}
+            >
+              清空条件
+            </button>
+          </div>
+          <div className="filter-grid">
+            <input
+              className={inputClass}
+              placeholder="搜索模式、产品、标签或设计判断…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} optionLabels={PRODUCT_CATEGORY_LABELS} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
+            <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} optionLabels={JOURNEY_STAGE_LABELS} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
+            <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} optionLabels={SCREENSHOT_STATE_LABELS} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
+            <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
+            <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
+          </div>
+          {activeChips.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2.5">
+              <span className="mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-weak)]">
+                生效条件
+              </span>
+              {activeChips.map((chip) => (
+                <span key={chip.key} className="filter-chip">
+                  {chip.label}
+                  <button type="button" aria-label="移除筛选" onClick={chip.clear}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </Panel>
+
         {isLoading && records.length === 0 ? (
           <LoadingState label="正在读取本地数据…" />
         ) : null}
 
-        <Panel noPadding>
-          <div className="records-toolbar">
-            <div className="records-toolbar-main">
-              <div className="records-search-wrap">
-                <Search className="records-search-icon" strokeWidth={1.75} aria-hidden />
-                <input
-                  className="records-search"
-                  placeholder="搜索模式、产品、标签…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              <div className="records-filter-row">
-                <FilterSelect value={filters.productCategory} options={PRODUCT_CATEGORIES} optionLabels={PRODUCT_CATEGORY_LABELS} placeholder="产品类型" onChange={(v) => setFilters({ ...filters, productCategory: v })} />
-                <FilterSelect value={filters.journeyStage} options={JOURNEY_STAGES} optionLabels={JOURNEY_STAGE_LABELS} placeholder="旅程阶段" onChange={(v) => setFilters({ ...filters, journeyStage: v })} />
-                <FilterSelect value={filters.screenshotState} options={SCREENSHOT_STATES} optionLabels={SCREENSHOT_STATE_LABELS} placeholder="截图状态" onChange={(v) => setFilters({ ...filters, screenshotState: v })} />
-                <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
-                <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
-              </div>
-              {activeChips.length > 0 ? (
-                <button
-                  type="button"
-                  className="records-toolbar-clear"
-                  onClick={() => {
-                    setQuery("");
-                    setFilters({
-                      productCategory: "",
-                      journeyStage: "",
-                      screenshotState: "",
-                      patternCategory: "",
-                      reuseLevel: "",
-                    });
-                  }}
-                >
-                  清空
-                </button>
-              ) : null}
-            </div>
-            {activeChips.length > 0 ? (
-              <div className="records-toolbar-chips">
-                {activeChips.map((chip) => (
-                  <span key={chip.key} className="filter-chip">
-                    {chip.label}
-                    <button type="button" aria-label="移除筛选" onClick={chip.clear}>
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <div className="table-scroll">
-            <table className="data-table">
+        <Panel noPadding className="table-scroll">
+          <table className="data-table records-primary-table">
             <thead>
               <tr>
                 <th>证据</th>
-                <th>模式</th>
+                <th>模式与核心判断</th>
                 <th>产品</th>
-                <th>类型</th>
-                <th>阶段</th>
-                <th>状态</th>
-                <th>复用</th>
-                <th>Lens</th>
-                <th>标签</th>
+                <th>路径</th>
+                <th>复用价值</th>
                 <th>更新</th>
               </tr>
             </thead>
@@ -204,27 +203,46 @@ function RecordsView() {
                 filtered.map((r) => {
                   const isCore = CORE_JOURNEY_STAGES.some((s) => s === r.journeyStage);
                   return (
-                    <tr key={r.id} data-clickable="true" onClick={() => setSelected(r)}>
-                      <td>
+                    <tr
+                      key={r.id}
+                      data-clickable="true"
+                      tabIndex={0}
+                      aria-label={`打开模式记录：${r.patternName}`}
+                      onClick={() => setSelected(r)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setSelected(r);
+                        }
+                      }}
+                    >
+                      <td data-label="证据">
                         <div className="flex items-center gap-2">
                           <EvidenceThumbnail src={r.imageDataUrl} alt={r.screenshotId} />
                           <TypedIdBadge kind="evidence">{r.screenshotId}</TypedIdBadge>
                         </div>
                       </td>
-                      <td>
-                        <div className="max-w-[160px] truncate font-medium">{r.patternName}</div>
+                      <td data-label="模式与核心判断">
+                        <div className="max-w-[280px] truncate font-medium">{r.patternName}</div>
                         <TypedIdBadge kind="pattern" className="mt-0.5">{r.patternId}</TypedIdBadge>
+                        <div className="record-row-finding" title={r.userProblem || r.designJudgment}>
+                          {r.userProblem || r.designJudgment || "尚未补充核心判断"}
+                        </div>
                       </td>
-                      <td className="text-[var(--text-muted)]">{r.product || "—"}</td>
-                      <td><CategoryTag label={labelOf(r.productCategory, PRODUCT_CATEGORY_LABELS)} category={r.productCategory} /></td>
-                      <td>
-                        <span className={cn("text-[12px]", isCore ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]")}>
-                          {journeyCode(r.journeyStage)}
-                        </span>
+                      <td data-label="产品">
+                        <div className="mb-1 text-[12px] text-[var(--text)]">{r.product || "—"}</div>
+                        <CategoryTag label={labelOf(r.productCategory, PRODUCT_CATEGORY_LABELS)} category={r.productCategory} />
                       </td>
-                      <td className="text-[12px] text-[var(--text-muted)]">{labelOf(r.screenshotState, SCREENSHOT_STATE_LABELS)}</td>
-                      <td><ReuseTag level={r.reuseLevel} /></td>
-                      <td>
+                      <td data-label="路径">
+                        <div className={cn("text-[12px]", isCore ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]")}>
+                          {journeyCode(r.journeyStage)} · {labelOf(r.journeyStage, JOURNEY_STAGE_LABELS)}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[var(--text-weak)]">
+                          {labelOf(r.screenshotState, SCREENSHOT_STATE_LABELS)}
+                        </div>
+                      </td>
+                      <td data-label="复用价值">
+                        <ReuseTag level={r.reuseLevel} />
                         <span className="lens-meter" title={`平均 Lens ${averageLensScore(r).toFixed(1)} / 3`}>
                           <span className="lens-meter-track">
                             <span
@@ -235,16 +253,13 @@ function RecordsView() {
                           <span className="tabular-nums mono text-[12px]">{averageLensScore(r).toFixed(1)}</span>
                         </span>
                       </td>
-                      <td className="max-w-[120px] truncate text-[11px] text-[var(--text-muted)]">
-                        {(Array.isArray(r.tags) && r.tags.length) ? r.tags.join(", ") : "—"}
-                      </td>
-                      <td className="text-[11px] text-[var(--text-weak)]">{formatDate(r.updatedAt)}</td>
+                      <td data-label="更新" className="text-[11px] text-[var(--text-weak)]">{formatDate(r.updatedAt)}</td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} className="!py-8">
+                  <td colSpan={6} className="!py-8">
                     <SlotEmpty>
                       {records.length === 0 ? (
                         <>
@@ -263,7 +278,6 @@ function RecordsView() {
               )}
             </tbody>
           </table>
-          </div>
         </Panel>
       </PageBody>
       <RecordDrawer record={selected} onClose={() => setSelected(null)} />

@@ -85,8 +85,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
+      <a className="skip-link" href="#main-content">
+        跳到主要内容
+      </a>
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 flex w-[var(--sidebar-width)] flex-col overflow-hidden bg-[var(--panel)]">
-        <div className="shrink-0 px-5 pb-4 pt-6">
+        <div className="app-sidebar-brand shrink-0 px-5 pb-4 pt-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--accent)_40%,var(--border))] bg-[var(--accent-muted)]">
               <Boxes className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} />
@@ -99,10 +102,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+        <nav className="app-sidebar-nav min-h-0 flex-1 overflow-y-auto px-3 py-2" aria-label="主要导航">
           {navGroups.map((group, groupIndex) => (
-            <div key={group.kicker} className={cn(groupIndex > 0 && "mt-4")}>
-              <div className="mono mb-1 px-2 text-[9px] uppercase tracking-[0.2em] text-[var(--text-weak)]">
+            <div key={group.kicker} className={cn("app-nav-group", groupIndex > 0 && "mt-4")}>
+              <div className="app-nav-group-label mono mb-1 px-2 text-[9px] uppercase tracking-[0.2em] text-[var(--text-weak)]">
                 {group.kicker}
               </div>
               {group.items.map((item) => {
@@ -112,8 +115,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group relative mb-0.5 flex h-11 items-center gap-3 rounded-[var(--radius-md)] px-3 transition",
+                      "app-nav-link group relative mb-0.5 flex h-11 items-center gap-3 rounded-[var(--radius-md)] px-3 transition",
                       isActive
                         ? "bg-[var(--accent-muted)] text-[var(--text)]"
                         : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[var(--text)]",
@@ -141,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-[var(--border)] px-5 pb-6 pt-4">
+        <div className="app-sidebar-meta shrink-0 border-t border-[var(--border)] px-5 pb-6 pt-4">
           <div className="mono mb-3 flex items-center justify-between text-[9px] uppercase tracking-[0.18em] text-[var(--text-weak)]">
             <span>Coverage</span>
             <span className="text-[var(--accent)]">{coverage.percent}%</span>
@@ -167,8 +171,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <button
+              type="button"
               onClick={() => signOut()}
               title="登出"
+              aria-label="登出当前账号"
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-weak)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
             >
               <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />

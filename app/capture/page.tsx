@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PanelRightClose } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, PanelRightClose } from "lucide-react";
 import { toast } from "sonner";
 import {
   MAX_SCREENSHOTS,
@@ -22,6 +23,7 @@ import {
 import {
   EvidenceMediaSlot,
   ImageLightbox,
+  ResearchWorkflowProgress,
   VideoLightbox,
 } from "@/components/research-ui";
 import {
@@ -35,6 +37,7 @@ import {
 import { cn } from "@/lib/utils";
 import { callCloudFunction, ensureAuth } from "@/lib/cloudbase";
 import { prepareImagesForAnalysis, parseAnalyzeCloudResult } from "@/lib/prepare-evidence-for-analyze";
+import type { PatternAnalysisResult } from "@/lib/types";
 
 const RESEARCH_NOTE_PLACEHOLDER =
   "这张图里值得研究的交互是什么，例如：修改代码前展示待改文件并要求确认。";
@@ -43,6 +46,12 @@ const WRITING_TEMPLATE =
   "[产品] 在 [用户阶段] 通过 [界面机制] 帮用户 [解决问题]";
 
 const CAPTURE_DRAWER_MS = 280;
+
+type SavedReceipt = {
+  patternId: string;
+  screenshotId: string;
+  patternName: string;
+};
 
 function buildEvidenceFingerprint(params: {
   imageDataUrl: string;
@@ -72,16 +81,11 @@ const createBrowserId = () =>
 /**
  * 防御性处理 AI 返回数据，确保所有字段有安全默认值
  */
-function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> {
+function sanitizePayload(raw: Record<string, unknown>): PatternAnalysisResult {
   const safeStr = (v: unknown, fallback = ""): string => {
     if (v === null || v === undefined) return fallback;
     if (typeof v === "string") return v;
     try { return JSON.stringify(v); } catch { return fallback; }
-  };
-  
-  const safeObj = (v: unknown): Record<string, unknown> => {
-    if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
-    return {};
   };
   
   return {
@@ -107,7 +111,7 @@ function sanitizePayload(raw: Record<string, unknown>): Record<string, unknown> 
     designJudgment: safeStr(raw.designJudgment),
     lensScore: raw.lensScore && typeof raw.lensScore === "object" ? raw.lensScore : {},
     tags: Array.isArray(raw.tags) ? raw.tags : [],
-  };
+  } as PatternAnalysisResult;
 }
 
 function ComposerInlineField({
@@ -149,7 +153,6 @@ export default function CapturePage() {
     videoPreviewUrl,
     videoFileID,
     videoName,
-    videoMime,
     rawNote,
     sourceUrl,
     taskContext,
@@ -163,7 +166,6 @@ export default function CapturePage() {
     setImage,
     addExtraImage,
     removeImageAt,
-    clearImages,
     setVideo,
     setVideoFileID,
     clearVideo,
@@ -188,6 +190,7 @@ export default function CapturePage() {
   const [drawerPresent, setDrawerPresent] = useState(false);
   const [drawerEntered, setDrawerEntered] = useState(false);
   const [analyzedFingerprint, setAnalyzedFingerprint] = useState<string | null>(null);
+  const [savedReceipt, setSavedReceipt] = useState<SavedReceipt | null>(null);
 
   const totalImages = (imageDataUrl ? 1 : 0) + extraImages.length;
   const hasVideo = Boolean(videoPreviewUrl || videoFileID);
@@ -303,13 +306,6 @@ export default function CapturePage() {
     setPreviewOpen(true);
   }
 
-  async function reset() {
-    setPreviewOpen(false);
-    setReviewDrawerOpen(false);
-    setAnalyzedFingerprint(null);
-    await resetDraft();
-  }
-
   function insertWritingTemplate() {
     if (!rawNote.trim()) {
       setRawNote(`${WRITING_TEMPLATE} `);
@@ -370,7 +366,7 @@ export default function CapturePage() {
       const payload = parseAnalyzeCloudResult(rawPayload);
       const sanitized = sanitizePayload(payload);
       const nextProduct = (sanitized.product as string) || analysis.product;
-      setAnalysis({ ...sanitized, product: nextProduct } as any);
+      setAnalysis({ ...sanitized, product: nextProduct });
       setAnalysisStatus("analyzed");
       setShowReview(true);
       setReviewDrawerOpen(true);
@@ -431,10 +427,16 @@ export default function CapturePage() {
       createdAt: now,
       updatedAt: now,
     });
+    setSavedReceipt({
+      patternId: ids.patternId,
+      screenshotId: ids.screenshotId,
+      patternName: analysis.patternName,
+    });
+    setDrawerDismissed(true);
+    setReviewDrawerOpen(false);
+    setAnalyzedFingerprint(null);
+    await resetDraft();
     toast.success("模式记录已保存");
-    window.setTimeout(() => {
-      void reset();
-    }, 1400);
   }
 
   function handleBottomAction() {
@@ -452,6 +454,14 @@ export default function CapturePage() {
     : inReviewReady
       ? "打开 Review 校对"
       : "提取设计模式";
+
+  const workflowStep: 1 | 2 | 3 | 4 = savedReceipt
+    ? 4
+    : inReviewReady
+      ? 3
+      : isAnalyzing || analysisStatus === "failed" || evidenceStale
+        ? 2
+        : 1;
 
   const drawerIntent =
     isAnalyzing ||
@@ -480,39 +490,76 @@ export default function CapturePage() {
       : "结果校对";
 
   useEffect(() => {
-    if (evidenceStale) {
-      setReviewDrawerOpen(false);
-    }
-  }, [evidenceStale]);
+    let mountFrame = 0;
+    let enterFrame = 0;
+    let exitFrame = 0;
+    let timer = 0;
 
-  useEffect(() => {
     if (drawerOpen) {
-      setDrawerPresent(true);
-      let enterFrame = 0;
-      const mountFrame = requestAnimationFrame(() => {
+      mountFrame = requestAnimationFrame(() => {
+        setDrawerPresent(true);
         enterFrame = requestAnimationFrame(() => setDrawerEntered(true));
       });
-      return () => {
-        cancelAnimationFrame(mountFrame);
-        cancelAnimationFrame(enterFrame);
-      };
+    } else {
+      exitFrame = requestAnimationFrame(() => setDrawerEntered(false));
+      timer = window.setTimeout(() => setDrawerPresent(false), CAPTURE_DRAWER_MS);
     }
 
-    setDrawerEntered(false);
-    const timer = window.setTimeout(() => setDrawerPresent(false), CAPTURE_DRAWER_MS);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(mountFrame);
+      cancelAnimationFrame(enterFrame);
+      cancelAnimationFrame(exitFrame);
+      window.clearTimeout(timer);
+    };
   }, [drawerOpen]);
 
   return (
     <div className="capture-workbench flex-1">
       <PageHeader
+        eyebrow="证据 → 模式"
         title="采集"
-        description="粘贴截图或上传录屏与研究备注，提炼 AI 产品设计模式。"
+        description="先记录真实证据与观察，再让 AI 提炼为可校对、可复用的设计模式。"
       />
 
-      <div className="capture-columns">
+      <ResearchWorkflowProgress currentStep={workflowStep} stale={evidenceStale} />
+
+      {savedReceipt ? (
+        <main id="main-content" className="capture-save-receipt-wrap">
+          <section className="capture-save-receipt" aria-live="polite">
+            <CheckCircle2 className="capture-save-receipt-icon" aria-hidden="true" />
+            <div className="capture-save-receipt-copy">
+              <span className="capture-save-receipt-kicker">已入库</span>
+              <h2>{savedReceipt.patternName}</h2>
+              <p>
+                {savedReceipt.patternId} 已与证据 {savedReceipt.screenshotId} 建立关联，并同步进入记录、矩阵、旅程、模式库和洞察统计。
+              </p>
+            </div>
+            <div className="capture-save-receipt-actions">
+              <Button onClick={() => setSavedReceipt(null)}>继续采集</Button>
+              <Link className="receipt-link" href={`/records?q=${encodeURIComponent(savedReceipt.patternId)}`}>
+                查看记录 <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link className="receipt-link" href="/insights">
+                查看洞察 <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </section>
+        </main>
+      ) : (
+      <div id="main-content" className="capture-columns">
         <div className="capture-evidence-column">
           <div className="capture-evidence-body">
+            {evidenceStale ? (
+              <div className="capture-status-banner capture-status-banner--warning" role="status">
+                <div>
+                  <strong>证据已发生变化</strong>
+                  <span>上次提炼结果已失效，请基于当前证据重新提炼。</span>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => void analyze()}>
+                  重新提炼
+                </Button>
+              </div>
+            ) : null}
             <EvidenceMediaSlot
               imageUrls={imageDataUrl ? [imageDataUrl, ...extraImages] : extraImages}
               videoUrl={videoPreviewUrl || undefined}
@@ -587,15 +634,25 @@ export default function CapturePage() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="capture-bottom-action" role="region" aria-label="提炼模式操作">
+      {!savedReceipt ? <div className="capture-bottom-action" role="region" aria-label="提炼模式操作">
+        <span className="capture-bottom-hint" role="status">
+          {inReviewReady
+            ? "提炼已完成，打开校对后确认必填摘要"
+            : !hasEvidence
+              ? "先添加截图或录屏证据"
+              : !hasRawNote
+                ? "补充研究备注后即可提炼"
+                : "证据已就绪，可以开始提炼"}
+        </span>
         <Button
           onClick={handleBottomAction}
           disabled={isAnalyzing || (!inReviewReady && !canExtract)}
         >
           {bottomActionLabel}
         </Button>
-      </div>
+      </div> : null}
 
       {drawerPresent ? (
         <div className="capture-drawer-layer">
