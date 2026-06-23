@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { Toaster } from "sonner";
+import { useThemeStore } from "@/lib/theme-store";
 
 const toasterStyle = {
   "--width": "max-content",
@@ -12,10 +13,12 @@ const toasterStyle = {
 } as CSSProperties;
 
 export function AppToaster() {
+  const theme = useThemeStore((s) => s.theme);
+
   return (
     <Toaster
       position="top-center"
-      theme="dark"
+      theme={theme}
       richColors={false}
       expand={false}
       visibleToasts={3}

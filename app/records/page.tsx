@@ -28,6 +28,7 @@ import {
 } from "@/lib/utils";
 import {
   CategoryTag,
+  DropdownSelect,
   ErrorBanner,
   EvidenceThumbnail,
   LoadingState,
@@ -36,7 +37,6 @@ import {
   PageHeader,
   Panel,
   ReuseTag,
-  StatMetric,
   TypedIdBadge,
 } from "@/components/ui";
 import { SlotEmpty } from "@/components/research-ui";
@@ -67,32 +67,15 @@ function RecordsView() {
     loadRecords();
   }, [loadRecords]);
 
-  const clearFilter = (key: keyof typeof filters) =>
-    setFilters((prev) => ({ ...prev, [key]: "" }));
-
-  const activeChips = useMemo(() => {
-    const chips: Array<{ key: string; label: string; clear: () => void }> = [];
-    if (query.trim()) {
-      chips.push({ key: "query", label: `“${query.trim()}”`, clear: () => setQuery("") });
-    }
-    const chipLabelMaps: Record<keyof typeof filters, Record<string, string>> = {
-      productCategory: PRODUCT_CATEGORY_LABELS,
-      journeyStage: JOURNEY_STAGE_LABELS,
-      screenshotState: SCREENSHOT_STATE_LABELS,
-      patternCategory: PATTERN_CATEGORY_LABELS,
-      reuseLevel: REUSE_LEVEL_LABELS,
-    };
-    const map: Array<[keyof typeof filters, string]> = [
-      ["productCategory", filters.productCategory],
-      ["journeyStage", filters.journeyStage],
-      ["screenshotState", filters.screenshotState],
-      ["patternCategory", filters.patternCategory],
-      ["reuseLevel", filters.reuseLevel],
-    ];
-    for (const [key, value] of map) {
-      if (value) chips.push({ key, label: labelOf(value, chipLabelMaps[key]), clear: () => clearFilter(key) });
-    }
-    return chips;
+  const hasActiveFilters = useMemo(() => {
+    return Boolean(
+      query.trim() ||
+        filters.productCategory ||
+        filters.journeyStage ||
+        filters.screenshotState ||
+        filters.patternCategory ||
+        filters.reuseLevel,
+    );
   }, [filters, query]);
 
   const filtered = useMemo(() => {
@@ -116,14 +99,16 @@ function RecordsView() {
   return (
     <PageFrame>
       <PageHeader
-        title="记录"
-        description="模式证据数据库。"
-        stats={
+        title={
           <>
-            <StatMetric label="总计" value={records.length} compact />
-            <StatMetric label="当前显示" value={filtered.length} compact />
+            记录
+            <span className="text-[var(--text-weak)]"> · </span>
+            <span className="mono tabular-nums font-normal text-[var(--text-muted)]">
+              {records.length}
+            </span>
           </>
         }
+        description="模式证据数据库。"
       />
       <PageBody className="page-section-gap">
         <ErrorBanner message={error} />
@@ -151,7 +136,7 @@ function RecordsView() {
                 <FilterSelect value={filters.patternCategory} options={PATTERN_CATEGORIES} optionLabels={PATTERN_CATEGORY_LABELS} placeholder="模式分类" onChange={(v) => setFilters({ ...filters, patternCategory: v })} />
                 <FilterSelect value={filters.reuseLevel} options={REUSE_LEVELS} optionLabels={REUSE_LEVEL_LABELS} placeholder="复用等级" onChange={(v) => setFilters({ ...filters, reuseLevel: v })} />
               </div>
-              {activeChips.length > 0 ? (
+              {hasActiveFilters ? (
                 <button
                   type="button"
                   className="records-toolbar-clear"
@@ -170,18 +155,6 @@ function RecordsView() {
                 </button>
               ) : null}
             </div>
-            {activeChips.length > 0 ? (
-              <div className="records-toolbar-chips">
-                {activeChips.map((chip) => (
-                  <span key={chip.key} className="filter-chip">
-                    {chip.label}
-                    <button type="button" aria-label="移除筛选" onClick={chip.clear}>
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            ) : null}
           </div>
           <div className="table-scroll">
             <table className="data-table">
@@ -285,15 +258,15 @@ function FilterSelect<T extends string>({
   onChange: (v: string) => void;
 }) {
   return (
-    <select
-      className={cn("records-filter-select", value && "records-filter-select--active")}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((o) => (
-        <option key={o} value={o}>{optionLabels ? labelOf(o, optionLabels) : o}</option>
-      ))}
-    </select>
+    <DropdownSelect
+      size="sm"
+      variant="filter"
+      value={value as T}
+      options={options}
+      optionLabels={optionLabels}
+      placeholder={placeholder}
+      onChange={(v) => onChange(v)}
+      aria-label={placeholder}
+    />
   );
 }

@@ -24,12 +24,12 @@ import {
 } from "@/lib/constants";
 import {
   DualLabel,
+  DropdownSelect,
   Field,
   SegmentedControl,
   TypedIdBadge,
   formTextareaClass,
   inputClass,
-  selectClass,
 } from "@/components/ui";
 import { FormModule } from "@/components/research-ui";
 
@@ -544,13 +544,12 @@ function SelectField<T extends string>({
 }) {
   return (
     <Field label={label} compact>
-      <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value as T)}>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {optionLabels ? labelOf(opt, optionLabels) : opt}
-          </option>
-        ))}
-      </select>
+      <DropdownSelect
+        value={value}
+        options={options}
+        optionLabels={optionLabels}
+        onChange={onChange}
+      />
     </Field>
   );
 }

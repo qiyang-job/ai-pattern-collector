@@ -11,8 +11,8 @@ import {
 } from "@/lib/constants";
 import { useRecordsStore } from "@/lib/records-store";
 import { computeMatrixCoverage, getMatrixCellRecords } from "@/lib/stats";
-import { average, cn, journeyCode, journeyDisplay, journeyName } from "@/lib/utils";
-import { PageBody, PageFrame, PageHeader, Panel, StatMetric, TypedIdBadge } from "@/components/ui";
+import { average, cn, journeyCode, journeyName } from "@/lib/utils";
+import { PageBody, PageFrame, PageHeader, Panel, TypedIdBadge } from "@/components/ui";
 
 function recordsHref(params: Record<string, string>) {
   return `/records?${new URLSearchParams(params).toString()}`;
@@ -29,52 +29,29 @@ export default function MatrixPage() {
   const coverage = useMemo(() => computeMatrixCoverage(records), [records]);
 
   return (
-    <PageFrame>
+    <PageFrame className="matrix-page">
       <PageHeader
-        title="矩阵"
-        description="产品类型 × 旅程阶段 — 方法论覆盖地图。"
-        stats={
+        title={
           <>
-            <StatMetric label="模式数" value={records.length} compact />
-            <StatMetric label="矩阵格" value={`${coverage.filled}/${coverage.total}`} compact />
-            <StatMetric label="覆盖率" value={`${coverage.percent}%`} compact />
+            矩阵
+            <span className="text-[var(--text-weak)]"> · </span>
+            <span className="mono tabular-nums font-normal text-[var(--text-muted)]">
+              {coverage.filled}/{coverage.total}
+            </span>
           </>
         }
+        description={`产品类型 × 旅程阶段 — 方法论覆盖地图 · 横向比较类型、纵向观察 ${journeyCode(CORE_JOURNEY_STAGES[0])}→${journeyCode(CORE_JOURNEY_STAGES[CORE_JOURNEY_STAGES.length - 1])} 核心阶段模式密度 · 点击单元格或合计下钻`}
       />
       <PageBody className="page-section-gap">
-        <Panel className="filter-panel">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-[12px] font-semibold text-[var(--text)]">覆盖判断</div>
-              <p className="mt-1 text-[11px] text-[var(--text-muted)]">
-                横向比较产品类型，纵向观察 {journeyDisplay(CORE_JOURNEY_STAGES[0])} 到{" "}
-                {journeyDisplay(CORE_JOURNEY_STAGES[CORE_JOURNEY_STAGES.length - 1])}{" "}
-                的 AI 核心交互阶段是否形成模式密度。点击单元格或合计可下钻到对应记录。
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-[10px] text-[var(--text-muted)]">
-              <span className="rounded-[var(--radius-sm)] bg-[var(--accent-muted)] px-2 py-1 text-[var(--accent-strong)]">
-                核心阶段
-              </span>
-              <span className="rounded-[var(--radius-sm)] bg-[var(--panel-muted)] px-2 py-1">
-                已有记录
-              </span>
-              <span className="rounded-[var(--radius-sm)] bg-[var(--panel)] px-2 py-1">
-                待采样
-              </span>
-            </div>
-          </div>
-        </Panel>
-
         <Panel noPadding className="table-scroll">
           <table className="matrix-table">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 w-32 bg-[var(--panel-muted)]">阶段</th>
+                <th className="matrix-corner-stage sticky left-0 z-10 w-32">阶段</th>
                 {PRODUCT_CATEGORIES.map((cat) => (
                   <th key={cat}>{labelOf(cat, PRODUCT_CATEGORY_LABELS)}</th>
                 ))}
-                <th className="w-16">合计</th>
+                <th className="matrix-corner-total">合计</th>
               </tr>
             </thead>
             <tbody>
@@ -85,7 +62,7 @@ export default function MatrixPage() {
                   <tr key={stage}>
                     <th
                       className={cn(
-                        "sticky left-0 z-10 w-32 bg-[var(--panel-muted)] px-2 py-1.5 text-left",
+                        "matrix-row-label sticky left-0 z-10 w-32 px-2 py-1.5 text-left",
                         isCore && "matrix-row-label--core",
                       )}
                     >
@@ -150,7 +127,6 @@ export default function MatrixPage() {
                     <td
                       className={cn(
                         "matrix-col-total text-center align-middle",
-                        isCore && "matrix-cell--core",
                         rowTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]",
                       )}
                       title={rowTotal > 0 ? `查看 ${journeyName(stage)} 阶段全部记录` : undefined}
@@ -158,7 +134,7 @@ export default function MatrixPage() {
                         rowTotal > 0 && router.push(recordsHref({ journeyStage: stage }))
                       }
                     >
-                      <span className="tabular-nums mono text-[13px]">{rowTotal}</span>
+                      <span className="matrix-total-value">{rowTotal}</span>
                     </td>
                   </tr>
                 );
@@ -166,13 +142,15 @@ export default function MatrixPage() {
             </tbody>
             <tfoot>
               <tr>
-                <th className="sticky left-0 z-10">合计</th>
+                <th className="matrix-corner-stage sticky left-0 z-10">合计</th>
                 {PRODUCT_CATEGORIES.map((cat) => {
                   const colTotal = records.filter((r) => r.productCategory === cat).length;
                   return (
                     <td
                       key={cat}
-                      className={cn(colTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]")}
+                      className={cn(
+                        colTotal > 0 && "cursor-pointer hover:bg-[var(--accent-muted)]",
+                      )}
                       title={colTotal > 0 ? `查看 ${labelOf(cat, PRODUCT_CATEGORY_LABELS)} 全部记录` : undefined}
                       onClick={() =>
                         colTotal > 0 && router.push(recordsHref({ productCategory: cat }))
@@ -183,7 +161,7 @@ export default function MatrixPage() {
                   );
                 })}
                 <td className="matrix-col-total">
-                  <span className="text-[13px]">{records.length}</span>
+                  <span className="matrix-total-value">{records.length}</span>
                 </td>
               </tr>
             </tfoot>

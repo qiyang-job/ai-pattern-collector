@@ -455,7 +455,7 @@ function RemoveBadge({
 }) {
   return (
     <span
-      className="absolute top-1.5 right-1.5 z-[3] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-[#c4cad4] text-[#3a4049] shadow-none outline-none transition-[background,transform] duration-150 hover:scale-[1.04] hover:bg-[#a8b0bc] active:scale-[0.98] active:bg-[#96a0ae]"
+      className="absolute top-1.5 right-1.5 z-[3] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-[var(--chip-dismiss-bg)] text-[var(--chip-dismiss-text)] shadow-none outline-none transition-[background,transform] duration-150 hover:scale-[1.04] hover:bg-[var(--chip-dismiss-hover)] active:scale-[0.98] active:bg-[var(--chip-dismiss-active)]"
       onClick={onClick}
       onPointerDown={(e) => e.stopPropagation()}
       role="button"

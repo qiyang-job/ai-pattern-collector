@@ -127,29 +127,41 @@ export default function InsightsPage() {
         }
       />
       <PageBody className="page-section-gap">
-        <Panel className="insight-readiness">
-          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-[11px] font-semibold text-[var(--text-muted)]">样本量阈值</div>
-                {hasRecords ? (
-                  <Button size="sm" onClick={generateInsights} disabled={isGenerating}>
-                    {isGenerating ? "生成中…" : "AI 生成洞察"}
-                  </Button>
-                ) : null}
-              </div>
-              <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--text-muted)]">
+        <Panel noPadding className="insight-readiness">
+          <div className="insight-readiness-header">
+            <div className="insight-readiness-copy">
+              <div className="insight-readiness-eyebrow">样本量阈值</div>
+              <p className="insight-readiness-desc">
                 Insights 的可信度来自记录密度。先看样本规模，再判断报告适合用于初步观察还是稳定设计建议。
               </p>
             </div>
-            <ul className="grid min-w-[240px] shrink-0 gap-1 text-[11px] text-[var(--text-muted)] sm:grid-cols-3">
-              <li><strong className="text-[var(--text)]">5+</strong> 基础洞察</li>
-              <li><strong className="text-[var(--text)]">15+</strong> 跨产品对比</li>
-              <li><strong className="text-[var(--text)]">30+</strong> 稳定建议</li>
-            </ul>
+            {hasRecords ? (
+              <Button
+                size="sm"
+                className="insight-readiness-action shrink-0 rounded-[6px]"
+                onClick={generateInsights}
+                disabled={isGenerating}
+              >
+                {isGenerating ? "生成中…" : "AI 生成洞察"}
+              </Button>
+            ) : null}
+          </div>
+          <div className="insight-readiness-thresholds" aria-label="样本量阈值说明">
+            <div className="insight-readiness-threshold">
+              <span className="mono tabular-nums">5+</span>
+              <span>基础洞察</span>
+            </div>
+            <div className="insight-readiness-threshold">
+              <span className="mono tabular-nums">15+</span>
+              <span>跨产品对比</span>
+            </div>
+            <div className="insight-readiness-threshold">
+              <span className="mono tabular-nums">30+</span>
+              <span>稳定建议</span>
+            </div>
           </div>
           {!hasRecords ? (
-            <Link href="/capture" className="mt-2 inline-block text-[11px] text-[var(--accent)] underline">
+            <Link href="/capture" className="insight-readiness-empty text-[11px] text-[var(--accent)] underline">
               开始采集 →
             </Link>
           ) : null}

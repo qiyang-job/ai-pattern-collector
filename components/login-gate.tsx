@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Boxes, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuthStore } from "@/lib/auth-store";
 
 type Step = "email" | "code";
@@ -74,7 +75,10 @@ export function LoginGate() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 text-[var(--text)]">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 text-[var(--text)]">
+      <div className="absolute right-5 top-5">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[380px]">
         <div className="mb-7 flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--accent)_40%,var(--border))] bg-[var(--accent-muted)]">
@@ -104,7 +108,7 @@ export function LoginGate() {
                   <span className="mono mb-1.5 block text-[10px] uppercase tracking-[0.16em] text-[var(--text-weak)]">
                     Email
                   </span>
-                  <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] px-3 focus-within:border-[var(--accent)]">
+                  <div className="login-field-shell flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] px-3">
                     <Mail className="h-4 w-4 shrink-0 text-[var(--text-weak)]" strokeWidth={1.75} />
                     <input
                       type="email"
@@ -120,7 +124,7 @@ export function LoginGate() {
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] text-[13px] font-medium text-[#1a1206] transition hover:bg-[var(--accent-strong)] disabled:opacity-60"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] text-[13px] font-medium text-[var(--accent-on)] transition hover:bg-[var(--accent-strong)] disabled:opacity-60"
                 >
                   {sending && <Loader2 className="h-4 w-4 animate-spin" />}
                   {sending ? "发送中…" : "发送验证码"}
@@ -140,13 +144,13 @@ export function LoginGate() {
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     onKeyDown={(e) => e.key === "Enter" && handleVerify()}
                     placeholder="6 位验证码"
-                    className="mono h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] px-3 text-[15px] tracking-[0.3em] outline-none focus:border-[var(--accent)] placeholder:tracking-normal placeholder:text-[var(--text-weak)]"
+                    className="login-field-input mono h-11 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--panel-muted)] px-3 text-[15px] tracking-[0.3em] outline-none placeholder:tracking-normal placeholder:text-[var(--text-weak)]"
                   />
                 </label>
                 <button
                   onClick={handleVerify}
                   disabled={verifying}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] text-[13px] font-medium text-[#1a1206] transition hover:bg-[var(--accent-strong)] disabled:opacity-60"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--accent)] text-[13px] font-medium text-[var(--accent-on)] transition hover:bg-[var(--accent-strong)] disabled:opacity-60"
                 >
                   {verifying && <Loader2 className="h-4 w-4 animate-spin" />}
                   {verifying ? "登录中…" : "登录"}

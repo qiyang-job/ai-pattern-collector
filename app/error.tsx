@@ -35,7 +35,7 @@ export default function RouteError({
         <button
           onClick={reset}
           style={{
-            border: "1px solid var(--border)",
+            border: "var(--border-width) solid var(--border)",
             borderRadius: 6,
             padding: "6px 14px",
             fontSize: 12,
@@ -49,7 +49,7 @@ export default function RouteError({
         <a
           href="/"
           style={{
-            border: "1px solid var(--border)",
+            border: "var(--border-width) solid var(--border)",
             borderRadius: 6,
             padding: "6px 14px",
             fontSize: 12,

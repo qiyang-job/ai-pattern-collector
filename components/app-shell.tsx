@@ -20,6 +20,8 @@ import { computeMatrixCoverage } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 import { CoverageBar } from "@/components/research-ui";
 import { LoginGate } from "@/components/login-gate";
+import { ProductMark } from "@/components/product-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navGroups = [
   {
@@ -88,12 +90,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 flex w-[var(--sidebar-width)] flex-col overflow-hidden bg-[var(--panel)]">
         <div className="shrink-0 px-5 pb-4 pt-6">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--accent)_40%,var(--border))] bg-[var(--accent-muted)]">
-              <Boxes className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} />
-            </span>
+            <ProductMark className="h-6 w-6 text-[var(--text)]" />
             <div className="min-w-0">
               <div className="display-serif text-[17px] leading-none text-[var(--text)]">
-                Pattern Collector
+                AI Pattern Collector
               </div>
             </div>
           </div>
@@ -166,13 +166,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {email ?? "—"}
               </div>
             </div>
-            <button
-              onClick={() => signOut()}
-              title="登出"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-weak)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
-            >
-              <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
+            <div className="flex shrink-0 items-center gap-2.5">
+              <ThemeToggle />
+              <button
+                onClick={() => signOut()}
+                title="登出"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-weak)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
+              >
+                <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

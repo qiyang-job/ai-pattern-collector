@@ -1,12 +1,15 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Info } from "lucide-react";
 import type { PatternCategory, ProductCategory, ReuseLevel } from "@/lib/types";
 import { REUSE_LEVEL_LABELS, labelOf } from "@/lib/constants";
 import {
-  PATTERN_CATEGORY_COLORS,
-  PRODUCT_CATEGORY_COLORS,
-  REUSE_LEVEL_COLORS,
+  getPatternCategoryColors,
+  getProductCategoryColors,
+  getReuseLevelColors,
 } from "@/lib/design-tokens";
+import { useThemeStore } from "@/lib/theme-store";
 import { cn } from "@/lib/utils";
 
 /* ─── Layout ─── */
@@ -17,7 +20,7 @@ export function PageHeader({
   stats,
   actions,
 }: {
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   stats?: ReactNode;
   actions?: ReactNode;
@@ -77,7 +80,7 @@ export function Panel({
     <section
       id={id}
       className={cn(
-        "panel rounded-[var(--radius-lg)] bg-[var(--panel)]",
+        "panel rounded-[var(--radius-md)] bg-[var(--panel)]",
         !noPadding && "p-[var(--page-gutter)]",
         className,
       )}
@@ -171,11 +174,11 @@ export function Button({
         "focus-ring inline-flex items-center justify-center rounded-[var(--radius-md)] border font-medium transition active:translate-y-px",
         size === "sm" ? "h-8 px-2.5 text-[12px]" : "h-9 px-4 text-[13px]",
         variant === "primary" &&
-          "border-[var(--accent)] bg-[var(--accent)] text-[#1a1305] hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)]",
+          "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-on)] hover:bg-[var(--accent-strong)] hover:border-[var(--accent-strong)]",
         variant === "secondary" &&
           "border-[var(--border-strong)] bg-[var(--panel-muted)] text-[var(--text)] hover:border-[var(--text-weak)] hover:bg-[var(--panel-raised)]",
         variant === "danger" &&
-          "border-[var(--danger)] bg-[var(--danger)] text-[#1a0805] hover:brightness-110",
+          "border-[var(--danger)] bg-[var(--danger)] text-[var(--danger-on)] hover:brightness-110",
         variant === "ghost" &&
           "border-transparent bg-transparent text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[var(--text)]",
         variant === "text" &&
@@ -223,7 +226,8 @@ export const formTextareaClass = cn(
   "h-[104px] max-h-[104px] min-h-[104px] resize-none overflow-y-auto",
 );
 
-export const selectClass = cn(inputClass, "select-field h-9 cursor-pointer");
+export { DropdownSelect } from "./dropdown-select";
+export type { DropdownSelectOption } from "./dropdown-select";
 
 export type IdBadgeKind = "evidence" | "pattern" | "stage" | "lens";
 
@@ -273,14 +277,15 @@ export function CategoryTag({
   category?: ProductCategory | PatternCategory;
   reuseLevel?: ReuseLevel;
 }) {
+  const theme = useThemeStore((s) => s.theme);
   const fallback = { bg: "var(--panel-muted)", text: "var(--text-muted)" };
   let style = fallback;
-  if (category && category in PRODUCT_CATEGORY_COLORS) {
-    style = PRODUCT_CATEGORY_COLORS[category as ProductCategory] ?? fallback;
-  } else if (category && category in PATTERN_CATEGORY_COLORS) {
-    style = PATTERN_CATEGORY_COLORS[category as PatternCategory] ?? fallback;
-  } else if (reuseLevel && reuseLevel in REUSE_LEVEL_COLORS) {
-    style = REUSE_LEVEL_COLORS[reuseLevel] ?? fallback;
+  if (category && category in getProductCategoryColors(theme)) {
+    style = getProductCategoryColors(theme)[category as ProductCategory] ?? fallback;
+  } else if (category && category in getPatternCategoryColors(theme)) {
+    style = getPatternCategoryColors(theme)[category as PatternCategory] ?? fallback;
+  } else if (reuseLevel && reuseLevel in getReuseLevelColors(theme)) {
+    style = getReuseLevelColors(theme)[reuseLevel] ?? fallback;
   }
 
   return (
@@ -295,8 +300,9 @@ export function CategoryTag({
 }
 
 export function ReuseTag({ level }: { level?: ReuseLevel | null }) {
+  const theme = useThemeStore((s) => s.theme);
   const c =
-    (level && REUSE_LEVEL_COLORS[level]) ?? {
+    (level && getReuseLevelColors(theme)[level]) ?? {
       bg: "var(--panel-muted)",
       text: "var(--text-muted)",
     };
@@ -427,7 +433,7 @@ export function SegmentedControl<T extends string | number>({
   compact?: boolean;
 }) {
   return (
-    <div className="inline-flex max-w-full gap-0.5 rounded-[var(--radius-md)] bg-[var(--panel-muted)] p-0.5">
+    <div className="inline-flex max-w-full gap-0.5 rounded-[var(--radius-md)] bg-[var(--segment-track-bg)] p-0.5">
       {options.map((opt) => (
         <button
           key={String(opt.value)}

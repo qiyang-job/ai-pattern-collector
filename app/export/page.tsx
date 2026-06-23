@@ -42,7 +42,7 @@ import {
   ReuseTag,
   SegmentedControl,
   TypedIdBadge,
-  selectClass,
+  DropdownSelect,
 } from "@/components/ui";
 import { DistributionRow, ReportSkeletonSection, SlotEmpty } from "@/components/research-ui";
 
@@ -299,16 +299,14 @@ export default function ExportPage() {
           {scope === "category" ? (
             <div className="mt-2">
               <div className="mb-1 text-[11px] text-[var(--text-muted)]">模式分类 Pattern Category</div>
-              <select
-                className={selectClass}
+              <DropdownSelect
                 value={category}
-                onChange={(e) => setCategory(e.target.value as PatternCategory)}
+                options={PATTERN_CATEGORIES}
+                optionLabels={PATTERN_CATEGORY_LABELS}
+                onChange={(v) => setCategory(v as PatternCategory)}
                 disabled={!hasData}
-              >
-                {PATTERN_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{labelOf(c, PATTERN_CATEGORY_LABELS)}</option>
-                ))}
-              </select>
+                aria-label="模式分类 Pattern Category"
+              />
             </div>
           ) : null}
           <div className="mt-3 flex flex-wrap items-center gap-2">
